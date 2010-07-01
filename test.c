@@ -7,9 +7,9 @@
 #include "atmos_rest.h"
 #include "crypto.h"
 
-static const char *user_id ="";
-static const char *key = "";
-static const char *endpoint = "";
+static const char *user_id =NULL;
+static const char *key = NULL;
+static const char *endpoint = NULL;
 
 
 //hmac validater

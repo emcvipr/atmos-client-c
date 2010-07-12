@@ -111,9 +111,9 @@ void parse_headers(ws_result* ws, system_meta* sm, user_meta** head_ptr_um) {
 		}else if (0 == strncmp(result, objname, strlen(objname))) {
 		    strcpy(sm->objname, result+strlen(objname)+1);
 		}else if (0 == strncmp(result, size, strlen(size))) {
-		    sm->size = atoi(result+strlen(size+1));
+		    sm->size = atoi(result+strlen(size)+1);
 		}else if (0 == strncmp(result, nlink,strlen(nlink))){
-		    sm->nlink = atoi(result+strlen(nlink+1));
+		    sm->nlink = atoi(result+strlen(nlink)+1);
 		}else if (0 == strncmp(result, policyname, strlen(policyname))) {
 		    strcpy(sm->policyname, result+strlen(policyname)+1);
 		} else {

@@ -26,7 +26,7 @@ typedef struct ACLval {
 #define UIDSIZE  44
 #define POLICYSIZE  44
 #define GIDSIZE  44
-#define OBJECTIDSIZE  44
+#define OBJECTIDSIZE  45
 
 typedef struct System_meta {
     char atime[TIMESIZE];

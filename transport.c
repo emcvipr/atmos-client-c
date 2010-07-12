@@ -38,7 +38,6 @@ size_t writefunc(void *ptr, size_t size, size_t nmemb, void *stream)
 	void *new_response = NULL;
 	size_t data_offset = ws->body_size;
     size_t mem_required = size*nmemb;
-    
     ws->body_size+= mem_required;
     new_response = realloc(ws->response_body, ws->body_size);
     if(new_response) {
@@ -54,9 +53,9 @@ size_t writefunc(void *ptr, size_t size, size_t nmemb, void *stream)
 size_t headerfunc(void *ptr, size_t size, size_t nmemb, void *stream)
 {
     ws_result *ws = (ws_result*)stream;
-	size_t mem_required = size*nmemb-2;
+    size_t mem_required = size*nmemb-2; // - 2 for the /r/n at the end of each header
 
-    ws->headers[ws->header_count] = malloc(mem_required+1);
+    ws->headers[ws->header_count] = malloc(mem_required+1);//+1 for \0
     memcpy(ws->headers[ws->header_count],ptr, mem_required);
     ws->headers[ws->header_count][mem_required] = '\0';
     ws->header_count++;
@@ -73,8 +72,8 @@ void result_init(ws_result *result) {
 }
 
 void result_deinit(ws_result* result) {
-	int i = 0;
-	free(result->response_body);
+  int i = 0;
+  free(result->response_body);
     for(; i < result->header_count; i++) {
 	free(result->headers[i]);
     }
@@ -92,6 +91,8 @@ const char *http_request_ns(credentials *c, http_method method, char *uri,char *
 
 const char *http_request(credentials *c, http_method method, char *uri, char *content_type, char **headers, int header_count, postdata *data, ws_result* ws_result) 
 {
+
+
 
   //    if(!curl_code) {
   //;
@@ -119,6 +120,7 @@ const char *http_request(credentials *c, http_method method, char *uri, char *co
     char range_header[1024];
     //CURLcode curl_code = 
     curl_global_init(CURL_GLOBAL_ALL);
+    result_init(ws_result); //MUST DEALLOC
 
     memset(range, 0, 1024);
     get_date(date);
@@ -184,10 +186,9 @@ const char *http_request(credentials *c, http_method method, char *uri, char *co
 
 	if(data) {
 	  if(data->offset) {
-	    snprintf(range, 1024, 
-		     "Bytes=%d-%d", data->offset,data->offset+data->body_size-1);
+	    snprintf(range, 1024, "Bytes=%d-%d", data->offset,data->offset+data->body_size-1);
 	  } else if(data->body_size) {
-	    snprintf(range, 1024, "Bytes=0-%d", data->body_size-1);
+	    ;//	    snprintf(range, 1024, "Bytes=0-%d", data->body_size-1);
 	  }
 	}
  
@@ -200,7 +201,7 @@ const char *http_request(credentials *c, http_method method, char *uri, char *co
 	    headers[header_count++]=content_length_header;
 	  }
 	  
-	  if(data->offset > 0) {
+	  if(data->offset > 0 && method != GET ) {
 	    snprintf(range_header, 1024, "range: Bytes=%d-%d", data->offset,data->offset+data->body_size-1);
 	    headers[header_count++] = range_header;
 	  }

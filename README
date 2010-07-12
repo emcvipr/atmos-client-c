@@ -33,7 +33,6 @@ After you have created your credentials struct, you can use the methods in atmos
 For instance, to create a new, empty object in the cloud, you would create a ws_result struct, initialize it and call create_ns.  You MUST result_deinit the ws_result struct or you will leak memory.
 
     ws_result result;    	     
-    result_init(&result);  
     create_ns(c, testdir, NULL,NULL,  NULL, &result);
     result_deinit(&result);
 

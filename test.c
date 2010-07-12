@@ -435,11 +435,58 @@ void rangestest() {
 
 
 }
+void truncate() {
 
+  credentials *c = init_ws(user_id, key, endpoint);
+  ws_result result;
+  char *testfile="/truncate";
+  system_meta sm;
+  user_meta *um = NULL;	
+  postdata pd;
+  postdata rd;
+
+  memset(&pd, 0, sizeof(pd));
+
+  pd.data = malloc(32);
+  
+  //memset(pd.data,5, 32);
+  memcpy(pd.data, testfile, strlen(testfile));
+  pd.body_size=strlen(testfile);
+  //*** Create
+  create_ns(c, testfile, NULL,NULL,  NULL, &result);
+  result_deinit(&result);
+  
+  update_ns(c, testfile,NULL, NULL, &pd, NULL,&result);    
+
+  result_deinit(&result);
+
+  rd.offset=31;
+  rd.body_size=32;
+  list_ns(c, testfile,&rd, 0, &result);
+    
+  result_deinit(&result);
+
+  update_ns(c, testfile, NULL, NULL, NULL, NULL, &result);
+  result_deinit(&result);
+
+  list_ns(c, testfile,&rd, 0, &result);  
+
+  //*** Delete
+  
+  delete_ns(c, testfile, &result);
+  result_deinit(&result);
+
+  free(pd.data);
+  free(c);
+
+
+
+}
 int main() { 
 
   if(user_id) {
-    set_meta_data();
+    truncate();
+        set_meta_data();
     list();
     simple_update();
     api_testing();

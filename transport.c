@@ -14,18 +14,20 @@ size_t readfunc(void *ptr, size_t size, size_t nmemb, void *stream)
 {
 
     if(stream) {
+
 	postdata *ud = (postdata*)stream;
-	
-	if(ud->bytes_remaining) {
+	if(ud->bytes_remaining > 0) {
 	    if(ud->bytes_remaining > size*nmemb) {
-		memcpy((char*)ptr, (char*)(ud->data+ud->bytes_written), size*nmemb);
+	      
+	        memcpy((char*)ptr, (char*)(ud->data+ud->bytes_written), size*nmemb);
 		ud->bytes_written+=size+nmemb;
 		ud->bytes_remaining -=size*nmemb;
 		return size*nmemb;
 	    } else {
-		memcpy(ptr, ud->data+ud->bytes_written, ud->bytes_remaining);
+	      int datasize = ud->bytes_remaining;
+	        memcpy(ptr, ud->data+ud->bytes_written, datasize);
 		ud->bytes_remaining=0;
-		return size*nmemb;;
+		return datasize;
 	    }
 	}
     }
@@ -35,8 +37,8 @@ size_t readfunc(void *ptr, size_t size, size_t nmemb, void *stream)
 size_t writefunc(void *ptr, size_t size, size_t nmemb, void *stream)
 {
     ws_result *ws = (ws_result*)stream;
-	void *new_response = NULL;
-	size_t data_offset = ws->body_size;
+    void *new_response = NULL;
+    size_t data_offset = ws->body_size;
     size_t mem_required = size*nmemb;
     ws->body_size+= mem_required;
     new_response = realloc(ws->response_body, ws->body_size);
@@ -92,15 +94,12 @@ const char *http_request_ns(credentials *c, http_method method, char *uri,char *
 const char *http_request(credentials *c, http_method method, char *uri, char *content_type, char **headers, int header_count, postdata *data, ws_result* ws_result) 
 {
 
-
-
   //    if(!curl_code) {
   //;
   //} else {
 
-      CURL  *curl = curl_easy_init();
+    CURL  *curl = curl_easy_init();
     CURLcode result_code;
-    //struct curl_httppost *formpost=NULL;
     const int connect_timeout = 200;
     char date[256];
     char uidheader[1024];
@@ -118,8 +117,8 @@ const char *http_request(credentials *c, http_method method, char *uri, char *co
     char *signed_hash = NULL;
     char content_length_header[1024];
     char range_header[1024];
-    //CURLcode curl_code = 
     curl_global_init(CURL_GLOBAL_ALL);
+
     result_init(ws_result); //MUST DEALLOC
 
     memset(range, 0, 1024);
@@ -129,7 +128,7 @@ const char *http_request(credentials *c, http_method method, char *uri, char *co
     snprintf(groupaclheader,1024,"X-Emc-groupacl:other=NONE");    
     headers[header_count++] = dateheader;
     //FIXME groupacl headers breaks sig string
-    //headers[header_count++] = groupaclheader;
+    headers[header_count++] = groupaclheader;
     headers[header_count++] = uidheader;
 
     if (!content_type) {
@@ -170,7 +169,7 @@ const char *http_request(credentials *c, http_method method, char *uri, char *co
 	    curl_easy_setopt(curl, CURLOPT_PUT, 1L); 
 	    curl_easy_setopt(curl, CURLOPT_READDATA, data);
 	    curl_easy_setopt(curl, CURLOPT_READFUNCTION, readfunc);
-	    
+
 	    break;
 	case aDELETE:
 	    curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE"); 
@@ -201,7 +200,7 @@ const char *http_request(credentials *c, http_method method, char *uri, char *co
 	    headers[header_count++]=content_length_header;
 	  }
 	  
-	  if(data->offset > 0 && method != GET ) {
+	  if(data->offset > 0) {
 	    snprintf(range_header, 1024, "range: Bytes=%d-%d", data->offset,data->offset+data->body_size-1);
 	    headers[header_count++] = range_header;
 	  }

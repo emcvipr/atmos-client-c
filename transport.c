@@ -48,7 +48,7 @@ size_t writefunc(void *ptr, size_t size, size_t nmemb, void *stream)
     if(new_response) {
       ws->response_body = new_response;
     } else {
-      printf("alloc error... ");
+      ;
     }
     
     if(data_offset) {
@@ -242,7 +242,7 @@ const char *http_request(credentials *c, http_method method, char *uri, char *co
 	
 	ws_result->duration_ms = end_time.tv_usec - start_time.tv_usec ;	
 	ws_result->duration_sec = end_time.tv_sec - start_time.tv_sec ;	
-	printf("times %d\t%d\n", end_time.tv_usec, end_time.tv_sec);
+	
 	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &ws_result->return_code);
 	curl_easy_cleanup(curl);
 	curl_slist_free_all(chunk);

@@ -6,11 +6,6 @@
 #include "atmos_util.h"
 #include "crypto.h"
 
-
-       #include <sys/types.h>
-       #include <sys/stat.h>
-       #include <fcntl.h>
-
 static const char *namespace_uri = "/rest/namespace";
 //static const char *object_uri = "/rest/objects";
 size_t readfunc(void *ptr, size_t size, size_t nmemb, void *stream)
@@ -49,7 +44,7 @@ size_t writefunc(void *ptr, size_t size, size_t nmemb, void *stream)
     size_t data_offset = ws->body_size;
     size_t mem_required = size*nmemb;
     ws->body_size+= mem_required;
-    new_response = realloc(ws->response_body, ws->body_size);
+    new_response = realloc(ws->response_body,ws->body_size);
     if(new_response) {
       ws->response_body = new_response;
     } else {
@@ -81,8 +76,10 @@ void result_init(ws_result *result) {
     result->return_code = -1;
     result->response_body = NULL;
     result->body_size = 0;
-   memset(result->headers, 0,sizeof(result->headers));
+    memset(result->headers, 0,sizeof(result->headers));
     result->header_count=0;
+    result->duration_sec = 0;
+    result->duration_ms = 0;
 }
 
 void result_deinit(ws_result* result) {
@@ -129,6 +126,8 @@ const char *http_request(credentials *c, http_method method, char *uri, char *co
     char *signed_hash = NULL;
     char content_length_header[1024];
     char range_header[1024];
+    struct timeval start_time;
+    struct timeval end_time;
     curl_global_init(CURL_GLOBAL_ALL);
 
     result_init(ws_result); //MUST DEALLOC
@@ -187,9 +186,10 @@ const char *http_request(credentials *c, http_method method, char *uri, char *co
 	    curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE"); 
 	    break;
 	case HEAD:
-
+	  curl_easy_setopt(curl, CURLOPT_NOBODY, 1l);
 	    break;
 	case GET:
+
 	  break;
 	case OPTIONS:
 	  break;
@@ -235,13 +235,19 @@ const char *http_request(credentials *c, http_method method, char *uri, char *co
 	curl_slist_append(chunk, content_type_header);
 	curl_slist_append(chunk,signature);
 	result_code = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, chunk);
+
+	gettimeofday(&start_time, NULL);
 	result_code = curl_easy_perform(curl);
+	gettimeofday(&end_time, NULL);	
 	
-	
+	ws_result->duration_ms = end_time.tv_usec - start_time.tv_usec ;	
+	ws_result->duration_sec = end_time.tv_sec - start_time.tv_sec ;	
+	printf("times %d\t%d\n", end_time.tv_usec, end_time.tv_sec);
 	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &ws_result->return_code);
 	curl_easy_cleanup(curl);
 	curl_slist_free_all(chunk);
     }
+
     free(endpoint_url);
     return  NULL;
 }

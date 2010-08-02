@@ -6,28 +6,36 @@
 #include "atmos_util.h"
 #include "crypto.h"
 
+
+       #include <sys/types.h>
+       #include <sys/stat.h>
+       #include <fcntl.h>
+
 static const char *namespace_uri = "/rest/namespace";
 //static const char *object_uri = "/rest/objects";
-
-
 size_t readfunc(void *ptr, size_t size, size_t nmemb, void *stream)
 {
 
-    if(stream) {
 
+
+     if(stream) {
 	postdata *ud = (postdata*)stream;
 	if(ud->bytes_remaining > 0) {
-	    if(ud->bytes_remaining > size*nmemb) {
-	      
-	        memcpy((char*)ptr, (char*)(ud->data+ud->bytes_written), size*nmemb);
-		ud->bytes_written+=size+nmemb;
+	    if(ud->bytes_remaining >= size*nmemb) {
+	      if(ud->bytes_written == 0) {
+	        memcpy(ptr, ud->data, size*nmemb);
+	      } else {
+	        memcpy(ptr, ud->data+ud->bytes_written-1, size*nmemb);
+	      }
+		ud->bytes_written+=size*nmemb;
 		ud->bytes_remaining -=size*nmemb;
 		return size*nmemb;
 	    } else {
 	      int datasize = ud->bytes_remaining;
-	        memcpy(ptr, ud->data+ud->bytes_written, datasize);
-		ud->bytes_remaining=0;
-		return datasize;
+	      memcpy(ptr, ud->data+ud->bytes_written-1, datasize);
+	      ud->bytes_written+=datasize;
+	      ud->bytes_remaining=0;
+	      return datasize;
 	    }
 	}
     }
@@ -43,13 +51,17 @@ size_t writefunc(void *ptr, size_t size, size_t nmemb, void *stream)
     ws->body_size+= mem_required;
     new_response = realloc(ws->response_body, ws->body_size);
     if(new_response) {
-	ws->response_body = new_response;
+      ws->response_body = new_response;
     } else {
-	printf("alloc error... ");
+      printf("alloc error... ");
     }
     
-    memcpy(ws->response_body+data_offset,ptr, mem_required);
-    return size*nmemb;
+    if(data_offset) {
+      memcpy(ws->response_body+data_offset-1,ptr, mem_required);
+    } else {
+      memcpy(ws->response_body,ptr, mem_required);
+    }
+    return mem_required;
 }
 
 size_t headerfunc(void *ptr, size_t size, size_t nmemb, void *stream)

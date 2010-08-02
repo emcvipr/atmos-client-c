@@ -31,7 +31,10 @@ typedef struct ws_result {
     size_t body_size;
     char *headers[MAX_HEADERS];
     int header_count;
+    int duration_ms;
+    int duration_sec;  
 } ws_result;
+
 
 #define true 1
 #define false 0

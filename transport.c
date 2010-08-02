@@ -199,7 +199,7 @@ const char *http_request(credentials *c, http_method method, char *uri, char *co
 	  if(data->offset) {
 	    snprintf(range, 1024, "Bytes=%d-%d", data->offset,data->offset+data->body_size-1);
 	  } else if(data->body_size) {
-	    ;//	    snprintf(range, 1024, "Bytes=0-%d", data->body_size-1);
+	    snprintf(range, 1024, "Bytes=0-%d", data->body_size-1);
 	  }
 	}
  
@@ -212,8 +212,11 @@ const char *http_request(credentials *c, http_method method, char *uri, char *co
 	    headers[header_count++]=content_length_header;
 	  }
 	  
-	  if(data->offset > 0) {
+	  if(data->offset >0 ) {
 	    snprintf(range_header, 1024, "range: Bytes=%d-%d", data->offset,data->offset+data->body_size-1);
+	    headers[header_count++] = range_header;
+	  } else if(data->body_size) {
+	    snprintf(range_header, 1024, "range: Bytes=0-%d", data->body_size-1);
 	    headers[header_count++] = range_header;
 	  }
 	}

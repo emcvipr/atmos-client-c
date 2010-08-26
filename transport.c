@@ -78,7 +78,7 @@ void result_init(ws_result *result) {
     result->body_size = 0;
     memset(result->headers, 0,sizeof(result->headers));
     result->header_count=0;
-    result->duration_sec = 0;
+
     result->duration_ms = 0;
 }
 
@@ -242,6 +242,11 @@ const char *http_request(credentials *c, http_method method, char *uri, char *co
 	
 	ws_result->duration_ms = end_time.tv_usec - start_time.tv_usec ;	
 	ws_result->duration_sec = end_time.tv_sec - start_time.tv_sec ;	
+	
+	if(ws_result->duration_ms  < 0 ) {
+	  ws_result->duration_sec -=1;
+	  ws_result->duration_ms +=1000000;
+	}
 	
 	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &ws_result->return_code);
 	curl_easy_cleanup(curl);

@@ -70,8 +70,8 @@
 				AdditionalLibraryDirectories="&quot;C:\Documents and Settings\junkis\curl-7.20.1\lib\DLL-Release&quot;;&quot;C:\Documents and Settings\junkis\curl-7.20.1\lib\DLL-Debug&quot;;&quot;C:\OpenSSL-Win32\lib\VC&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="1"
-				StackReserveSize="1048576"
-				StackCommitSize="1048576"
+				StackReserveSize="10485760"
+				StackCommitSize="10485760"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -171,7 +171,6 @@
 	<References>
 		<ProjectReference
 			ReferencedProjectIdentifier="{08F204F7-CA54-4B67-9B62-5CFC8982DE32}"
-			RelativePathToProject="..\..\..\curl-7.20.1\src\vc6curlsrc.vcproj"
 		/>
 	</References>
 	<Files>

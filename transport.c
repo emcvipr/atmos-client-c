@@ -20,14 +20,14 @@ size_t readfunc(void *ptr, size_t size, size_t nmemb, void *stream)
 	      if(ud->bytes_written == 0) {
 	        memcpy(ptr, ud->data, size*nmemb);
 	      } else {
-	        memcpy(ptr, ud->data+ud->bytes_written-1, size*nmemb);
+	        memcpy(ptr, ud->data+ud->bytes_written, size*nmemb);
 	      }
 		ud->bytes_written+=size*nmemb;
 		ud->bytes_remaining -=size*nmemb;
 		return size*nmemb;
 	    } else {
 	      int datasize = ud->bytes_remaining;
-	      memcpy(ptr, ud->data+ud->bytes_written-1, datasize);
+	      memcpy(ptr, ud->data+ud->bytes_written, datasize);
 	      ud->bytes_written+=datasize;
 	      ud->bytes_remaining=0;
 	      return datasize;
@@ -52,7 +52,7 @@ size_t writefunc(void *ptr, size_t size, size_t nmemb, void *stream)
     }
     
     if(data_offset) {
-      memcpy(ws->response_body+data_offset-1,ptr, mem_required);
+      memcpy(ws->response_body+data_offset,ptr, mem_required);
     } else {
       memcpy(ws->response_body,ptr, mem_required);
     }

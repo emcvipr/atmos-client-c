@@ -7,9 +7,10 @@
 #include "atmos_rest.h"
 #include "crypto.h"
 
-static const char *user_id = "604373f7c99b404caa2e430626f74977/mail";
-static const char *key = "w7mxRvPlDYUkA4J6uTuItfUS1u4=";
-static const char *endpoint = "10.241.38.90";
+static const char *user_id = "9e21feebb9f5455f99cd1ad8c76ebe1e/EMC0056CC2B8DDD13D60";
+static const char *key = "1dz6W6m2GJLcF54xHQfkfyomPrA=";
+static const char *endpoint = "accesspoint.emccis.com";
+
 
 
 //hmac validater

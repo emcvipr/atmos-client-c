@@ -168,6 +168,7 @@ void parse_headers(ws_result* ws, system_meta* sm, user_meta** head_ptr_um) {
 	    
 	    ptr_um->listable = true;	
 	    result = strtok_r(hdr_result, delims, &inner_context);
+	    while (*result == ' ') result++;
 	    while (result != NULL) {
 	      if(0==meta_index) {
 		strcpy(ptr_um->key,result);		  
@@ -208,23 +209,31 @@ int user_meta_ns(credentials *c, const char *uri, char * content_type, user_meta
 	//http_method method =POST;
 	
 	for( ; index !=NULL;  index=index->next) {
-	    if(index->listable == false) {
-		if(meta_count > 0) {
-		    emc_meta_loc+=sprintf(emc_meta+emc_meta_loc, ",%s=%s", index->key, index->value);
+	  char *value, *key;
+
+	  value = index->value;
+	  key = index->key;
+	  
+	  while(*key == ' ') key++;
+	  while(*value == ' ') value++;
+
+	  if(index->listable == false) {
+	    if(meta_count > 0) {
+		    emc_meta_loc+=sprintf(emc_meta+emc_meta_loc, ",%s=%s", key, value);
 		}
 		else {
 		    headers[header_count++] = emc_meta;
-		    emc_meta_loc += sprintf(emc_meta+emc_meta_loc, "X-Emc-Meta:%s=%s", index->key, index->value);
+		    emc_meta_loc += sprintf(emc_meta+emc_meta_loc, "X-Emc-Meta:%s=%s", key, value);
 		    
 		}
 		meta_count++;
 	    } else if(index->listable == true) {
 		if(meta_listable_count > 0) {
-		    emc_listable_loc+=sprintf(emc_listable+emc_listable_loc, ",%s=%s", index->key, index->value);
+		    emc_listable_loc+=sprintf(emc_listable+emc_listable_loc, ",%s=%s", key, value);
 		}
 		else {
 		    headers[header_count++] = emc_listable;
-		    emc_listable_loc += sprintf(emc_listable+emc_listable_loc, "X-Emc-Listable-meta:%s=%s", index->key, index->value);
+		    emc_listable_loc += sprintf(emc_listable+emc_listable_loc, "X-Emc-Listable-meta:%s=%s", key, value);
 		}
 		meta_listable_count++;
 	    }

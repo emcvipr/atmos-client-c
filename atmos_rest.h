@@ -38,7 +38,7 @@ typedef struct System_meta {
     char gid[GIDSIZE];
     char objectid[OBJECTIDSIZE];
     char objname[1024];
-    int size;
+    unsigned long long size;
     int nlink;
     char policyname[POLICYSIZE];
 } system_meta;

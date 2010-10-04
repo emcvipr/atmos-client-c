@@ -41,7 +41,7 @@ size_t writefunc(void *ptr, size_t size, size_t nmemb, void *stream)
 {
     ws_result *ws = (ws_result*)stream;
     void *new_response = NULL;
-    size_t data_offset = ws->body_size;
+    unsigned long long data_offset = ws->body_size;
     size_t mem_required = size*nmemb;
     ws->body_size+= mem_required;
     new_response = realloc(ws->response_body,ws->body_size);
@@ -197,9 +197,9 @@ const char *http_request(credentials *c, http_method method, char *uri, char *co
 
 	if(data) {
 	  if(data->offset) {
-	    snprintf(range, 1024, "Bytes=%d-%d", data->offset,data->offset+data->body_size-1);
+	    snprintf(range, 1024, "Bytes=%lld-%lld", data->offset,data->offset+data->body_size-1);
 	  } else if(data->body_size) {
-	    snprintf(range, 1024, "Bytes=0-%d", data->body_size-1);
+	    snprintf(range, 1024, "Bytes=0-%lld", data->body_size-1);
 	  }
 	}
  
@@ -208,15 +208,15 @@ const char *http_request(credentials *c, http_method method, char *uri, char *co
 	  data->bytes_written=0;
 	  data->bytes_remaining=data->body_size;
 	  if(method != GET) {
-	    snprintf(content_length_header,1024, "content-length: %zu", data->body_size);
+	    snprintf(content_length_header,1024, "content-length: %lld", data->body_size);
 	    headers[header_count++]=content_length_header;
 	  }
 	  
 	  if(data->offset >0 ) {
-	    snprintf(range_header, 1024, "range: Bytes=%d-%d", data->offset,data->offset+data->body_size-1);
+	    snprintf(range_header, 1024, "range: Bytes=%lld-%lld", data->offset,data->offset+data->body_size-1);
 	    headers[header_count++] = range_header;
 	  } else if(data->body_size) {
-	    snprintf(range_header, 1024, "range: Bytes=0-%d", data->body_size-1);
+	    snprintf(range_header, 1024, "range: Bytes=0-%lld", data->body_size-1);
 	    headers[header_count++] = range_header;
 	  }
 	}

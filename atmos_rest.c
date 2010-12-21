@@ -55,7 +55,8 @@ void  update_ns (credentials *c, char * uri, char *content_type, acl *acl, postd
 //need offset, size and x-emc-limit..
 void list_ns(credentials *c,char * uri, postdata *pd, int limit, ws_result *ws) 
 {
-    http_method method =GET;
+    http_method method =HEAD;
+    if(pd) method = GET;
     char **headers = calloc(20,sizeof(char*));
     int count = 0;
     if (limit) {

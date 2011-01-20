@@ -60,7 +60,7 @@ void list_ns(credentials *c,char * uri, postdata *pd, int limit, ws_result *ws)
     char **headers = calloc(20,sizeof(char*));
     int count = 0;
     if (limit) {
-      sprintf(headers[count++], "x-emc-limit: %d", limit);
+	sprintf(headers[count++], "x-emc-limit: %d", limit);
     }
     http_request_ns (c, method, uri, NULL, headers, count, pd, ws);
     free(headers);    
@@ -88,7 +88,7 @@ void parse_headers(ws_result* ws, system_meta* sm, user_meta** head_ptr_um) {
 	    result = strtok_r( meta_ptr, delims, &hdr_context);
 	    while (result != NULL) {
 		
-	      //trim leading whitespace
+		//trim leading whitespace
 		int offset = 0;
 		for (;result[offset] == ' '; offset++) ;
 		result+=offset;
@@ -118,76 +118,75 @@ void parse_headers(ws_result* ws, system_meta* sm, user_meta** head_ptr_um) {
 		}else if (0 == strncmp(result, policyname, strlen(policyname))) {
 		    strcpy(sm->policyname, result+strlen(policyname)+1);
 		} else {
-			char um_delims[] = "=";
-			char *meta_context;
+		    char um_delims[] = "=";
+		    char *meta_context;
 		    char *um_result = NULL;
-			 int meta_index = 0;
+		    int meta_index = 0;
 		    if(ptr_um) {
 			ptr_um->next = malloc(sizeof(user_meta));
 			ptr_um = ptr_um->next;
 		    } else {
-				*head_ptr_um = malloc(sizeof(user_meta));
+			*head_ptr_um = malloc(sizeof(user_meta));
 			ptr_um = *head_ptr_um;
 		    }
 		    memset(ptr_um, 0,sizeof(user_meta));
 		    ptr_um->listable = false;	  
 		    um_result = strtok_r(result, um_delims, &meta_context);
 		    while (um_result != NULL) {
-		      if(0==meta_index) {
-			strcpy(ptr_um->key,um_result);		  
-		      } else {
-			strcpy(ptr_um->value,um_result);
-		      }
-		      meta_index++;
-		      um_result = strtok_r(NULL, um_delims, &meta_context);
+			if(0==meta_index) {
+			    strcpy(ptr_um->key,um_result);		  
+			} else {
+			    strcpy(ptr_um->value,um_result);
+			}
+			meta_index++;
+			um_result = strtok_r(NULL, um_delims, &meta_context);
 		    }
 		}
 		result = strtok_r(NULL, delims, &hdr_context);
 	    }
 	} else if(0==strncmp(ws->headers[i], EMC_USER_HDR_STR, strlen(EMC_USER_HDR_STR))) {
-	  ;
+	    ;
 	    
 	} else if(0 == strncmp(ws->headers[i], EMC_LISTABLE_META_HDR_STR, strlen(EMC_LISTABLE_META_HDR_STR))) {
-	  //listable x-emc-listable-meta: meta_test=meta_pass
-	  char hdr_delims[] = ",";
-	  char *hdr_result = NULL;
-	  char *hdr_context = NULL;
-	  hdr_result = strtok_r(ws->headers[i]+strlen(EMC_LISTABLE_META_HDR_STR), hdr_delims, &hdr_context);
-	  while (hdr_result != NULL) {
-	    char delims[] = "=";
-	    char *result = NULL;
-	    char *inner_context;
-	int meta_index = 0;
-		  if(ptr_um) {
-	      ptr_um->next = malloc(sizeof(user_meta));
-	      ptr_um = ptr_um->next;
-	    } else {
-	      *head_ptr_um = malloc(sizeof(user_meta));
-	      ptr_um = *head_ptr_um;
-	    }
-	    memset(ptr_um,0, sizeof(user_meta));
+	    //listable x-emc-listable-meta: meta_test=meta_pass
+	    char hdr_delims[] = ",";
+	    char *hdr_result = NULL;
+	    char *hdr_context = NULL;
+	    hdr_result = strtok_r(ws->headers[i]+strlen(EMC_LISTABLE_META_HDR_STR), hdr_delims, &hdr_context);
+	    while (hdr_result != NULL) {
+		char delims[] = "=";
+		char *result = NULL;
+		char *inner_context;
+		int meta_index = 0;
+		if(ptr_um) {
+		    ptr_um->next = malloc(sizeof(user_meta));
+		    ptr_um = ptr_um->next;
+		} else {
+		    *head_ptr_um = malloc(sizeof(user_meta));
+		    ptr_um = *head_ptr_um;
+		}
+		memset(ptr_um,0, sizeof(user_meta));
 	    
-	    ptr_um->listable = true;	
-	    result = strtok_r(hdr_result, delims, &inner_context);
-	    while (*result == ' ') result++;
-	    while (result != NULL) {
-	      if(0==meta_index) {
-		strcpy(ptr_um->key,result);		  
-	      } else {
-		strcpy(ptr_um->value,result);
-	      }
-	      meta_index++;
-	      result = strtok_r(NULL, delims, &inner_context);
+		ptr_um->listable = true;	
+		result = strtok_r(hdr_result, delims, &inner_context);
+		while (*result == ' ') result++;
+		while (result != NULL) {
+		    if(0==meta_index) {
+			strcpy(ptr_um->key,result);		  
+		    } else {
+			strcpy(ptr_um->value,result);
+		    }
+		    meta_index++;
+		    result = strtok_r(NULL, delims, &inner_context);
+		}
+		hdr_result = strtok_r(NULL, hdr_delims, &hdr_context);
 	    }
-	    hdr_result = strtok_r(NULL, hdr_delims, &hdr_context);
-	  }
 	} else if(0 == strncmp(ws->headers[i], EMC_META_HDR_STR, strlen(EMC_META_HDR_STR))) {
-	  ptr_um->listable=false;
+	    ptr_um->listable=false;
 	  
 	}
     }
 }
-
 
 int user_meta_ns(credentials *c, const char *uri, char * content_type, user_meta *meta, ws_result * ws) 
 {
@@ -210,16 +209,16 @@ int user_meta_ns(credentials *c, const char *uri, char * content_type, user_meta
 	//http_method method =POST;
 	
 	for( ; index !=NULL;  index=index->next) {
-	  char *value, *key;
+	    char *value, *key;
 
-	  value = index->value;
-	  key = index->key;
+	    value = index->value;
+	    key = index->key;
 	  
-	  while(*key == ' ') key++;
-	  while(*value == ' ') value++;
+	    while(*key == ' ') key++;
+	    while(*value == ' ') value++;
 
-	  if(index->listable == false) {
-	    if(meta_count > 0) {
+	    if(index->listable == false) {
+		if(meta_count > 0) {
 		    emc_meta_loc+=sprintf(emc_meta+emc_meta_loc, ",%s=%s", key, value);
 		}
 		else {
@@ -246,8 +245,47 @@ int user_meta_ns(credentials *c, const char *uri, char * content_type, user_meta
     }
     return ws->return_code;
 }
+
 //int object_get_listable_meta(const char *object_name) 
 //{
   
 //}
 
+user_meta* new_user_meta(char *key, char *value, int listable) { 
+    user_meta *um = malloc(sizeof(user_meta));
+    memset(um, 0, sizeof(user_meta));
+    strcpy(um->key, key);
+    strcpy(um->value, value);
+    um->listable = listable;  
+    um->next= NULL;
+    return um;
+}
+void add_user_meta(user_meta *head, char *key, char *value, int listable) {
+    user_meta *um = malloc(sizeof(user_meta));
+    memset(um, 0, sizeof(user_meta));
+    strcpy(um->key, key);
+    strcpy(um->value, value);
+    um->next = NULL;
+    um->listable = listable;
+    
+    
+    if(head->next == NULL) {
+	head->next = um;
+    } else {
+	user_meta *current = head->next;
+	while(current->next !=NULL) {
+	    current= current->next;
+	}
+	current->next = um;
+    }
+    
+}
+
+void free_user_meta(user_meta *um) {
+    user_meta *idx=um;
+    while (idx != NULL) {
+	user_meta *f = idx;
+	idx=idx->next;
+	free(f);
+    }
+}

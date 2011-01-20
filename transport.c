@@ -213,16 +213,21 @@ const char *http_request(credentials *c, http_method method, char *uri, char *co
 	  }
 	  
 	  if(data->offset >0 ) {
-	    snprintf(range_header, 1024, "range: Bytes=%lld-%lld", data->offset,data->offset+data->body_size-1);
-	    headers[header_count++] = range_header;
+	      memset(range_header, 0, 1024);
+	      snprintf(range_header, 1024, "range: Bytes=%lld-%lld", data->offset,data->offset+data->body_size-1);
+	      headers[header_count++] = range_header;
 	  } else if(data->body_size) {
-	    snprintf(range_header, 1024, "range: Bytes=0-%lld", data->body_size-1);
-	    headers[header_count++] = range_header;
+	      snprintf(range_header, 1024, "range: Bytes=0-%lld", data->body_size-1);
+	      headers[header_count++] = range_header;
 	  }
 	}
 
 	for(i=0;i<header_count; i++) {
-	    chunk = curl_slist_append(chunk, headers[i]);	
+	    if(headers[i] != NULL) { 
+		chunk = curl_slist_append(chunk, headers[i]);	
+	    } else {
+		; //a null header thats been added to the array is proabbly a bug.
+	    }
 	}
 	
 

@@ -94,7 +94,12 @@ void parse_headers(ws_result*, system_meta*, user_meta**);
 
 //atmos specific helpers
 credentials* init_ws(const char *user_id, const char *key, const char *endpoint);
-void create_meta(char* key, char* val, int listable, user_meta*);
+
+//user meta data helpers
+user_meta* new_user_meta(char *key, char *value, int listable);
+void add_user_meta(user_meta *head, char *key, char *value, int listable);
+void free_user_meta(user_meta *um);
+
 
 
 //generic ´helper functions

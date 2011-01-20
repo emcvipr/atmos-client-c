@@ -19,6 +19,12 @@ lib: $(OBJ)
 test: $(TESTSRC)
 	gcc -pg -g -o atmostest ${OBJ} $(TESTSRC) $(LIBS) $(LIBDIR)
 
+terawriter: terawriter.c
+	gcc -pg -g -o terawriter ${OBJ} terawriter.c $(LIBS) $(LIBDIR)
+
+lister: lister.c
+	gcc -pg -g -o lister ${OBJ} lister.c $(LIBS) $(LIBDIR)
+
 clean:
 	rm *.o
 	rm *.so

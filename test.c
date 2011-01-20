@@ -7,9 +7,13 @@
 #include "atmos_rest.h"
 #include "crypto.h"
 
-static const char *user_id = "9e21feebb9f5455f99cd1ad8c76ebe1e/EMC0056CC2B8DDD13D60";
+    static const char *user_id = "whitewater";
+    static const char *key = "EIJHmj9JZSGVFQ2Hsl/scAsKm00=";
+    static const char *endpoint = "10.245.35.162";  //*/
+
+/*static const char *user_id = "9e21feebb9f5455f99cd1ad8c76ebe1e/EMC0056CC2B8DDD13D60";
 static const char *key = "1dz6W6m2GJLcF54xHQfkfyomPrA=";
-static const char *endpoint = "accesspoint.emccis.com";
+static const char *endpoint = "accesspoint.emccis.com";*/
 
 
 
@@ -64,7 +68,7 @@ int api_testing(){
 
   credentials *c = init_ws(user_id, key, endpoint);
   ws_result result;
-  char *testdir = "/.Trash_test";
+  char *testdir = "trash_test";
   char *body = NULL;
   int hc = 0;
   const int bd_size = 1024*64+2;// force boundary condistions in readfunction
@@ -76,7 +80,7 @@ int api_testing(){
   //*** Create
   
   create_ns(c, testdir, NULL,NULL,  NULL, &result);
-  printf("code: %d==201\n", result.return_code);
+  printf("code: %d==201\t%s\n", result.return_code, result.response_body);
   result_deinit(&result);
 
 
@@ -113,17 +117,24 @@ int api_testing(){
 
   //*** Create  
   create_ns(c, testdir, NULL,NULL,  NULL, &result);
-  printf("code: %d==201\n", result.return_code);
+  printf("created %s\tcode: %d==201\t%s\n", testdir,result.return_code, result.response_body);
   assert(result.return_code ==201);
   result_deinit(&result);
+
+  /*  list_ns(c, testdir,NULL, 0,&result);    
+  printf("listed %s\tcode: %d==201\t%s\n", testdir,result.return_code, result.response_body);
+  assert(result.return_code >= 200 && result.return_code < 300);
+  result_deinit(&result);
+  */  
 
   //*** UPDATE  
   memset(&d, 0, sizeof(postdata));
   memset(big_data, 0, bd_size);
   d.data=data;
   d.body_size = bd_size;
+  sleep(5);
   update_ns(c, testdir,NULL, NULL, &d, NULL,&result);    
-  printf("update code: %d==200\n", result.return_code);
+  printf("%s\tupdate code: %d==200\t%s\n", testdir,result.return_code, result.response_body);
   assert(result.return_code ==200);
   result_deinit(&result);
 
@@ -195,7 +206,7 @@ void print_system_meta(system_meta sm) {
   printf("gid\t%s\n", sm.gid);
   printf("objectid\t[%s]\n", sm.objectid );
   printf("objname\t%s\n", sm.objname);
-  printf("size\t%d\n", sm.size);
+  printf("size\t%lld\n", sm.size);
   printf("nlink\t%d\n", sm.nlink);
   printf("policyname\t%s\n", sm.policyname);
   
@@ -216,29 +227,16 @@ void set_meta_data() {
   create_ns(c, testdir, NULL,NULL,  NULL, &result);
   printf("code: %d\n", result.return_code);
   result_deinit(&result);
-    
-  //** update_meta
+  user_meta *t = new_user_meta("meta_test", "meta_pass", 1);
+  add_user_meta(t, "1_test", "1_pass", 0);
+  add_user_meta(t, "2_test", "2_pass", 0);
+  add_user_meta(t, "3_test", "3_pass", 0);
+  add_user_meta(t, "4_test", "4_pass", 0);
+  add_user_meta(t, "5_test", "5_pass", 0);
+  add_user_meta(t, "6_test", "6_pass", 0);
+  user_meta_ns(c, testdir, NULL, t, &result);
 
-  memset(&meta, 0, sizeof(user_meta));
-  memset(&meta1, 0, sizeof(user_meta));
-  memset(&meta2, 0, sizeof(user_meta));
-  memset(&meta3, 0, sizeof(user_meta));
-  strcpy(meta.key, "meta_test");
-  strcpy(meta.value, "meta_pass");
-  meta.listable=true;
-  strcpy(meta1.key, "1_test");
-  strcpy(meta1.value, "1_pass");
-  strcpy(meta2.key, "2_test");
-  strcpy(meta2.value, "2_pass");
-  strcpy(meta3.key, "3_test");
-  strcpy(meta3.value, "3_pass");
-    
-  
-
-  meta.next=&meta1;
-  meta1.next=&meta2;
-  meta2.next=&meta3;
-  user_meta_ns(c, testdir, NULL, &meta, &result);
+  free_user_meta(t);
   result_deinit(&result);
   printf("send metadata\n");
 
@@ -260,7 +258,8 @@ void set_meta_data() {
     um=t;
   }
   
-      
+  delete_ns(c, testdir, &result);  
+  result_deinit(&result);
   free(c);
 }
 
@@ -471,7 +470,7 @@ void truncate() {
   result_deinit(&result);
 
   list_ns(c, testfile,&rd, 0, &result);  
-
+  result_deinit(&result);
   //*** Delete
   
   delete_ns(c, testfile, &result);
@@ -486,17 +485,20 @@ void truncate() {
 int main() { 
 
   if(user_id) {
+    api_testing();
+    //    set_meta_data();
     truncate();
-        set_meta_data();
+
     list();
     simple_update();
-    api_testing();
+
     rangestest();
     create_test();
     capstest();
     api_testing();
     testbuildhashstring();
     testhmac();
+    //*/ 
   } else {
     printf("please edit test.c and add your credentials for user_id and shared_secret\n");
   }

@@ -21,6 +21,38 @@ credentials* init_ws(const char *user_id, const char *key, const char *endpoint)
 }
 
 
+void rename_ns(credentials *c, char * uri, char *new_uri, int force, ws_result *ws)
+{
+    
+    static const char* rename = "?rename";
+    static const char* PATH_HEADER = "x-emc-path:";
+
+    char *rename_uri = (char*)malloc(strlen(uri)+strlen(rename)+1);
+    http_method method = POST;
+    char *path= NULL;
+    char **headers = calloc(20,sizeof(char*));
+    int header_count =0;
+    char theader[] = "x-emc-force:true";
+    char fheader[] = "x-emc-force:false";
+    sprintf(rename_uri, "%s%s", uri, rename);
+ 
+   if(force) 
+       headers[header_count++] = theader;
+   else
+       headers[header_count++] = fheader;
+    
+
+    path = (char*)malloc(strlen(new_uri)+strlen(PATH_HEADER)+1);
+    sprintf(path, "%s%s", PATH_HEADER,new_uri);
+    headers[header_count++] = path;
+    http_request_ns(c, method,rename_uri,NULL, headers,header_count, NULL, ws);
+
+    free(path);
+    free(headers);    
+    free(rename_uri);
+}
+
+
 void create_ns(credentials *c, char * uri, char *content_type ,acl *acl,user_meta *meta, ws_result *ws)
 {
     

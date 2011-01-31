@@ -78,6 +78,7 @@ static const char* policyname="policyname";
 
 
 //Namespace
+void rename_ns(credentials *c, char * uri, char *new_uri, int force, ws_result *ws);
 void create_ns(credentials *c, char * uri, char *content_type, acl *acl, user_meta *meta, ws_result *ws);
 void list_ns(credentials *c, char * uri, postdata*d, int count, ws_result *ws);
 void update_ns(credentials *c, char * uri, char *content_type, acl *acl, postdata* data, user_meta *meta, ws_result *ws);

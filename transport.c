@@ -6,6 +6,8 @@
 #include "atmos_util.h"
 #include "crypto.h"
 
+static const int HEADER_MAX = 1024;
+
 static const char *namespace_uri = "/rest/namespace";
 //static const char *object_uri = "/rest/objects";
 size_t readfunc(void *ptr, size_t size, size_t nmemb, void *stream)
@@ -111,32 +113,32 @@ const char *http_request(credentials *c, http_method method, char *uri, char *co
     CURLcode result_code;
     const int connect_timeout = 200;
     char date[256];
-    char uidheader[1024];
-    char dateheader[1024];
-    char groupaclheader[1024];
+    char uidheader[HEADER_MAX];
+    char dateheader[HEADER_MAX];
+    char groupaclheader[HEADER_MAX];
     char *endpoint_url = NULL;
     size_t endpoint_size;
-    char errorbuffer[1024*1024];
+    char errorbuffer[HEADER_MAX*HEADER_MAX];
     struct curl_slist *chunk = NULL;
-    char hash_string[1024];
-    char range[1024];
-    char signature[1024];
-    char content_type_header[1024];
+    char hash_string[HEADER_MAX];
+    char range[HEADER_MAX];
+    char signature[HEADER_MAX];
+    char content_type_header[HEADER_MAX];
     int i;
     char *signed_hash = NULL;
-    char content_length_header[1024];
-    char range_header[1024];
+    char content_length_header[HEADER_MAX];
+    char range_header[HEADER_MAX];
     struct timeval start_time;
     struct timeval end_time;
     curl_global_init(CURL_GLOBAL_ALL);
 
     result_init(ws_result); //MUST DEALLOC
 
-    memset(range, 0, 1024);
+    memset(range, 0, HEADER_MAX);
     get_date(date);
-    snprintf(dateheader,1024,"X-Emc-Date:%s", date);
-    snprintf(uidheader,1024,"X-Emc-Uid:%s",c->tokenid);    
-    snprintf(groupaclheader,1024,"X-Emc-groupacl:other=NONE");    
+    snprintf(dateheader,HEADER_MAX,"X-Emc-Date:%s", date);
+    snprintf(uidheader,HEADER_MAX,"X-Emc-Uid:%s",c->tokenid);    
+    snprintf(groupaclheader,HEADER_MAX,"X-Emc-groupacl:other=NONE");    
     headers[header_count++] = dateheader;
     //FIXME groupacl headers breaks sig string
     headers[header_count++] = groupaclheader;
@@ -197,9 +199,9 @@ const char *http_request(credentials *c, http_method method, char *uri, char *co
 
 	if(data) {
 	  if(data->offset) {
-	    snprintf(range, 1024, "Bytes=%lld-%lld", data->offset,data->offset+data->body_size-1);
+	    snprintf(range, HEADER_MAX, "Bytes=%lld-%lld", data->offset,data->offset+data->body_size-1);
 	  } else if(data->body_size) {
-	    snprintf(range, 1024, "Bytes=0-%lld", data->body_size-1);
+	      snprintf(range, HEADER_MAX, "Bytes=0-%lld", data->body_size-1);
 	  }
 	}
  
@@ -208,16 +210,16 @@ const char *http_request(credentials *c, http_method method, char *uri, char *co
 	  data->bytes_written=0;
 	  data->bytes_remaining=data->body_size;
 	  if(method != GET) {
-	    snprintf(content_length_header,1024, "content-length: %lld", data->body_size);
+	    snprintf(content_length_header,HEADER_MAX, "content-length: %lld", data->body_size);
 	    headers[header_count++]=content_length_header;
 	  }
 	  
 	  if(data->offset >0 ) {
-	      memset(range_header, 0, 1024);
-	      snprintf(range_header, 1024, "range: Bytes=%lld-%lld", data->offset,data->offset+data->body_size-1);
+	      memset(range_header, 0, HEADER_MAX);
+	      snprintf(range_header, HEADER_MAX, "range: Bytes=%lld-%lld", data->offset,data->offset+data->body_size-1);
 	      headers[header_count++] = range_header;
 	  } else if(data->body_size) {
-	      snprintf(range_header, 1024, "range: Bytes=0-%lld", data->body_size-1);
+	      snprintf(range_header, HEADER_MAX, "range: Bytes=0-%lld", data->body_size-1);
 	      headers[header_count++] = range_header;
 	  }
 	}
@@ -232,9 +234,9 @@ const char *http_request(credentials *c, http_method method, char *uri, char *co
 	
 
 	signed_hash = (char*)sign(hash_string,c->secret);
-	snprintf(signature,1024,"X-Emc-Signature:%s", signed_hash);
+	snprintf(signature,HEADER_MAX,"X-Emc-Signature:%s", signed_hash);
 	free(signed_hash);
-	snprintf(content_type_header, 1024,"content-type:%s", content_type); 
+	snprintf(content_type_header, HEADER_MAX,"content-type:%s", content_type); 
 	curl_slist_append(chunk,"Expect:");
 	curl_slist_append(chunk,"Transfer-Encoding:");
 	curl_slist_append(chunk, content_type_header);

@@ -52,19 +52,86 @@ void rename_ns(credentials *c, char * uri, char *new_uri, int force, ws_result *
     free(rename_uri);
 }
 
+void add_acl_headers(char *acl_header, acl *acllist) {
+    
+    //end up with :
+    //x-emc-useracl: name=perm,name=perm
+    int offset = 0;
+    
+    if(!acllist) return;
+    
+    offset=sprintf(acl_header, "x-emc-useracl:");
+    offset+=sprintf(acl_header+offset, "%s=%s",acllist->user,acllist->permission);
+    while( (acllist =acllist->next)) 
+	offset+=sprintf(acl_header+offset, ",%s=%s",acllist->user,acllist->permission);
+    
+}
+
+void add_meta_headers(char **headers, int *header_count, user_meta *meta) {
+
+	char emc_meta[8192]; //FIXME is 8k the header limit?
+	int emc_meta_loc = 0;
+	char emc_listable[8192]; //FIXME is 8k the header limit?
+	int emc_listable_loc = 0;
+	
+	user_meta *index = meta;
+	int meta_count = 0;
+	int meta_listable_count = 0;
+	
+	
+	for( ; index !=NULL;  index=index->next) {
+	    char *value, *key;
+
+	    value = index->value;
+	    key = index->key;
+	  
+	    while(*key == ' ') key++;
+	    while(*value == ' ') value++;
+
+	    if(index->listable == false) {
+		if(meta_count > 0) {
+		    emc_meta_loc+=sprintf(emc_meta+emc_meta_loc, ",%s=%s", key, value);
+		}
+		else {
+		    headers[(*header_count)++] = emc_meta;
+		    emc_meta_loc += sprintf(emc_meta+emc_meta_loc, "X-Emc-Meta:%s=%s", key, value);
+		    
+		}
+		meta_count++;
+	    } else if(index->listable == true) {
+		if(meta_listable_count > 0) {
+		    emc_listable_loc+=sprintf(emc_listable+emc_listable_loc, ",%s=%s", key, value);
+		}
+		else {
+		    headers[(*header_count)++] = emc_listable;
+		    emc_listable_loc += sprintf(emc_listable+emc_listable_loc, "X-Emc-Listable-meta:%s=%s", key, value);
+		}
+		meta_listable_count++;
+	    }
+	}
+
+
+}
 
 void create_ns(credentials *c, char * uri, char *content_type ,acl *acl,user_meta *meta, ws_result *ws)
 {
     
     http_method method = POST;
     char **headers = calloc(20,sizeof(char*));
+    int header_count =0;
     if(acl) {
-	//add acl headers
+	headers[header_count] = malloc(1024);
+	add_acl_headers(headers[header_count], acl);
+	header_count++;
     }
+
     if(meta) {
-	//add meta headers on create
+	
     }
-    http_request_ns(c, method,uri,content_type, headers,0, NULL, ws);
+    http_request_ns(c, method,uri,content_type, headers,header_count, NULL, ws);
+    
+    if(acl)
+	free(headers[0]);
     free(headers);    
 }
 
@@ -73,14 +140,19 @@ void  update_ns (credentials *c, char * uri, char *content_type, acl *acl, postd
 
     char **headers = calloc(20,sizeof(char*));
     http_method method = PUT;    
+    int header_count =0;
     if(acl) {
-	//add acl headers
+	headers[header_count] = malloc(1024);
+	add_acl_headers(headers[header_count], acl);
+	header_count++;
     }
     if(meta) {
 	//add meta headers on create
     }
     
-    http_request_ns(c, method, uri, content_type,headers, 0, data, ws);
+    http_request_ns(c, method, uri, content_type,headers, header_count, data, ws);
+    if(acl)
+	free(headers[0]);
     free(headers);
 }
 
@@ -227,50 +299,10 @@ int user_meta_ns(credentials *c, const char *uri, char * content_type, user_meta
 	char *meta_uri = (char*)malloc(strlen(uri)+strlen(user_meta_uri)+1);
 	char **headers = calloc(20,sizeof(char*));
 	int header_count =0;
-	
-	char emc_meta[8192]; //FIXME is 8k the header limit?
-	int emc_meta_loc = 0;
-	char emc_listable[8192]; //FIXME is 8k the header limit?
-	int emc_listable_loc = 0;
-	
-	user_meta *index = meta;
-	int meta_count = 0;
-	int meta_listable_count = 0;
-	
 	sprintf(meta_uri, "%s%s", uri, user_meta_uri);
 	//http_method method =POST;
-	
-	for( ; index !=NULL;  index=index->next) {
-	    char *value, *key;
+	add_meta_headers(headers, &header_count, meta);
 
-	    value = index->value;
-	    key = index->key;
-	  
-	    while(*key == ' ') key++;
-	    while(*value == ' ') value++;
-
-	    if(index->listable == false) {
-		if(meta_count > 0) {
-		    emc_meta_loc+=sprintf(emc_meta+emc_meta_loc, ",%s=%s", key, value);
-		}
-		else {
-		    headers[header_count++] = emc_meta;
-		    emc_meta_loc += sprintf(emc_meta+emc_meta_loc, "X-Emc-Meta:%s=%s", key, value);
-		    
-		}
-		meta_count++;
-	    } else if(index->listable == true) {
-		if(meta_listable_count > 0) {
-		    emc_listable_loc+=sprintf(emc_listable+emc_listable_loc, ",%s=%s", key, value);
-		}
-		else {
-		    headers[header_count++] = emc_listable;
-		    emc_listable_loc += sprintf(emc_listable+emc_listable_loc, "X-Emc-Listable-meta:%s=%s", key, value);
-		}
-		meta_listable_count++;
-	    }
-	}
-	
 	http_request_ns (c, POST, meta_uri, content_type, headers, header_count, NULL, ws);
 	free(meta_uri);
 	free(headers);

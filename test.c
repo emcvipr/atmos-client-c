@@ -66,7 +66,7 @@ void testbuildhashstring() {
 void aol_rename() {
     credentials *c = init_ws(user_id, key, endpoint);
     ws_result result;
-    char *obj = "/rename_test_object1";
+    char *obj = "/rename_test_object1/a/1/a";
     char *renamed_obj = "1renamed_object";
 
     //*** Create
@@ -77,12 +77,12 @@ void aol_rename() {
     sleep(2);
     //**rename
     rename_ns(c, obj, renamed_obj, 1, &result);
-    printf("code: %d==201\t%s\n", result.return_code, result.response_body);
+    printf("rename code: %d==200\t%s\n", result.return_code, result.response_body);
     result_deinit(&result);
     
     //*** Delete - old object should fail
     delete_ns(c, obj, &result);
-    printf("code: %d==204\n", result.return_code);
+    printf("code: %d!=204\n", result.return_code);
     result_deinit(&result);
 
     //*** Delete - new object should great success
@@ -90,9 +90,7 @@ void aol_rename() {
     delete_ns(c, renamed_obj1, &result);
     printf("code: %d==204\n", result.return_code);
     result_deinit(&result);
-
-
-
+    free(c);
 }
 
 //cycle through series of tests creating,setting meta data updateing deleting and listing objects
@@ -514,11 +512,52 @@ void truncate() {
 
 
 }
+void testacl() {
+    credentials *c = init_ws(user_id, key, endpoint);
+    ws_result result;
+    char *obj = "/rename_test_object1";
+    char *renamed_obj = "1renamed_object";
+    
+    acl *acllist=malloc(sizeof(acl));
+    memset(acllist, 0, sizeof(acl));
+    sprintf(acllist->user,"john");
+    sprintf(acllist->permission,"FULL_CONTROL");
+    acl *acllist2=malloc(sizeof(acl));
+    memset(acllist2, 0, sizeof(acl));
+    acllist->next = acllist2;
+    sprintf(acllist2->user,"mary");
+    sprintf(acllist2->permission,"READ");
+    
+    //*** Create acl
+    create_ns(c, obj, NULL,acllist,  NULL, &result);
+    printf("code: %d==201\t%s\n", result.return_code, result.response_body);
+    result_deinit(&result);
+    
+    
+    //*** Delete - new object should great success
+    delete_ns(c, obj, &result);
+    printf("code: %d==204\n", result.return_code);
+    result_deinit(&result);
+    free(acllist);
+    free(acllist2);
+    free(c);
+
+}
+
 int main() { 
 
     if(user_id) {
 	aol_rename();
-	//	set_meta_data();
+
+    }
+
+}
+int v(){
+    if(1) {
+	set_meta_data();
+	testacl();
+	/*	set_meta_data();
+	testacl();
 	truncate();
 	api_testing();
 	list();

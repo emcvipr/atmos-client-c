@@ -381,3 +381,11 @@ void free_user_meta(user_meta *um) {
 	free(f);
     }
 }
+
+void get_system_info(credentials *c, ws_result *result) {
+    char **headers = calloc(20,sizeof(char*));
+    int header_count = 0;
+    const char *sys_info = "/rest/service";
+    http_request(c, GET, sys_info, NULL, headers, header_count, NULL, result);
+    free(headers);
+}

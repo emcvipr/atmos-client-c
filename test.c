@@ -7,14 +7,14 @@
 #include "atmos_rest.h"
 #include "crypto.h"
 
-    static const char *user_id = "whitewater";
+/*    static const char *user_id = "whitewater";
       static const char *key = "EIJHmj9JZSGVFQ2Hsl/scAsKm00=";
       static const char *endpoint = "10.245.35.162";  //*/
 
-/*static const char *user_id = "9e21feebb9f5455f99cd1ad8c76ebe1e/EMC0056CC2B8DDD13D60";
+static const char *user_id = "9e21feebb9f5455f99cd1ad8c76ebe1e/EMC0056CC2B8DDD13D60";
 static const char *key = "1dz6W6m2GJLcF54xHQfkfyomPrA=";
-static const char *endpoint = "127.0.0.1";//"accesspoint.emccis.com";//*/
-
+//static const char *endpoint = "127.0.0.1";//"accesspoint.emccis.com";//*/
+static const char *endpoint = "accesspoint.emccis.com";//*/
 
 
 //hmac validater
@@ -544,19 +544,21 @@ void testacl() {
 
 }
 
+void 	get_sys_info() {
+   credentials *c = init_ws(user_id, key, endpoint);
+   ws_result result;
+   get_system_info(c, &result);
+   printf("%s\n", result.response_body);
+   
+}
 int main() { 
 
     if(user_id) {
+	get_sys_info();
 	aol_rename();
-
-    }
-
-}
-int v(){
-    if(1) {
 	set_meta_data();
 	testacl();
-	/*	set_meta_data();
+	set_meta_data();
 	testacl();
 	truncate();
 	api_testing();

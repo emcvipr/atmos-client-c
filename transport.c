@@ -12,9 +12,6 @@ static const char *namespace_uri = "/rest/namespace";
 //static const char *object_uri = "/rest/objects";
 size_t readfunc(void *ptr, size_t size, size_t nmemb, void *stream)
 {
-
-
-
      if(stream) {
 	postdata *ud = (postdata*)stream;
 	if(ud->bytes_remaining > 0) {

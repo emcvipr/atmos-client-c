@@ -22,6 +22,11 @@ typedef struct ACLval {
     void *next;
 } acl;
 
+
+typedef struct sys_info {
+    char version[1024];
+} sys_info;
+
 #define TIMESIZE 40
 #define UIDSIZE  44
 #define POLICYSIZE  44
@@ -102,11 +107,8 @@ void add_user_meta(user_meta *head, char *key, char *value, int listable);
 void free_user_meta(user_meta *um);
 
 
+void get_system_info(credentials *c, ws_result *result) ;
 
-//generic ´helper functions
 
-
-///////// const30
-/////
 
 #endif

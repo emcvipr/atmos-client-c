@@ -107,7 +107,7 @@ void add_user_meta(user_meta *head, char *key, char *value, int listable);
 void free_user_meta(user_meta *um);
 
 
-void get_system_info(credentials *c, ws_result *result) ;
+void get_service_info(credentials *c, ws_result *result) ;
 
 
 

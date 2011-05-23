@@ -547,7 +547,7 @@ void testacl() {
 void 	get_sys_info() {
    credentials *c = init_ws(user_id, key, endpoint);
    ws_result result;
-   get_system_info(c, &result);
+   get_service_info(c, &result);
    printf("%s\n", result.response_body);
    
 }

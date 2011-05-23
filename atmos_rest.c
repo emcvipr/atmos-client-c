@@ -382,7 +382,7 @@ void free_user_meta(user_meta *um) {
     }
 }
 
-void get_system_info(credentials *c, ws_result *result) {
+void get_service_info(credentials *c, ws_result *result) {
     char **headers = calloc(20,sizeof(char*));
     int header_count = 0;
     const char *sys_info = "/rest/service";

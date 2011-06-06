@@ -445,6 +445,56 @@ int delete_obj(credentials *c, char *obj, ws_result *ws)
     return ws->return_code;
 }
 
+int read_obj(credentials *c, char *object_id, postdata* pd, int limit, ws_result* ws) {
+    http_method method =HEAD;
+    if(pd) method = GET;
+    char **headers = calloc(20,sizeof(char*));
+    int count = 0;
+    if (limit) {
+	sprintf(headers[count++], "x-emc-limit: %d", limit);
+    }
+    char *object_path = "/rest/objects/";
+    char *obj_uri = (char*) malloc(strlen(object_path) + strlen(object_id)+1);
+    sprintf(obj_uri,"%s%s", object_path, object_id);
+    http_request (c, method, obj_uri, NULL, headers, count, pd, ws);
+    free(headers);    
+    return ws->return_code;
+}
+int update_obj(credentials *c, char *object_id, char* content_type, acl* acl, postdata* data, user_meta* meta, ws_result *ws) {
+
+
+    char **headers = calloc(20,sizeof(char*));
+    http_method method = PUT;    
+    char *acl_header=NULL;
+    char *meta_listable_header=NULL;
+    char *meta_header=NULL;
+
+    int header_count =0;
+    if(acl) {
+	headers[header_count] = malloc(1024);
+	add_acl_headers(headers[header_count], acl);
+	header_count++;
+    }
+    if(meta) {
+	//add meta headers on create
+    }
+    char *object_path = "/rest/objects/";
+    char *obj_uri = (char*) malloc(strlen(object_path) + strlen(object_id)+1);
+    sprintf(obj_uri,"%s%s", object_path, object_id);
+
+    http_request(c, method, obj_uri, content_type,headers, header_count, data, ws);
+
+    if(acl_header)
+	free(acl_header);
+    if(meta_listable_header)
+	free(meta_listable_header);
+    if(meta_header)
+	free(meta_header);
+    free(headers);
+
+}
+
+
 
 void get_object_id(char** headers, int count, char *object_id) {
     

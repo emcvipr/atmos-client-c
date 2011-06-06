@@ -18,15 +18,16 @@ int main() {
 
     credentials *c = init_ws(user_id, key, endpoint);
     ws_result result;
-    char *object_id;
+    char *object_id = (char*)malloc(45);;
     system_meta sm;
     user_meta *um = NULL;	
     //*** Create
-    create_obj(c, object_id, NULL,NULL,  NULL, &result);
+
+    create_obj(c,object_id, NULL,NULL,  NULL, &result);
     printf("result %d\n", result.return_code);
+    printf("%s\n", object_id);
     result_deinit(&result);
 
-    print_ws_result(&result);
 
     free(c);
 }

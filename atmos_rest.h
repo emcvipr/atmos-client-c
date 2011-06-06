@@ -82,7 +82,7 @@ static const char* nlink="nlink";
 static const char* policyname="policyname";
 
 //Object - CRUD
-int create_obj(credentials *c, char * obj_id, char *content_type ,acl *acl,user_meta *meta, ws_result *ws);
+int create_obj(credentials *c, char *obj_id, char *content_type ,acl *acl,user_meta *meta, ws_result *ws);
 
 int read_obj(credentials *c, char *object_id, postdata* d, int limit, ws_result* ws);
 int update_obj(credentials *c, char *object_id, char* content_type, acl* acl, postdata* data, user_meta* meta, ws_result *ws);
@@ -133,7 +133,7 @@ void free_user_meta(user_meta *um);
 
 void get_service_info(credentials *c, ws_result *result) ;
 
-char* get_object_id(char** headers, int count);
+void get_object_id(char** headers, int count, char *obj);
 
 
 #endif

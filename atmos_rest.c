@@ -392,7 +392,7 @@ void get_service_info(credentials *c, ws_result *result) {
 }
 
 
-int create_obj(credentials *c, char * obj_id, char *content_type ,acl *acl,user_meta *meta, ws_result *ws)
+int create_obj(credentials *c, char *obj_id, char *content_type ,acl *acl,user_meta *meta, ws_result *ws)
 {
     
     http_method method = POST;
@@ -421,33 +421,38 @@ int create_obj(credentials *c, char * obj_id, char *content_type ,acl *acl,user_
     }
     char *obj_uri = "/rest/objects";
     http_request(c, method,obj_uri,content_type, headers,header_count, NULL, ws);
-
-
-    
+    get_object_id(ws->headers, ws->header_count, obj_id);
+     
     if(acl_header)
 	free(acl_header);
     if(meta_listable_header)
 	free(meta_listable_header);
     if(meta_header)
 	free(meta_header);    
-    obj_id = get_object_id(ws->headers, ws->header_count);
-
     free(headers);    
     return 1;
 }
 
+int delete_obj(credentials *c, char *obj, ws_result *ws) 
+{
+    http_method method = aDELETE;
+    char **headers = calloc(20,sizeof(char*));
+    char *object_path = "/rest/objects/";
+    char *obj_uri = (char*) malloc(strlen(object_path) + strlen(obj)+1);
+    sprintf(obj_uri,"%s%s", object_path, obj);
+    http_request (c, method, obj_uri,NULL, headers, 0, NULL, ws);
+    free(headers);
+    return ws->return_code;
+}
 
 
-char* get_object_id(char** headers, int count) {
+void get_object_id(char** headers, int count, char *object_id) {
     
     int i;
     char *location_str = "location: /rest/objects/";
-    char *object_id = NULL;
     for(i=0; i < count; i++) {
 	if(0== strncmp(location_str, headers[i], strlen(location_str)) ) {
-	    object_id = malloc(50);
 	    strcpy(object_id, headers[i]+strlen(location_str));
 	}
     }
-    return object_id;
 }

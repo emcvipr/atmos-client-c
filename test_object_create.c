@@ -22,8 +22,6 @@ int main() {
     system_meta sm;
     user_meta *um = NULL;	
     //*** Create
-
-  
     create_obj(c, object_id, NULL,NULL,  NULL, &result);
     printf("result %d\n", result.return_code);
     result_deinit(&result);

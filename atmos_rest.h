@@ -133,6 +133,7 @@ void free_user_meta(user_meta *um);
 
 void get_service_info(credentials *c, ws_result *result) ;
 
+char* get_object_id(char** headers, int count);
 
 
 #endif

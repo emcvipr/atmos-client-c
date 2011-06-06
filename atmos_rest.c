@@ -421,15 +421,33 @@ int create_obj(credentials *c, char * obj_id, char *content_type ,acl *acl,user_
     }
     char *obj_uri = "/rest/objects";
     http_request(c, method,obj_uri,content_type, headers,header_count, NULL, ws);
+
+
     
     if(acl_header)
 	free(acl_header);
     if(meta_listable_header)
 	free(meta_listable_header);
     if(meta_header)
-	free(meta_header);
+	free(meta_header);    
+    obj_id = get_object_id(ws->headers, ws->header_count);
 
-    obj_id = NULL;
     free(headers);    
     return 1;
+}
+
+
+
+char* get_object_id(char** headers, int count) {
+    
+    int i;
+    char *location_str = "location: /rest/objects/";
+    char *object_id = NULL;
+    for(i=0; i < count; i++) {
+	if(0== strncmp(location_str, headers[i], strlen(location_str)) ) {
+	    object_id = malloc(50);
+	    strcpy(object_id, headers[i]+strlen(location_str));
+	}
+    }
+    return object_id;
 }

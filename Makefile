@@ -16,7 +16,7 @@ objects: $(SRC)
 	gcc $(FLAGS) $(SRC)
 lib: $(OBJ)
 	gcc $(SOFLAGS) $(OBJ) 
-test: $(TESTSRC)
+test: $(TESTSRC) 
 	gcc -pg -g -o atmostest ${OBJ} $(TESTSRC) $(LIBS) $(LIBDIR)
 
 terawriter: terawriter.c

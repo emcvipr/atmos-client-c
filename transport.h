@@ -46,5 +46,6 @@ void ws_init(ws_result*);
 void ws_deinit(ws_result*);
 void result_deinit(ws_result *result);
 void result_init(ws_result *result);
+void print_ws_result(ws_result *result);
 #endif
 

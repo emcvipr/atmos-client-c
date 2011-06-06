@@ -260,3 +260,11 @@ const char *http_request(credentials *c, http_method method, char *uri, char *co
     free(endpoint_url);
     return  NULL;
 }
+
+
+void print_ws_result(ws_result *result) {
+    char *body = malloc(result->body_size+1);
+    memcpy(body, result->response_body, result->body_size);
+    body[result->body_size] = '\0';
+    printf("datum%d:%s\n", result->body_size,body);
+}

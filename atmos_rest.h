@@ -82,7 +82,8 @@ static const char* nlink="nlink";
 static const char* policyname="policyname";
 
 //Object - CRUD
-int create_obj(credentials *c, char *object_id, ws_result* ws);
+int create_obj(credentials *c, char * obj_id, char *content_type ,acl *acl,user_meta *meta, ws_result *ws);
+
 int read_obj(credentials *c, char *object_id, postdata* d, int limit, ws_result* ws);
 int update_obj(credentials *c, char *object_id, char* content_type, acl* acl, postdata* data, user_meta* meta, ws_result *ws);
 int delete_obj(credentials *c, char *object_od, ws_result *ws);
@@ -107,8 +108,8 @@ int list_obj(credentials *c, char* objectid,char *tag, ws_result * ws); //retrie
 int get_sysmd_obj(credentials *c,const char *object_name, ws_result *ws);
 int get_usermd_obj();
 
-int set_meta_ns(credentials *c, const char *object_name, const char *key, const char *val);
-int get_meta_ns(credentials *c,const char *object_name);
+int set_meta_obj(credentials *c, const char *object_name, const char *key, const char *val);
+int get_meta_obj(credentials *c,const char *object_name);
 
 
 //versionining - new

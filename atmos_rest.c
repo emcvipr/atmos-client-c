@@ -135,6 +135,7 @@ void create_ns(credentials *c, char * uri, char *content_type ,acl *acl,user_met
 	    headers[header_count++]=meta_header;
 	}
     }
+
     http_request_ns(c, method,uri,content_type, headers,header_count, NULL, ws);
     
     if(acl_header)
@@ -385,7 +386,50 @@ void free_user_meta(user_meta *um) {
 void get_service_info(credentials *c, ws_result *result) {
     char **headers = calloc(20,sizeof(char*));
     int header_count = 0;
-    const char *sys_info = "/rest/service";
+    char *sys_info = "/rest/service";
     http_request(c, GET, sys_info, NULL, headers, header_count, NULL, result);
     free(headers);
+}
+
+
+int create_obj(credentials *c, char * obj_id, char *content_type ,acl *acl,user_meta *meta, ws_result *ws)
+{
+    
+    http_method method = POST;
+    char **headers = calloc(20,sizeof(char*));
+    int header_count =0;
+    char *acl_header=NULL;
+    char *meta_listable_header=NULL;
+    char *meta_header=NULL;
+    
+    if(acl) {
+	acl_header= malloc(1024);
+	memset(acl_header, 0, 1024);
+	headers[header_count] = acl_header;
+	add_acl_headers(headers[header_count], acl);
+	header_count++;
+    }
+
+    if(meta) {
+	add_meta_headers(meta_listable_header, meta_header, meta);
+	if(meta_listable_header) {
+	    headers[header_count++]=meta_listable_header;
+	}
+	if (meta_header) {
+	    headers[header_count++]=meta_header;
+	}
+    }
+    char *obj_uri = "/rest/objects";
+    http_request(c, method,obj_uri,content_type, headers,header_count, NULL, ws);
+    
+    if(acl_header)
+	free(acl_header);
+    if(meta_listable_header)
+	free(meta_listable_header);
+    if(meta_header)
+	free(meta_header);
+
+    obj_id = NULL;
+    free(headers);    
+    return 1;
 }

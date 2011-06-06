@@ -81,6 +81,11 @@ static const char* size="size";
 static const char* nlink="nlink";
 static const char* policyname="policyname";
 
+//Object - CRUD
+int create_obj(credentials *c, char *object_id, ws_result* ws);
+int read_obj(credentials *c, char *object_id, postdata* d, int limit, ws_result* ws);
+int update_obj(credentials *c, char *object_id, char* content_type, acl* acl, postdata* data, user_meta* meta, ws_result *ws);
+int delete_obj(credentials *c, char *object_od, ws_result *ws);
 
 //Namespace
 void rename_ns(credentials *c, char * uri, char *new_uri, int force, ws_result *ws);
@@ -93,7 +98,25 @@ int get_meta_ns(credentials *c,const char *object_name);
 
 //namespace metadata
 int user_meta_ns(credentials *c, const char *uri, char * content_type, user_meta *meta, ws_result* ws);
-//Object
+
+int set_acl_obj(credentials *c, char *objectid, acl* acl, ws_result *ws);
+int get_acl_obj(credentials *c, char *objectid, acl* acl, ws_result *ws);
+int get_info_obj(credentials *c, char *objectid, ws_result* ws);//returns object details - replica's etc
+int list_obj(credentials *c, char* objectid,char *tag, ws_result * ws); //retrieves all obj id's indexed by tag
+
+int get_sysmd_obj(credentials *c,const char *object_name, ws_result *ws);
+int get_usermd_obj();
+
+int set_meta_ns(credentials *c, const char *object_name, const char *key, const char *val);
+int get_meta_ns(credentials *c,const char *object_name);
+
+
+//versionining - new
+int create_version();
+int delete_version();
+int list_versions();
+int restore_version();
+
 
 //Take a ws_result and break its headers into system and user meta structs
 void parse_headers(ws_result*, system_meta*, user_meta**);

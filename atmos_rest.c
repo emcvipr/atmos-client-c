@@ -462,7 +462,6 @@ int read_obj(credentials *c, char *object_id, postdata* pd, int limit, ws_result
 }
 int update_obj(credentials *c, char *object_id, char* content_type, acl* acl, postdata* data, user_meta* meta, ws_result *ws) {
 
-
     char **headers = calloc(20,sizeof(char*));
     http_method method = PUT;    
     char *acl_header=NULL;
@@ -492,6 +491,7 @@ int update_obj(credentials *c, char *object_id, char* content_type, acl* acl, po
 	free(meta_header);
     free(headers);
 
+    return 0;
 }
 
 

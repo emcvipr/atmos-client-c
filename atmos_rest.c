@@ -6,18 +6,41 @@
 #include "atmos_util.h"
 #include "atmos_rest.h"
 
+/**
+ * Initialize constants here.
+ */
+const char *EMC_META_HDR_STR = "x-emc-meta: ";
+const char *EMC_USER_HDR_STR = "x-emc-user: ";
+//static const char *EMC_GROUPACL_HDR_STR = "x-emc-groupacl";
+//static const char *EMC_USERACL_HDR_STR = "x-emc-useracl";
+const char *EMC_LISTABLE_META_HDR_STR = "x-emc-listable-meta: ";
 
+const char* atime="atime";
+const char* mtime="mtime";
+const char* itime="itime";
+const char* emc_ctime="ctime";
+const char* type="type";
+const char* uid="uid";
+const char* gid="gid";
+const char* objectid="objectid";
+const char* objname="objname";
+const char* size="size";
+const char* nlink="nlink";
+const char* policyname="policyname";
 
-#define _CRT_SECURE_NO_WARNINGS 1
 
 credentials* init_ws(const char *user_id, const char *key, const char *endpoint) 
 {
 
     credentials *c = malloc(sizeof(credentials));
-    strcpy(c->tokenid, user_id);
-    strcpy(c->secret, key);
-    strcpy(c->accesspoint, endpoint);
+    strncpy(c->tokenid, user_id, CREDS_SIZE);
+    strncpy(c->secret, key, CREDS_SIZE);
+    strncpy(c->accesspoint, endpoint, CREDS_SIZE);
     return c;
+}
+
+void free_ws(credentials *c) {
+	free(c);
 }
 
 
@@ -339,6 +362,14 @@ int user_meta_ns(credentials *c, const char *uri, char * content_type, user_meta
     return ws->return_code;
 }
 
+int get_meta_ns(credentials *c,const char *object_name, ws_result *ws) {
+	char **headers = calloc(20, sizeof(char*));
+	int header_count=0;
+	http_request_ns(c, HEAD, object_name, NULL, headers, header_count, NULL, ws);
+
+	return ws->return_code;
+}
+
 //int object_get_listable_meta(const char *object_name) 
 //{
   
@@ -381,6 +412,17 @@ void free_user_meta(user_meta *um) {
 	idx=idx->next;
 	free(f);
     }
+}
+
+user_meta* find_user_meta(user_meta *um, const char *name) {
+	while(um != NULL) {
+		if(!strcmp(name, um->key)) {
+			return um;
+		}
+		um = um->next;
+	}
+
+	return NULL;
 }
 
 void get_service_info(credentials *c, ws_result *result) {

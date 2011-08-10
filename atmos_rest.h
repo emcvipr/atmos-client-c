@@ -62,27 +62,27 @@ typedef struct listing {
     char type[128];
 } listing;
 
-static const char *EMC_META_HDR_STR = "x-emc-meta: ";
-static const char *EMC_USER_HDR_STR = "x-emc-user: ";
+extern const char *EMC_META_HDR_STR;
+extern const char *EMC_USER_HDR_STR;
 //static const char *EMC_GROUPACL_HDR_STR = "x-emc-groupacl";
 //static const char *EMC_USERACL_HDR_STR = "x-emc-useracl";
-static const char *EMC_LISTABLE_META_HDR_STR = "x-emc-listable-meta: ";
+extern const char *EMC_LISTABLE_META_HDR_STR;
 
-static const char* atime="atime";
-static const char* mtime="mtime";
-static const char* itime="itime";
-static const char* emc_ctime="ctime";
-static const char* type="type";
-static const char* uid="uid";
-static const char* gid="gid";
-static const char* objectid="objectid";
-static const char* objname="objname";
-static const char* size="size";
-static const char* nlink="nlink";
-static const char* policyname="policyname";
+extern const char* atime;
+extern const char* mtime;
+extern const char* itime;
+extern const char* emc_ctime;
+extern const char* type;
+extern const char* uid;
+extern const char* gid;
+extern const char* objectid;
+extern const char* objname;
+extern const char* size;
+extern const char* nlink;
+extern const char* policyname;
 
 //Object - CRUD
-int create_obj(credentials *c, char *obj_id, char *content_type ,acl *acl,user_meta *meta, ws_result *ws);
+int create_obj(credentials *c, char *obj_id, char *content_type, acl *acl,user_meta *meta, ws_result *ws);
 
 int read_obj(credentials *c, char *object_id, postdata* d, int limit, ws_result* ws);
 int update_obj(credentials *c, char *object_id, char* content_type, acl* acl, postdata* data, user_meta* meta, ws_result *ws);
@@ -95,7 +95,13 @@ void list_ns(credentials *c, char * uri, postdata*d, int count, ws_result *ws);
 void update_ns(credentials *c, char * uri, char *content_type, acl *acl, postdata* data, user_meta *meta, ws_result *ws);
 int delete_ns(credentials *c, char *object_id, ws_result *ws);
 int set_meta_ns(credentials *c, const char *object_name, const char *key, const char *val);
-int get_meta_ns(credentials *c,const char *object_name);
+
+/**
+ * Gets object metadata.  This issues a HEAD call against the object name and
+ * fetches the object's metadata.  On success, pass the ws_result to
+ * parse_headers if you want to extract the metadata.
+ */
+int get_meta_ns(credentials *c,const char *object_name, ws_result *ws);
 
 //namespace metadata
 int user_meta_ns(credentials *c, const char *uri, char * content_type, user_meta *meta, ws_result* ws);
@@ -124,12 +130,17 @@ void parse_headers(ws_result*, system_meta*, user_meta**);
 
 //atmos specific helpers
 credentials* init_ws(const char *user_id, const char *key, const char *endpoint);
+void free_ws(credentials *creds);
 
 //user meta data helpers
 user_meta* new_user_meta(char *key, char *value, int listable);
 void add_user_meta(user_meta *head, char *key, char *value, int listable);
 void free_user_meta(user_meta *um);
 
+/**
+ * Searches the given user_meta list for a value with the given name.
+ */
+user_meta* find_user_meta(user_meta *um, const char *name);
 
 void get_service_info(credentials *c, ws_result *result) ;
 

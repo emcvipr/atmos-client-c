@@ -2,10 +2,12 @@
 #define _AOL_TRANSPORT_H
 
 #include "atmos_util.h"
+
+#define CREDS_SIZE 255
 typedef struct credentialsval {
-    char tokenid[120];
-    char secret[120];
-    char accesspoint[120];
+    char tokenid[CREDS_SIZE];
+    char secret[CREDS_SIZE];
+    char accesspoint[CREDS_SIZE];
 } credentials;
 
 
@@ -32,7 +34,8 @@ typedef struct ws_result {
     char *headers[MAX_HEADERS];
     int header_count;
     int duration_ms;
-    int duration_sec;  
+    int duration_sec;
+    char *content_type;
 } ws_result;
 
 

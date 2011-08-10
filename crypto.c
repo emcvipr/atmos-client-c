@@ -36,7 +36,10 @@ char *base64encode(char *normal, size_t length)
     bmem = BIO_new(BIO_s_mem());
     b64 = BIO_push(b64, bmem);
     BIO_write(b64, normal, (int)length);
-    BIO_flush(b64);
+    if(BIO_flush(b64) != 1) {
+    	return NULL;
+    }
+
     BIO_get_mem_ptr(b64, &bptr);
 
 	buff = (char *)malloc(bptr->length);
@@ -47,6 +50,7 @@ char *base64encode(char *normal, size_t length)
     b64= NULL;
     return buff;
 }
+
 char *HMACSHA1(const unsigned char *hash_string, void *key, size_t key_len) {
 const EVP_MD *evp_md = EVP_sha1();    
     unsigned int md_len;

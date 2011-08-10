@@ -82,11 +82,17 @@ void result_init(ws_result *result) {
 }
 
 void result_deinit(ws_result* result) {
-  int i = 0;
-  free(result->response_body);
-    for(; i < result->header_count; i++) {
-	free(result->headers[i]);
-    }
+	int i = 0;
+	free(result->response_body);
+	for(; i < result->header_count; i++) {
+		free(result->headers[i]);
+	}
+
+	if(result->content_type != NULL) {
+		free(result->content_type);
+		result->content_type = NULL;
+	}
+
 }
 
 const char *http_request_ns(credentials *c, http_method method, char *uri,char *content_type, char **headers, int header_count, postdata * data, ws_result* ws_result) {
@@ -253,6 +259,10 @@ const char *http_request(credentials *c, http_method method, char *uri, char *co
 	}
 	
 	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &ws_result->return_code);
+	curl_easy_getinfo(curl, CURLINFO_CONTENT_TYPE, &ws_result->content_type);
+	/* dup it so we can free later */
+	ws_result->content_type = strdup(ws_result->content_type);
+
 	curl_easy_cleanup(curl);
 	curl_slist_free_all(chunk);
     }

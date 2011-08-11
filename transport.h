@@ -43,8 +43,8 @@ typedef struct ws_result {
 #define false 0
 
 #define HTTP_HDR_SIZE 4096
-const char *http_request(credentials *c,http_method method, char *uri,char * content_type, char **headers, int header_count, postdata* a, ws_result* ws_result) ;
-const char *http_request_ns(credentials *c,http_method method, char *uri, char *content_type, char **headers, int header_count, postdata* a, ws_result *ws_result) ;
+const char *http_request(credentials *c,http_method method, const char *uri,char * content_type, char **headers, int header_count, postdata* a, ws_result* ws_result) ;
+const char *http_request_ns(credentials *c,http_method method, const char *uri, char *content_type, char **headers, int header_count, postdata* a, ws_result *ws_result) ;
 void ws_init(ws_result*);
 void ws_deinit(ws_result*);
 void result_deinit(ws_result *result);

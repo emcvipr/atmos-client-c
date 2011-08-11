@@ -2,6 +2,11 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#ifdef WIN32
+/* For Sleep() */
+#include <Windows.h>
+#endif
+
 #include "stdio.h"
 #include "transport.h"
 #include "atmos_rest.h"
@@ -68,13 +73,19 @@ void aol_rename() {
     ws_result result;
     char *obj = "/rename_test_object1/a/1/a";
     char *renamed_obj = "1renamed_object";
+	char *renamed_obj1 = "/1renamed_object";
 
     //*** Create
     create_ns(c, obj, NULL,NULL,  NULL, &result);
     printf("code: %d==201\t%s\n", result.return_code, result.response_body);
     result_deinit(&result);
     
+#ifdef WIN32
+	Sleep(2);
+#else
     sleep(2);
+#endif
+
     //**rename
     rename_ns(c, obj, renamed_obj, 1, &result);
     printf("rename code: %d==200\t%s\n", result.return_code, result.response_body);
@@ -85,8 +96,7 @@ void aol_rename() {
     printf("code: %d!=204\n", result.return_code);
     result_deinit(&result);
 
-    //*** Delete - new object should great success
-    char *renamed_obj1="/1renamed_object";
+    /** Delete - new object should great success*/
     delete_ns(c, renamed_obj1, &result);
     printf("code: %d==204\n", result.return_code);
     result_deinit(&result);
@@ -118,7 +128,7 @@ int api_testing(){
   
     list_ns(c, testdir,NULL, 0,&result);    
     //result body size is not NULL terminated - could be binary
-    body = malloc(result.body_size+1);
+    body = (char*)malloc(result.body_size+1);
     memcpy(body, result.response_body, result.body_size);
     body[result.body_size] = '\0';
     printf("datum%d:%s\n", result.body_size,body);
@@ -162,8 +172,13 @@ int api_testing(){
     memset(big_data, 0, bd_size);
     d.data=data;
     d.body_size = bd_size;
+#ifdef WIN32
+	Sleep(5);
+#else
     sleep(5);
-    update_ns(c, testdir,NULL, NULL, &d, NULL,&result);    
+#endif    
+	result_init(&result);
+	update_ns(c, testdir,NULL, NULL, &d, NULL,&result);    
     printf("%s\tupdate code: %d==200\t%s\n", testdir,result.return_code, result.response_body);
     assert(result.return_code ==200);
     result_deinit(&result);
@@ -172,7 +187,7 @@ int api_testing(){
   
     list_ns(c, testdir,NULL, 0,&result);    
     
-    body2=malloc(result.body_size+1);
+    body2 = (char*)malloc(result.body_size+1);
     memcpy(body2, result.response_body, result.body_size);
     body2[result.body_size] = '\0';
     printf("datum%d:%s\n", result.body_size,body2);
@@ -250,14 +265,15 @@ void set_meta_data() {
     char *testdir = "/Resources.tgz1";
     user_meta meta,meta1, meta2, meta3;
     user_meta *um = NULL;
-    system_meta sm ;
+    system_meta sm;
+	user_meta *t;
 
     //*** Create
   
     create_ns(c, testdir, NULL,NULL,  NULL, &result);
     printf("code: %d\n", result.return_code);
     result_deinit(&result);
-    user_meta *t = new_user_meta("meta_test", "meta_pass", 1);
+    t = new_user_meta("meta_test", "meta_pass", 1);
     add_user_meta(t, "1_test", "1_pass", 0);
     add_user_meta(t, "2_test", "2_pass", 0);
     add_user_meta(t, "3_test", "3_pass", 0);
@@ -339,7 +355,8 @@ void list() {
     char big_data[2048];
     const int bd_size = 2048;
     postdata d;
-  
+  	char *char_response_bucket= NULL;
+
 
     create_ns(c, testdir, NULL,NULL,  NULL, &result);
     printf("%d\n", result.return_code);
@@ -358,7 +375,6 @@ void list() {
 
     for(loops;loops < 10; loops++) { 
 	list_ns(c, testdir, NULL, 0,&result);    
-	char *char_response_bucket= NULL;
 	if(result.response_body){
 	    char_response_bucket = malloc(result.body_size+1);
 	    memcpy(char_response_bucket, result.response_body, result.body_size);
@@ -517,12 +533,13 @@ void testacl() {
     ws_result result;
     char *obj = "/rename_test_object1";
     char *renamed_obj = "1renamed_object";
+	acl *acllist, *acllist2;
     
-    acl *acllist=malloc(sizeof(acl));
+    acllist = (acl*)malloc(sizeof(acl));
     memset(acllist, 0, sizeof(acl));
     sprintf(acllist->user,"john");
     sprintf(acllist->permission,"FULL_CONTROL");
-    acl *acllist2=malloc(sizeof(acl));
+    acllist2 = (acl*)malloc(sizeof(acl));
     memset(acllist2, 0, sizeof(acl));
     acllist->next = acllist2;
     sprintf(acllist2->user,"mary");

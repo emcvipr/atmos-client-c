@@ -50,12 +50,46 @@ The source code is seperated at the transport, crypto, helper and atmos specific
     * helper are simple functions
 
 
+Building (WIN32)
+----------------
+I highly recommend building your own OpenSSL and libcurl libraries and statically linking them into your atmos-c DLL.  To do this:
+
+    1. Get OpenSSL source.  You'll also need a perl interpreter from cygwin or activestate.  Extract the openssl source into your Visual Studio 2010\Projects folder
+    2. Configure OpenSSL: 
+perl Configure VC-WIN32 no-asm --prefix=C:\\OpenSSL-Win32
+ms/do_ms.bat
+
+    3. Open a "Visual Studio Command Prompt" and cd to your openssl dir
+    4. Build the openssl static library:
+nmake -f ms\nt.mak
+nmake -f ms\nt.mak test
+nmake -f ms\nt.mak install
+
+    5. In your visual studio projects folder, create a "deps" folder and copy the contents of C:\OpenSSL-Win32 there (lib, bin, include)
+    6. Download libcurl sources and extract to your visual studio projects folder
+    7. Change to the libcurl\winbuild folder in your visual studio command prompt
+    8. Build libcurl:
+nmake /f Makefile.vc mode=static VC=10 WITH_SSL=static DEBUG=yes GEN_PDB=yes
+
+    9. Inside the atmos-c project in visual studio, make sure your include and linker paths are set up correctly for the libcurl and openssl headers.  I currently have:
+
+Include (C/C++->General->Additional Include Directories)
+..\curl-7.21.7\builds\libcurl-debug-static-ssl-dll-ipv6-sspi\include
+C:\OpenSSL-Win32\include
+
+Link (Librarian->General->Additional Library Directories)
+..\curl-7.21.7\builds\libcurl-debug-static-ssl-dll-ipv6-sspi\lib
+
+
+
+
+
+
 Todo:
 object interface
 acl
 shared urls
 autoconf
-win32 support dll & build
 ACL support
 chunked transfer's
 

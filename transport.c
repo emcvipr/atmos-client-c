@@ -6,7 +6,58 @@
 #include "atmos_util.h"
 #include "crypto.h"
 
-static const int HEADER_MAX = 1024;
+#ifdef WIN32
+/* Windows does not have gettimeofday */
+#if defined(_MSC_VER) || defined(_MSC_EXTENSIONS)
+  #define DELTA_EPOCH_IN_MICROSECS  11644473600000000Ui64
+#else
+  #define DELTA_EPOCH_IN_MICROSECS  11644473600000000ULL
+#endif
+ 
+struct timezone 
+{
+  int  tz_minuteswest; /* minutes W of Greenwich */
+  int  tz_dsttime;     /* type of dst correction */
+};
+ 
+int gettimeofday(struct timeval *tv, struct timezone *tz)
+{
+  FILETIME ft;
+  unsigned __int64 tmpres = 0;
+  static int tzflag;
+ 
+  if (NULL != tv)
+  {
+    GetSystemTimeAsFileTime(&ft);
+ 
+    tmpres |= ft.dwHighDateTime;
+    tmpres <<= 32;
+    tmpres |= ft.dwLowDateTime;
+ 
+    /*converting file time to unix epoch*/
+    tmpres -= DELTA_EPOCH_IN_MICROSECS; 
+    tmpres /= 10;  /*convert into microseconds*/
+    tv->tv_sec = (long)(tmpres / 1000000UL);
+    tv->tv_usec = (long)(tmpres % 1000000UL);
+  }
+ 
+  if (NULL != tz)
+  {
+    if (!tzflag)
+    {
+      _tzset();
+      tzflag++;
+    }
+    tz->tz_minuteswest = _timezone / 60;
+    tz->tz_dsttime = _daylight;
+  }
+ 
+  return 0;
+}
+
+#endif
+
+#define HEADER_MAX 1024
 
 static const char *namespace_uri = "/rest/namespace";
 //static const char *object_uri = "/rest/objects";
@@ -25,7 +76,7 @@ size_t readfunc(void *ptr, size_t size, size_t nmemb, void *stream)
 		ud->bytes_remaining -=size*nmemb;
 		return size*nmemb;
 	    } else {
-	      int datasize = ud->bytes_remaining;
+	      unsigned int datasize = (unsigned int)ud->bytes_remaining;
 	      memcpy(ptr, ud->data+ud->bytes_written, datasize);
 	      ud->bytes_written+=datasize;
 	      ud->bytes_remaining=0;
@@ -45,7 +96,7 @@ size_t writefunc(void *ptr, size_t size, size_t nmemb, void *stream)
     ws->body_size+= mem_required;
     new_response = realloc(ws->response_body,ws->body_size);
     if(new_response) {
-      ws->response_body = new_response;
+      ws->response_body = (char*)new_response;
     } else {
       ;
     }
@@ -63,7 +114,7 @@ size_t headerfunc(void *ptr, size_t size, size_t nmemb, void *stream)
     ws_result *ws = (ws_result*)stream;
     size_t mem_required = size*nmemb-2; // - 2 for the /r/n at the end of each header
 
-    ws->headers[ws->header_count] = malloc(mem_required+1);//+1 for \0
+    ws->headers[ws->header_count] = (char*)malloc(mem_required+1);//+1 for \0
     memcpy(ws->headers[ws->header_count],ptr, mem_required);
     ws->headers[ws->header_count][mem_required] = '\0';
     ws->header_count++;
@@ -95,7 +146,7 @@ void result_deinit(ws_result* result) {
 
 }
 
-const char *http_request_ns(credentials *c, http_method method, char *uri,char *content_type, char **headers, int header_count, postdata * data, ws_result* ws_result) {
+const char *http_request_ns(credentials *c, http_method method, const char *uri,char *content_type, char **headers, int header_count, postdata * data, ws_result* ws_result) {
 	
     char * ns_uri = NULL;
     ns_uri = (char*)malloc(strlen(uri)+strlen(namespace_uri)+1);    
@@ -105,7 +156,7 @@ const char *http_request_ns(credentials *c, http_method method, char *uri,char *
     return NULL;
 }
 
-const char *http_request(credentials *c, http_method method, char *uri, char *content_type, char **headers, int header_count, postdata *data, ws_result* ws_result) 
+const char *http_request(credentials *c, http_method method, const char *uri, char *content_type, char **headers, int header_count, postdata *data, ws_result* ws_result) 
 {
 
   //    if(!curl_code) {

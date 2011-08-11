@@ -53,7 +53,7 @@ void rename_ns(credentials *c, char * uri, char *new_uri, int force, ws_result *
     char *rename_uri = (char*)malloc(strlen(uri)+strlen(rename)+1);
     http_method method = POST;
     char *path= NULL;
-    char **headers = calloc(20,sizeof(char*));
+    char **headers = (char**)calloc(20,sizeof(char*));
     int header_count =0;
     char theader[] = "x-emc-force:true";
     char fheader[] = "x-emc-force:false";
@@ -204,10 +204,13 @@ void  update_ns (credentials *c, char * uri, char *content_type, acl *acl, postd
 //need offset, size and x-emc-limit..
 void list_ns(credentials *c,char * uri, postdata *pd, int limit, ws_result *ws) 
 {
+	char **headers;
+	int count;
+
     http_method method =HEAD;
     if(pd) method = GET;
-    char **headers = calloc(20,sizeof(char*));
-    int count = 0;
+    headers = (char**)calloc(20,sizeof(char*));
+    count = 0;
     if (limit) {
 	sprintf(headers[count++], "x-emc-limit: %d", limit);
     }
@@ -363,7 +366,7 @@ int user_meta_ns(credentials *c, const char *uri, char * content_type, user_meta
 }
 
 int get_meta_ns(credentials *c,const char *object_name, ws_result *ws) {
-	char **headers = calloc(20, sizeof(char*));
+	char **headers = (char**)calloc(20, sizeof(char*));
 	int header_count=0;
 	http_request_ns(c, HEAD, object_name, NULL, headers, header_count, NULL, ws);
 
@@ -443,6 +446,7 @@ int create_obj(credentials *c, char *obj_id, char *content_type ,acl *acl,user_m
     char *acl_header=NULL;
     char *meta_listable_header=NULL;
     char *meta_header=NULL;
+    char *obj_uri = "/rest/objects";
     
     if(acl) {
 	acl_header= malloc(1024);
@@ -461,7 +465,6 @@ int create_obj(credentials *c, char *obj_id, char *content_type ,acl *acl,user_m
 	    headers[header_count++]=meta_header;
 	}
     }
-    char *obj_uri = "/rest/objects";
     http_request(c, method,obj_uri,content_type, headers,header_count, NULL, ws);
     get_object_id(ws->headers, ws->header_count, obj_id);
      
@@ -488,15 +491,19 @@ int delete_obj(credentials *c, char *obj, ws_result *ws)
 }
 
 int read_obj(credentials *c, char *object_id, postdata* pd, int limit, ws_result* ws) {
+	char **headers;
+	int count;
+    char *object_path = "/rest/objects/";
+	char *obj_uri;
+
     http_method method =HEAD;
     if(pd) method = GET;
-    char **headers = calloc(20,sizeof(char*));
-    int count = 0;
+    headers = (char**)calloc(20,sizeof(char*));
+    count = 0;
     if (limit) {
 	sprintf(headers[count++], "x-emc-limit: %d", limit);
     }
-    char *object_path = "/rest/objects/";
-    char *obj_uri = (char*) malloc(strlen(object_path) + strlen(object_id)+1);
+    obj_uri = (char*) malloc(strlen(object_path) + strlen(object_id)+1);
     sprintf(obj_uri,"%s%s", object_path, object_id);
     http_request (c, method, obj_uri, NULL, headers, count, pd, ws);
     free(headers);    
@@ -509,6 +516,8 @@ int update_obj(credentials *c, char *object_id, char* content_type, acl* acl, po
     char *acl_header=NULL;
     char *meta_listable_header=NULL;
     char *meta_header=NULL;
+    char *object_path = "/rest/objects/";
+	char *obj_uri;
 
     int header_count =0;
     if(acl) {
@@ -519,8 +528,7 @@ int update_obj(credentials *c, char *object_id, char* content_type, acl* acl, po
     if(meta) {
 	//add meta headers on create
     }
-    char *object_path = "/rest/objects/";
-    char *obj_uri = (char*) malloc(strlen(object_path) + strlen(object_id)+1);
+    obj_uri = (char*) malloc(strlen(object_path) + strlen(object_id)+1);
     sprintf(obj_uri,"%s%s", object_path, object_id);
 
     http_request(c, method, obj_uri, content_type,headers, header_count, data, ws);

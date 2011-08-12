@@ -441,6 +441,7 @@ int delete_obj(credentials *c, char *obj, ws_result *ws)
     char *obj_uri = (char*) malloc(strlen(object_path) + strlen(obj)+1);
     sprintf(obj_uri,"%s%s", object_path, obj);
     http_request (c, method, obj_uri,NULL, headers, 0, NULL, ws);
+    free(obj_uri);
     free(headers);
     return ws->return_code;
 }
@@ -458,6 +459,7 @@ int read_obj(credentials *c, char *object_id, postdata* pd, int limit, ws_result
     sprintf(obj_uri,"%s%s", object_path, object_id);
     http_request (c, method, obj_uri, NULL, headers, count, pd, ws);
     free(headers);    
+    free(obj_uri);
     return ws->return_code;
 }
 int update_obj(credentials *c, char *object_id, char* content_type, acl* acl, postdata* data, user_meta* meta, ws_result *ws) {
@@ -490,7 +492,7 @@ int update_obj(credentials *c, char *object_id, char* content_type, acl* acl, po
     if(meta_header)
 	free(meta_header);
     free(headers);
-
+    free(obj_uri);
     return 0;
 }
 

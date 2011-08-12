@@ -8,3 +8,7 @@ update01: update01.c
 	gcc -g -o update update01.c ${INC} ${LIBS}
 delete01: delete01.c
 	gcc -g -o delete delete01.c ${INC} ${LIBS}
+meta: meta_data01.c
+	gcc -g -o meta meta_data01.c ${INC} ${LIBS}	
+sysmeta: sys_meta_data01.c
+	gcc -g -o sys_meta sys_meta_data01.c ${INC} ${LIBS}	

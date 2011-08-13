@@ -31,9 +31,9 @@ void print_system_meta(system_meta sm) {
     printf("ctime\t%s\n", sm.ctime);
     printf("itime\t%s\n", sm.itime);
     printf("type\t%s\n", sm.type );
-    printf("uid\t%s\n",uid );
+    printf("uid\t%s\n", sm.uid );
     printf("gid\t%s\n", sm.gid);
-    printf("objectid\t[%s]\n", sm.objectid );
+    printf("objectid\t%s\n", sm.objectid );
     printf("objname\t%s\n", sm.objname);
     printf("size\t%lld\n", sm.size);
     printf("nlink\t%d\n", sm.nlink);

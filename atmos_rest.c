@@ -67,40 +67,41 @@ void add_acl_headers(char *acl_header, acl *acllist) {
     
 }
 
-void add_meta_headers(char *emc_listable,  char *emc_meta, user_meta *meta) {
+void add_meta_headers(char **emc_listable,  char **emc_meta, user_meta *meta) {
     user_meta *index = meta;
+    int emc_meta_loc = 0;
+    int emc_listable_loc = 0;
     for( ; index !=NULL;  index=index->next) {
 	char *value, *key;
 	value = index->value;
 	key = index->key;
-	  
 	while(*key == ' ') key++;
 	while(*value == ' ') value++;
 
 	if(index->listable == false) {
-	    int emc_meta_loc = 0;
-	    if(!emc_meta) {
-		emc_meta=malloc(8096);
-		memset(emc_meta, 0, 8096);
+
+	    if(!(*emc_meta)) {
+		(*emc_meta) =malloc(8096);
+		memset((*emc_meta), 0, 8096);
 	    }
 	    if(emc_meta_loc > 0) {
-		emc_meta_loc+=sprintf(emc_meta+emc_meta_loc, ",%s=%s", key, value);
+		emc_meta_loc+=sprintf(*emc_meta+emc_meta_loc, ",%s=%s", key, value);
 	    }
 	    else {
-		emc_meta_loc += sprintf(emc_meta+emc_meta_loc, "X-Emc-Meta:%s=%s", key, value);
+		emc_meta_loc += sprintf(*emc_meta+emc_meta_loc, "X-Emc-Meta:%s=%s", key, value);
 	    }
 	} else if(index->listable == true) {
-	    int emc_listable_loc = 0;
-	    if(!emc_listable) {
-		emc_listable=malloc(8096);
-		memset(emc_listable, 0, 8096);
+
+	    if(!(*emc_listable)) {
+		*emc_listable=malloc(8096);
+		memset(*emc_listable, 0, 8096);
 	    }
 	    
 	    if(emc_listable_loc > 0) {
-		emc_listable_loc+=sprintf(emc_listable+emc_listable_loc, ",%s=%s", key, value);
+		emc_listable_loc+=sprintf(*emc_listable+emc_listable_loc, ",%s=%s", key, value);
 	    }
 	    else {
-		emc_listable_loc += sprintf(emc_listable+emc_listable_loc, "X-Emc-Listable-meta:%s=%s", key, value);
+		emc_listable_loc += sprintf(*emc_listable+emc_listable_loc, "X-Emc-Listable-meta:%s=%s", key, value);
 	    }
 	}
     }
@@ -127,7 +128,7 @@ void create_ns(credentials *c, char * uri, char *content_type ,acl *acl,user_met
     }
 
     if(meta) {
-	add_meta_headers(meta_listable_header, meta_header, meta);
+	add_meta_headers(&meta_listable_header, &meta_header, meta);
 	if(meta_listable_header) {
 	    headers[header_count++]=meta_listable_header;
 	}
@@ -230,6 +231,7 @@ void parse_headers(ws_result* ws, system_meta* sm, user_meta** head_ptr_um) {
 		}else if (0 == strncmp(result, type, strlen(type))) {
 		    strcpy(sm->type, result+strlen(type)+1);
 		}else if (0 == strncmp(result, uid, strlen(uid))) {
+		    
 		    strcpy(sm->uid, result+strlen(uid)+1);
 		}else if (0 == strncmp(result, gid, strlen(gid))) {
 		    strcpy(sm->gid, result+strlen(gid)+1);
@@ -324,7 +326,7 @@ int user_meta_ns(credentials *c, const char *uri, char * content_type, user_meta
 	char *unlistable_meta=NULL, *listable_meta=NULL;
 	sprintf(meta_uri, "%s%s", uri, user_meta_uri);
 	
-	add_meta_headers(listable_meta, unlistable_meta, meta);
+	add_meta_headers(&listable_meta, &unlistable_meta, meta);
 
 	http_request_ns (c, POST, meta_uri, content_type, headers, header_count, NULL, ws);
 	
@@ -353,25 +355,28 @@ user_meta* new_user_meta(char *key, char *value, int listable) {
     um->next= NULL;
     return um;
 }
-void add_user_meta(user_meta *head, char *key, char *value, int listable) {
+void add_user_meta(user_meta **head, char *key, char *value, int listable) {
     user_meta *um = malloc(sizeof(user_meta));
+    user_meta *head_ptr = *head;
+
     memset(um, 0, sizeof(user_meta));
     strcpy(um->key, key);
     strcpy(um->value, value);
     um->next = NULL;
     um->listable = listable;
     
-    
-    if(head->next == NULL) {
-	head->next = um;
+    if((*head) == NULL) 
+	(*head)=um;
+    else if(head_ptr->next == NULL) {
+	head_ptr->next = um;
     } else {
-	user_meta *current = head->next;
+	user_meta *current = head_ptr->next;
 	while(current->next !=NULL) {
 	    current= current->next;
 	}
 	current->next = um;
     }
-    
+
 }
 
 void free_user_meta(user_meta *um) {
@@ -379,7 +384,16 @@ void free_user_meta(user_meta *um) {
     while (idx != NULL) {
 	user_meta *f = idx;
 	idx=idx->next;
-	free(f);
+	if(f) free(f);
+    }
+}
+
+void print_user_meta(user_meta *um) {
+    user_meta *idx=um;
+    while (idx != NULL) {
+	printf("%s=%s,%d\n", idx->key, idx->value, idx->listable);
+	idx=idx->next;
+	
     }
 }
 
@@ -411,7 +425,7 @@ int create_obj(credentials *c, char *obj_id, char *content_type ,acl *acl,user_m
     }
 
     if(meta) {
-	add_meta_headers(meta_listable_header, meta_header, meta);
+	add_meta_headers(&meta_listable_header, &meta_header, meta);
 	if(meta_listable_header) {
 	    headers[header_count++]=meta_listable_header;
 	}
@@ -477,7 +491,13 @@ int update_obj(credentials *c, char *object_id, char* content_type, acl* acl, po
 	header_count++;
     }
     if(meta) {
-	//add meta headers on create
+	add_meta_headers(&meta_listable_header, &meta_header, meta);
+	if(meta_listable_header) {
+	    headers[header_count++]=meta_listable_header;
+	}
+	if (meta_header) {
+	    headers[header_count++]=meta_header;
+	}
     }
     char *object_path = "/rest/objects/";
     char *obj_uri = (char*) malloc(strlen(object_path) + strlen(object_id)+1);

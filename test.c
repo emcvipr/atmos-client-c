@@ -258,12 +258,13 @@ void set_meta_data() {
     printf("code: %d\n", result.return_code);
     result_deinit(&result);
     user_meta *t = new_user_meta("meta_test", "meta_pass", 1);
-    add_user_meta(t, "1_test", "1_pass", 0);
-    add_user_meta(t, "2_test", "2_pass", 0);
-    add_user_meta(t, "3_test", "3_pass", 0);
-    add_user_meta(t, "4_test", "4_pass", 0);
-    add_user_meta(t, "5_test", "5_pass", 0);
-    add_user_meta(t, "6_test", "6_pass", 0);
+    add_user_meta(&t, "1_test", "1_pass", 0);
+    add_user_meta(&t, "2_test", "2_pass", 0);
+    add_user_meta(&t, "3_test", "3_pass", 0);
+    add_user_meta(&t, "4_test", "4_pass", 0);
+    add_user_meta(&t, "5_test", "5_pass", 0);
+    add_user_meta(&t, "6_test", "6_pass", 0);
+
     user_meta_ns(c, testdir, NULL, t, &result);
 
     free_user_meta(t);

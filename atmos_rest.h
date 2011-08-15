@@ -127,9 +127,10 @@ credentials* init_ws(const char *user_id, const char *key, const char *endpoint)
 
 //user meta data helpers
 user_meta* new_user_meta(char *key, char *value, int listable);
-void add_user_meta(user_meta *head, char *key, char *value, int listable);
+void add_user_meta(user_meta **head, char *key, char *value, int listable);
 void free_user_meta(user_meta *um);
-
+void print_user_meta(user_meta *um);
+void add_meta_headers(char **emc_listable,  char **emc_meta, user_meta *meta);
 
 void get_service_info(credentials *c, ws_result *result) ;
 

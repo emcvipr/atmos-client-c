@@ -16,12 +16,14 @@ enum atmos_cmd{
     UPDATE,
     DELETE,
     SHARE,
+    SYSMETA,
     NONE
 };
 
 void do_atmos_action(enum atmos_cmd cmd, credentials *creds,char *object_id, char* bytes, acl *acl, user_meta* umd, int limit);
-void create_action_cmdline(credentials *creds, char *data, char *content_type, acl *acl, user_meta *meta) ;
-void read_action_cmdline(credentials *creds, char *object_id, int limit) ;
+void create_action_cmdline(credentials *creds, char *data, char *content_type, acl *acl, user_meta *meta) 
+;void read_action_cmdline(credentials *creds, char *object_id, int limit) ;
+void sysmeta_action_cmdline(credentials *creds, char *object_id) ;
 void update_action_cmdline(credentials *creds, char *object_id, char *data, char *content_type, acl *acl, user_meta *meta   ) ;
 void delete_action_cmdline(credentials *creds, char *object_id);
 void print_system_meta(system_meta sm) {
@@ -143,7 +145,7 @@ int main(int argc, char *argv[])
 	    cmd=DELETE;
 	    break;
 	case 'y':
-	    cmd=READ;
+	    cmd=SYSMETA;
 	    break;
 	case '?':
 	    break;
@@ -193,6 +195,8 @@ void do_atmos_action(enum atmos_cmd cmd, credentials *creds,char *object_id, cha
     case DELETE:
 	delete_action_cmdline(creds, object_id);
 	break;
+    case SYSMETA:
+	sysmeta_action_cmdline(creds, object_id);
     default:
 	printf("how did you get here?");
     }
@@ -212,9 +216,6 @@ void read_action_cmdline(credentials *creds, char *object_id, int limit)
 
     ws_result wsr;
     postdata read_data;
-    user_meta *um = NULL;
-    system_meta sm ;
-    memset(&sm, 0, sizeof(system_meta));
     memset(&read_data, 0, sizeof(postdata));
     read_obj(creds, object_id, &read_data, 0, &wsr);
     char *bytes_read= malloc(wsr.body_size+1);
@@ -223,14 +224,21 @@ void read_action_cmdline(credentials *creds, char *object_id, int limit)
 	bytes_read[wsr.body_size] = '\0';
 	printf("%d\n", wsr.body_size);
 	printf("%s\n", bytes_read);
-    } else {
-	parse_headers(&wsr, &sm, &um);    
-	print_system_meta(sm);
-	if(um) free(um);
-    }
-
+    } 
     free(bytes_read);
-    free(read_data.data);
+    result_deinit(&wsr);
+} 
+void sysmeta_action_cmdline(credentials *creds, char *object_id) 
+{
+
+    ws_result wsr;
+    user_meta *um = NULL;
+    system_meta sm ;
+    memset(&sm, 0, sizeof(system_meta));
+    read_obj(creds, object_id, NULL, 0, &wsr);
+    parse_headers(&wsr, &sm, &um);    
+    print_system_meta(sm);
+    if(um) free(um);
     result_deinit(&wsr);
 } 
 

@@ -2,7 +2,7 @@ LIBDIR = -L/usr/local/lib
 LIBS= -lssl -lcrypto -lcurl
 SRC= atmos_rest.c crypto.c transport.c atmos_util.c
 OBJ= atmos_rest.o crypto.o transport.o atmos_util.o
-FLAGS = -Wall -Wextra -fPIC -g -c
+FLAGS = -Wall -fPIC -g -c -D_FILE_OFFSET_BITS=64
 
 TESTSRC = test.c
 TESTLIBS = -latmos

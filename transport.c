@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 #include "curl/curl.h"
 #include "transport.h"
@@ -94,7 +95,8 @@ size_t writefunc(void *ptr, size_t size, size_t nmemb, void *stream)
     unsigned long long data_offset = ws->body_size;
     size_t mem_required = size*nmemb;
     ws->body_size+= mem_required;
-    new_response = realloc(ws->response_body,ws->body_size);
+    /* Add an extra byte so we can null terminate it */
+    new_response = realloc(ws->response_body,ws->body_size+1);
     if(new_response) {
       ws->response_body = (char*)new_response;
     } else {
@@ -106,6 +108,12 @@ size_t writefunc(void *ptr, size_t size, size_t nmemb, void *stream)
     } else {
       memcpy(ws->response_body,ptr, mem_required);
     }
+
+    /* Null terminate the body in case it's a string*/
+    /* Since the data is one longer there is room, but */
+    /* shouldn't affect non-string data as long as the */
+    /* body_size element is used when copying*/
+    ws->response_body[ws->body_size] = 0;
     return mem_required;
 }
 
@@ -156,7 +164,9 @@ const char *http_request_ns(credentials *c, http_method method, const char *uri,
     return NULL;
 }
 
-const char *http_request(credentials *c, http_method method, const char *uri, char *content_type, char **headers, int header_count, postdata *data, ws_result* ws_result) 
+const char *http_request(credentials *c, http_method method, const char *uri,
+		char *content_type, char **headers, int header_count,
+		postdata *data, ws_result* ws_result)
 {
 
   //    if(!curl_code) {
@@ -169,7 +179,6 @@ const char *http_request(credentials *c, http_method method, const char *uri, ch
     char date[256];
     char uidheader[HEADER_MAX];
     char dateheader[HEADER_MAX];
-    char groupaclheader[HEADER_MAX];
     char *endpoint_url = NULL;
     size_t endpoint_size;
     char errorbuffer[HEADER_MAX*HEADER_MAX];
@@ -192,10 +201,8 @@ const char *http_request(credentials *c, http_method method, const char *uri, ch
     get_date(date);
     snprintf(dateheader,HEADER_MAX,"X-Emc-Date:%s", date);
     snprintf(uidheader,HEADER_MAX,"X-Emc-Uid:%s",c->tokenid);    
-    snprintf(groupaclheader,HEADER_MAX,"X-Emc-groupacl:other=NONE");    
     headers[header_count++] = dateheader;
     //FIXME groupacl headers breaks sig string
-    headers[header_count++] = groupaclheader;
     headers[header_count++] = uidheader;
 
     if (!content_type) {
@@ -228,15 +235,12 @@ const char *http_request(credentials *c, http_method method, const char *uri, ch
 
 	case POST:
 	    curl_easy_setopt(curl, CURLOPT_HTTPPOST, 1l);	
-	    curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, 0L);
+	    curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE_LARGE, 0L);
 	    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, NULL);
 
 	    break;
 	case PUT:
 	    curl_easy_setopt(curl, CURLOPT_PUT, 1L); 
-	    curl_easy_setopt(curl, CURLOPT_READDATA, data);
-	    curl_easy_setopt(curl, CURLOPT_READFUNCTION, readfunc);
-
 	    break;
 	case aDELETE:
 	    curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE"); 
@@ -252,10 +256,20 @@ const char *http_request(credentials *c, http_method method, const char *uri, ch
 	}
 
 	if(data) {
-	  if(data->offset) {
-	    snprintf(range, HEADER_MAX, "Bytes=%lld-%lld", data->offset,data->offset+data->body_size-1);
-	  } else if(data->body_size) {
-	      snprintf(range, HEADER_MAX, "Bytes=0-%lld", data->body_size-1);
+	  if(data->offset >= 0) {
+	    snprintf(range, HEADER_MAX, "Bytes=%jd-%jd", (intmax_t)data->offset,
+	    		(intmax_t)(data->offset+data->body_size-1));
+	  }
+	  curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE_LARGE,
+			  (curl_off_t)data->body_size);
+
+	  /* If a stream handle is used, let libcurl handle the file I/O */
+	  if(data->data_stream) {
+		  curl_easy_setopt(curl, CURLOPT_READDATA, data->data_stream);
+		  curl_easy_setopt(curl, CURLOPT_READFUNCTION, NULL);
+	  } else {
+		  curl_easy_setopt(curl, CURLOPT_READDATA, data);
+		  curl_easy_setopt(curl, CURLOPT_READFUNCTION, readfunc);
 	  }
 	}
  
@@ -264,16 +278,16 @@ const char *http_request(credentials *c, http_method method, const char *uri, ch
 	  data->bytes_written=0;
 	  data->bytes_remaining=data->body_size;
 	  if(method != GET) {
-	    snprintf(content_length_header,HEADER_MAX, "content-length: %lld", data->body_size);
+	    snprintf(content_length_header,HEADER_MAX, "content-length: %jd",
+	    		(intmax_t)data->body_size);
 	    headers[header_count++]=content_length_header;
 	  }
 	  
-	  if(data->offset >0 ) {
+	  if(data->offset >= 0 ) {
 	      memset(range_header, 0, HEADER_MAX);
-	      snprintf(range_header, HEADER_MAX, "range: Bytes=%lld-%lld", data->offset,data->offset+data->body_size-1);
-	      headers[header_count++] = range_header;
-	  } else if(data->body_size) {
-	      snprintf(range_header, HEADER_MAX, "range: Bytes=0-%lld", data->body_size-1);
+	      snprintf(range_header, HEADER_MAX, "range: Bytes=%jd-%jd",
+	    		  (intmax_t)data->offset,
+	    		  (intmax_t)(data->offset+data->body_size-1));
 	      headers[header_count++] = range_header;
 	  }
 	}
@@ -312,7 +326,11 @@ const char *http_request(credentials *c, http_method method, const char *uri, ch
 	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &ws_result->return_code);
 	curl_easy_getinfo(curl, CURLINFO_CONTENT_TYPE, &ws_result->content_type);
 	/* dup it so we can free later */
-	ws_result->content_type = strdup(ws_result->content_type);
+	if(ws_result->content_type) {
+	    ws_result->content_type = strdup(ws_result->content_type);
+	} else {
+	    ws_result->content_type = NULL;
+	}
 
 	curl_easy_cleanup(curl);
 	curl_slist_free_all(chunk);

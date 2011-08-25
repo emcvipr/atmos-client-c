@@ -499,26 +499,31 @@ void truncate() {
     memcpy(pd.data, testfile, strlen(testfile));
     pd.body_size=strlen(testfile);
     //*** Create
+
+    result_init(&result);
     create_ns(c, testfile, NULL,NULL,  NULL, &result);
     result_deinit(&result);
   
+    result_init(&result);
     update_ns(c, testfile,NULL, NULL, &pd, NULL,&result);    
-
     result_deinit(&result);
 
+    result_init(&rd);
     rd.offset=31;
     rd.body_size=32;
     list_ns(c, testfile,&rd, 0, &result);
-    
     result_deinit(&result);
 
+    result_init(&result);
     update_ns(c, testfile, NULL, NULL, NULL, NULL, &result);
     result_deinit(&result);
 
+    result_init(&result);
     list_ns(c, testfile,&rd, 0, &result);  
     result_deinit(&result);
     //*** Delete
   
+    result_init(&result);
     delete_ns(c, testfile, &result);
     result_deinit(&result);
 

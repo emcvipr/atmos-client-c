@@ -1,8 +1,13 @@
 #ifndef __AOL_INIT__
 #define __AOL_INIT__
 
-#include "transport.h"
+/**
+ * @file atmos_rest.h
+ */
 
+#include "transport.h"
+#include "stdio.h"  /*FILE*/
+#include "unistd.h" /*off_t*/
 
 typedef struct requestval {
     credentials c;
@@ -83,16 +88,93 @@ extern const char* policyname;
 
 //Object - CRUD
 int create_obj(credentials *c, char *obj_id, char *content_type, acl *acl,user_meta *meta, ws_result *ws);
-
 int read_obj(credentials *c, char *object_id, postdata* d, int limit, ws_result* ws);
 int update_obj(credentials *c, char *object_id, char* content_type, acl* acl, postdata* data, user_meta* meta, ws_result *ws);
 int delete_obj(credentials *c, char *object_od, ws_result *ws);
 
-//Namespace
-void rename_ns(credentials *c, char * uri, char *new_uri, int force, ws_result *ws);
-void create_ns(credentials *c, char * uri, char *content_type, acl *acl, user_meta *meta, ws_result *ws);
-void list_ns(credentials *c, char * uri, postdata*d, int count, ws_result *ws);
-void update_ns(credentials *c, char * uri, char *content_type, acl *acl, postdata* data, user_meta *meta, ws_result *ws);
+/**
+ * Renames an object in the Atmos namespace.
+ * @param path The Atmos namespace path.  This should be the relative path of
+ * the object, e.g. /foo/bar.txt (not /rest/foo/bar.txt).
+ * @param new_path the new Atmos namespace path for the object.
+ * @param force if nonzero, the rename will overwrite an existing file if it
+ * exists.  Note that overwrite operations are not synchronous and there may
+ * be a slight delay before the rename is complete.
+ * @param ws result information from the operation, including the response
+ * body (if any).  Be sure to call init_ws on the object before calling and
+ * free_ws on the object after you're done with it.
+ * @return the HTTP response code from the operation.
+ */
+int rename_ns(credentials *c, char *path, char *new_path, int force, ws_result *ws);
+
+/**
+ * Creates a new object in the Atmos namespace
+ * @param c the Atmos credentials
+ * @param path The Atmos namespace path.  This should be the relative path of
+ * the object, e.g. /foo/bar.txt (not /rest/foo/bar.txt).
+ * @param data content for the object.  See the postdata structure for more
+ * information.  If NULL, an empty object will be created.
+ * @param content_type the MIME type of the object.  If NULL, the type will
+ * default to application/octet-stream.
+ * @param acl the ACL to apply to the object.  May be NULL.
+ * @param user_meta user metadata to apply to the object.  May be NULL.
+ * @param ws result information from the operation, including the response
+ * body (if any).  Be sure to call init_ws on the object before calling and
+ * free_ws on the object after you're done with it.
+ * @return the HTTP response code from the operation.
+ */
+int create_ns(credentials *c, char * uri, char *content_type, acl *acl,
+		postdata *data, user_meta *meta, ws_result *ws);
+
+
+/**
+ * Lists the contents of a directory in the Atmos namespace.
+ * @param c the Atmos credentials
+ * @param path The Atmos namespace path.  This should be the relative path of
+ * the directory, e.g. /foo/bar.txt (not /rest/foo/).  Note that Atmos
+ * directory objects always end in a slash.
+ * @param token if non-null, the x-emc-token to continue a directory listing
+ * with.
+ * @param limit if greater than zero, the maximum number of objects to return
+ * in a listing.
+ * @param include_meta if nonzero, metdata will be fetched with entries.
+ * @param user_tag_list if include_meta is set, you may optionally provide a
+ * list of comma-separated user metadata tags to fetch.
+ * @param system_tag_list if include_meta is set, you may optionally provide
+ * a list of comma-separated system metadata tags to fetch.
+ * @param ws result information from the operation, including the response
+ * body (if any).  Be sure to call init_ws on the object before calling and
+ * free_ws on the object after you're done with it.  Also be sure to check
+ * the value of the x-emc-token response header.  If it is not null, you need
+ * to call list_ns again with that token to continue your listing.
+ * @return the HTTP response code from the operation.
+ */
+int list_ns(credentials *c, char * uri, char *token, int limit, int include_meta,
+        char *user_tag_list, char *system_tag_list, ws_result *ws);
+
+/**
+ * Updates an object in the Atmos namespace
+ * @param c the Atmos credentials
+ * @param path The Atmos namespace path.  This should be the relative path of
+ * the object, e.g. /foo/bar.txt (not /rest/foo/bar.txt).
+ * @param data content for the object.  See the postdata structure for more
+ * information.  If NULL, an empty object will be created.
+ * @param content_type the MIME type of the object.  If NULL, the type will
+ * default to application/octet-stream.
+ * @param acl the ACL to apply to the object.  May be NULL.
+ * @param user_meta user metadata to apply to the object.  May be NULL.
+ * @param ws result information from the operation, including the response
+ * body (if any).  Be sure to call init_ws on the object before calling and
+ * free_ws on the object after you're done with it.
+ * @return the HTTP response code from the operation.
+ */
+int update_ns(credentials *c, char * uri, char *content_type, acl *acl,
+		postdata* data, user_meta *meta, ws_result *ws);
+
+int update_from_stream_ns(credentials *c, char *path, FILE *data, off_t offset,
+		off_t data_length, char *content_type, acl *acl, user_meta *meta,
+		ws_result *ws);
+
 int delete_ns(credentials *c, char *object_id, ws_result *ws);
 int set_meta_ns(credentials *c, const char *object_name, const char *key, const char *val);
 
@@ -100,6 +182,12 @@ int set_meta_ns(credentials *c, const char *object_name, const char *key, const 
  * Gets object metadata.  This issues a HEAD call against the object name and
  * fetches the object's metadata.  On success, pass the ws_result to
  * parse_headers if you want to extract the metadata.
+ * @param c The Atmos credentials
+ * @param object_name the object's path in the namespace
+ * @param ws result information from the operation, including the response
+ * body (if any).  Be sure to call init_ws on the object before calling and
+ * free_ws on the object after you're done with it.
+ * @return the HTTP response code from the operation.
  */
 int get_meta_ns(credentials *c,const char *object_name, ws_result *ws);
 
@@ -110,9 +198,6 @@ int set_acl_obj(credentials *c, char *objectid, acl* acl, ws_result *ws);
 int get_acl_obj(credentials *c, char *objectid, acl* acl, ws_result *ws);
 int get_info_obj(credentials *c, char *objectid, ws_result* ws);//returns object details - replica's etc
 int list_obj(credentials *c, char* objectid,char *tag, ws_result * ws); //retrieves all obj id's indexed by tag
-
-int get_sysmd_obj(credentials *c,const char *object_name, ws_result *ws);
-int get_usermd_obj();
 
 int set_meta_obj(credentials *c, const char *object_name, const char *key, const char *val);
 int get_meta_obj(credentials *c,const char *object_name);
@@ -133,8 +218,8 @@ credentials* init_ws(const char *user_id, const char *key, const char *endpoint)
 void free_ws(credentials *creds);
 
 //user meta data helpers
-user_meta* new_user_meta(char *key, char *value, int listable);
-void add_user_meta(user_meta *head, char *key, char *value, int listable);
+user_meta* new_user_meta(const char *key, const char *value, int listable);
+void add_user_meta(user_meta *head, const char *key, const char *value, int listable);
 void free_user_meta(user_meta *um);
 
 /**

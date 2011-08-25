@@ -81,16 +81,16 @@ Link (Librarian->General->Additional Library Directories)
 ..\curl-7.21.7\builds\libcurl-debug-static-ssl-dll-ipv6-sspi\lib
 
 
-
-
+Documentation
+-------------
+The documentation is embedded in the source using Doxygen format.  To generate
+the documentation, simply install doxygen and run 'doxygen Doxyfile'.  The 
+generated documentation can be accessed by opening html/index.html.
 
 
 Todo:
-object interface
-acl
 shared urls
 autoconf
-ACL support
 chunked transfer's
 
 

@@ -1,6 +1,12 @@
 #ifndef _AOL_TRANSPORT_H
 #define _AOL_TRANSPORT_H
 
+/**
+ * @file transport.h
+ */
+
+#include <stdio.h> /*FILE*/
+#include <unistd.h> /*off_t*/
 #include "atmos_util.h"
 
 #define CREDS_SIZE 255
@@ -10,16 +16,22 @@ typedef struct credentialsval {
     char accesspoint[CREDS_SIZE];
 } credentials;
 
-
-typedef struct PD {
-    char *data;
-    unsigned long long body_size;
-    unsigned long long bytes_remaining;
-    unsigned long long offset;
-    unsigned long long bytes_written;
+/**
+ * Contains request data to be sent to the server.  Note that data and
+ * data_stream are mutually exclusive.
+ */
+typedef struct {
+	/** @{ */
+    char *data; /** Character data to post */
+    FILE *data_stream; /** Stream data to post */
+    /** @} */
+    off_t body_size; /** Size of data or data_stream.  Required. */
+    off_t bytes_remaining; /** Bytes remaining to send. */
+    off_t offset; /** Offset inside the Atmos object.  Set to -1 to truncate */
+    off_t bytes_written; /** ? */
 }postdata;
 
-typedef struct hdrval {
+typedef struct {
     void *header_data;
     size_t header_size;
     void *next_header;
@@ -27,7 +39,7 @@ typedef struct hdrval {
 
 #define MAX_HEADERS 1024
 
-typedef struct ws_result {
+typedef struct {
     int return_code;
     char *response_body;
     size_t body_size;
@@ -43,10 +55,19 @@ typedef struct ws_result {
 #define false 0
 
 #define HTTP_HDR_SIZE 4096
-const char *http_request(credentials *c,http_method method, const char *uri,char * content_type, char **headers, int header_count, postdata* a, ws_result* ws_result) ;
-const char *http_request_ns(credentials *c,http_method method, const char *uri, char *content_type, char **headers, int header_count, postdata* a, ws_result *ws_result) ;
-void ws_init(ws_result*);
-void ws_deinit(ws_result*);
+
+const char *http_request(credentials *c,http_method method, const char *uri,
+		char * content_type, char **headers, int header_count, postdata* a,
+		ws_result* ws_result);
+
+const char *http_request_ns(credentials *c,http_method method, const char *uri,
+		char *content_type, char **headers, int header_count, postdata* a,
+		ws_result *ws_result);
+
+const char *http_request_ns(credentials *c,http_method method, const char *uri,
+		char *content_type, char **headers, int header_count, postdata* a,
+		ws_result *ws_result);
+
 void result_deinit(ws_result *result);
 void result_init(ws_result *result);
 void print_ws_result(ws_result *result);

@@ -171,6 +171,9 @@ int list_ns(credentials *c, char * uri, char *token, int limit, int include_meta
 int update_ns(credentials *c, char * uri, char *content_type, acl *acl,
 		postdata* data, user_meta *meta, ws_result *ws);
 
+
+int read_obj_ns(credentials *c, char *uri, postdata* d, ws_result* ws);
+
 int update_from_stream_ns(credentials *c, char *path, FILE *data, off_t offset,
 		off_t data_length, char *content_type, acl *acl, user_meta *meta,
 		ws_result *ws);

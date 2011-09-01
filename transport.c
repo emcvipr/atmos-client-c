@@ -264,9 +264,13 @@ const char *http_request(credentials *c, http_method method, const char *uri,
 			  (curl_off_t)data->body_size);
 
 	  /* If a stream handle is used, let libcurl handle the file I/O */
-	  if(data->data_stream) {
+	  if(data->data_stream && (method == POST || method == PUT)) {
 		  curl_easy_setopt(curl, CURLOPT_READDATA, data->data_stream);
 		  curl_easy_setopt(curl, CURLOPT_READFUNCTION, NULL);
+	  } else if(data->data_stream && method == GET) {
+	      /* Write to the stream */
+	      curl_easy_setopt(curl, CURLOPT_WRITEDATA, data->data_stream);
+	      curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, NULL);
 	  } else {
 		  curl_easy_setopt(curl, CURLOPT_READDATA, data);
 		  curl_easy_setopt(curl, CURLOPT_READFUNCTION, readfunc);

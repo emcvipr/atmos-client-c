@@ -187,12 +187,13 @@ const char *http_request(credentials *c, http_method method, const char *uri,
     char range[HEADER_MAX];
     char signature[HEADER_MAX];
     char content_type_header[HEADER_MAX];
-    int i;
+    int i, j;
     char *signed_hash = NULL;
     char content_length_header[HEADER_MAX];
     char range_header[HEADER_MAX];
     struct timeval start_time;
     struct timeval end_time;
+    char *encoded_uri;
     curl_global_init(CURL_GLOBAL_ALL);
 
     result_init(ws_result); //MUST DEALLOC
@@ -209,11 +210,35 @@ const char *http_request(credentials *c, http_method method, const char *uri,
 	content_type = "application/octet-stream";
     }
     
+    /* Encode the URI */
+    encoded_uri = (char*)malloc(strlen(uri)*3+1); /* Worst case if every char was encoded */
+    memset(encoded_uri, 0, strlen(uri)*3+1);
+
+    for(i=0,j=0; i<strlen(uri); i++) {
+        if(uri[i] == '/') {
+            encoded_uri[j++] = uri[i];
+        } else if(uri[i] == '?') {
+            /* Do the rest */
+            strcat(encoded_uri, uri+i);
+            break;
+        } else {
+            /* Encode the data */
+            char *encoded;
+            encoded = curl_easy_escape(curl, uri+i, 1);
+            strcat(encoded_uri, encoded);
+            curl_free(encoded);
+            j = strlen(encoded_uri);
+        }
+    }
+
     
-    endpoint_size = strlen(c->accesspoint)+strlen(uri) +1;
+    endpoint_size = strlen(c->accesspoint)+strlen(encoded_uri) +1;
     endpoint_url = (char*)malloc(endpoint_size);
     
-    snprintf(endpoint_url, endpoint_size, "%s%s", c->accesspoint, uri);
+    snprintf(endpoint_url, endpoint_size, "%s%s", c->accesspoint, encoded_uri);
+
+    /* Done with encoded version */
+    free(encoded_uri);
 
     // set up flags this should move into transport layercyrk
     if (curl) {

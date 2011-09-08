@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <time.h>
 
+
 #include "atmos_util.h"
 static const char *methods[] = {"POST", "GET","PUT", "DELETE","HEAD","OPTIONS"};
 int cstring_cmp(const void *a, const void *b)
@@ -61,8 +62,6 @@ int build_hash_string (char *hash_string, http_method method, const char *conten
 	    }
     }
     length = (int)(req_ptr-hash_string);
-    //printf("length %d", length);
-    //printf("%s\n", hash_string);
     free(loweruri);
     return length;
 

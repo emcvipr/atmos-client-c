@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
-#include <glib.h>
 #include "atmos_util.h"
 #include "atmos_rest.h"
 
@@ -95,6 +94,7 @@ void add_acl_headers(char *acl_header, acl *acllist) {
 
 void add_meta_headers(char **emc_listable, char **emc_meta, user_meta *meta) {
     user_meta *index = meta;
+    int emc_meta_loc = 0;
     for (; index != NULL; index = index->next) {
         char *value, *key;
         value = index->value;
@@ -106,7 +106,6 @@ void add_meta_headers(char **emc_listable, char **emc_meta, user_meta *meta) {
             value++;
 
         if (index->listable == false) {
-            int emc_meta_loc = 0;
             if (!*emc_meta) {
                 *emc_meta = malloc(8096);
                 memset(*emc_meta, 0, 8096);
@@ -118,7 +117,6 @@ void add_meta_headers(char **emc_listable, char **emc_meta, user_meta *meta) {
                 emc_meta_loc += sprintf((*emc_meta) + emc_meta_loc,
                         "X-Emc-Meta:%s=%s", key, value);
             }
-            g_debug("meta: %s", *emc_meta);
         } else if (index->listable == true) {
             int emc_listable_loc = 0;
             if (!*emc_listable) {
@@ -133,7 +131,6 @@ void add_meta_headers(char **emc_listable, char **emc_meta, user_meta *meta) {
                 emc_listable_loc += sprintf((*emc_listable) + emc_listable_loc,
                         "X-Emc-Listable-meta:%s=%s", key, value);
             }
-            g_debug("listable meta: %s", *emc_listable);
 
         }
     }

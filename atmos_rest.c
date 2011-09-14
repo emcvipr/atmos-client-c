@@ -11,8 +11,6 @@
  */
 const char *EMC_META_HDR_STR = "x-emc-meta: ";
 const char *EMC_USER_HDR_STR = "x-emc-user: ";
-//static const char *EMC_GROUPACL_HDR_STR = "x-emc-groupacl";
-//static const char *EMC_USERACL_HDR_STR = "x-emc-useracl";
 const char *EMC_LISTABLE_META_HDR_STR = "x-emc-listable-meta: ";
 
 const char* atime = "atime";
@@ -74,21 +72,65 @@ int rename_ns(credentials *c, char * uri, char *new_uri, int force,
     return ws->return_code;
 }
 
-void add_acl_headers(char *acl_header, acl *acllist) {
+/**
+ * Parses the acllist and populates the user and group ACLs if needed.
+ * @param user_acl [inout] The user ACL header.  If not populated, will be set
+ * to NULL on return.  If not NULL, pass to free() when done.
+ * @param group_acl [inout] The group ACL header.  If not populated, will be set
+ * to NULL on return.  If not NULL, pass to free() when done.
+ * @param acllist [in] the list of ACL elements.  May be NULL to use default
+ * ACL (uid=FULL_CONTROL,other=NONE).
+ */
+void add_acl_headers(char **user_acl, char **group_acl, acl *acllist) {
+    int user_offset = 0;
+    int group_offset = 0;
 
-    //end up with :
-    //x-emc-useracl: name=perm,name=perm
-    int offset = 0;
+    *user_acl = NULL;
+    *group_acl = NULL;
 
     if (!acllist)
         return;
 
-    offset = sprintf(acl_header, "x-emc-useracl:");
-    offset += sprintf(acl_header + offset, "%s=%s", acllist->user,
-            acllist->permission);
-    while ((acllist = acllist->next))
-        offset += sprintf(acl_header + offset, ",%s=%s", acllist->user,
-                acllist->permission);
+    //end up with :
+    //x-emc-useracl: name=perm,name=perm
+
+    while (acllist) {
+//        printf("Adding ACL: %s=%s, group: %d\n", acllist->user, acllist->permission, (int)acllist->is_group);
+
+        if(acllist->is_group) {
+            if(!(*group_acl)) {
+                // Init header for first element
+                *group_acl = malloc(ACL_SIZE);
+                group_offset = sprintf(*group_acl, "x-emc-groupacl:%s=%s",
+                        acllist->user,
+                        acllist->permission);
+            } else {
+                group_offset += sprintf((*group_acl) + group_offset, ",%s=%s",
+                        acllist->user,
+                        acllist->permission);
+            }
+        } else {
+            if(!(*user_acl)) {
+                // Init header for first element
+                *user_acl = malloc(ACL_SIZE);
+                user_offset = sprintf(*user_acl, "x-emc-useracl:%s=%s",
+                        acllist->user,
+                        acllist->permission);
+            } else {
+                user_offset += sprintf((*user_acl) + user_offset, ",%s=%s",
+                        acllist->user,
+                        acllist->permission);
+            }
+        }
+        acllist = acllist->next;
+    }
+
+//    if(*user_acl) {
+//        printf("User ACL: %s\n", *user_acl);
+//    }
+//    if(*group_acl) {
+//        printf("Group ACL: %s\n", *group_acl);
+//    }
 
 }
 
@@ -143,9 +185,10 @@ int create_ns(credentials *c, char * uri, char *content_type, acl *acl,
     http_method method = POST;
     char **headers = calloc(20, sizeof(char*));
     int header_count = 0;
-    char *acl_header = NULL;
     char *meta_listable_header = NULL;
     char *meta_header = NULL;
+    char *user_acl = NULL;
+    char *group_acl = NULL;
 
     if (data) {
         // No range on create requests
@@ -153,11 +196,13 @@ int create_ns(credentials *c, char * uri, char *content_type, acl *acl,
     }
 
     if (acl) {
-        acl_header = malloc(1024);
-        memset(acl_header, 0, 1024);
-        headers[header_count] = acl_header;
-        add_acl_headers(headers[header_count], acl);
-        header_count++;
+        add_acl_headers(&user_acl, &group_acl, acl);
+        if(user_acl) {
+            headers[header_count++] = user_acl;
+        }
+        if(group_acl) {
+            headers[header_count++] = group_acl;
+        }
     }
 
     if (meta) {
@@ -173,8 +218,10 @@ int create_ns(credentials *c, char * uri, char *content_type, acl *acl,
     http_request_ns(c, method, uri, content_type, headers, header_count, data,
             ws);
 
-    if (acl_header)
-        free(acl_header);
+    if(user_acl)
+        free(user_acl);
+    if(group_acl)
+        free(group_acl);
     if (meta_listable_header)
         free(meta_listable_header);
     if (meta_header)
@@ -190,15 +237,20 @@ int update_ns(credentials *c, char * uri, char *content_type, acl *acl,
 
     char **headers = calloc(20, sizeof(char*));
     http_method method = PUT;
-    char *acl_header = NULL;
     char *meta_listable_header = NULL;
     char *meta_header = NULL;
+    char *user_acl = NULL;
+    char *group_acl = NULL;
 
     int header_count = 0;
     if (acl) {
-        headers[header_count] = malloc(1024);
-        add_acl_headers(headers[header_count], acl);
-        header_count++;
+        add_acl_headers(&user_acl, &group_acl, acl);
+        if(user_acl) {
+            headers[header_count++] = user_acl;
+        }
+        if(group_acl) {
+            headers[header_count++] = group_acl;
+        }
     }
     if (meta) {
         add_meta_headers(&meta_listable_header, &meta_header, meta);
@@ -213,8 +265,10 @@ int update_ns(credentials *c, char * uri, char *content_type, acl *acl,
     http_request_ns(c, method, uri, content_type, headers, header_count, data,
             ws);
 
-    if (acl_header)
-        free(acl_header);
+    if(user_acl)
+        free(user_acl);
+    if(group_acl)
+        free(group_acl);
     if (meta_listable_header)
         free(meta_listable_header);
     if (meta_header)
@@ -505,17 +559,20 @@ int create_obj(credentials *c, char *obj_id, char *content_type, acl *acl,
     http_method method = POST;
     char **headers = calloc(20, sizeof(char*));
     int header_count = 0;
-    char *acl_header = NULL;
     char *meta_listable_header = NULL;
     char *meta_header = NULL;
     char *obj_uri = "/rest/objects";
+    char *user_acl = NULL;
+    char *group_acl = NULL;
 
     if (acl) {
-        acl_header = malloc(1024);
-        memset(acl_header, 0, 1024);
-        headers[header_count] = acl_header;
-        add_acl_headers(headers[header_count], acl);
-        header_count++;
+        add_acl_headers(&user_acl, &group_acl, acl);
+        if(user_acl) {
+            headers[header_count++] = user_acl;
+        }
+        if(group_acl) {
+            headers[header_count++] = group_acl;
+        }
     }
 
     if (meta) {
@@ -531,8 +588,10 @@ int create_obj(credentials *c, char *obj_id, char *content_type, acl *acl,
             ws);
     get_object_id(ws->headers, ws->header_count, obj_id);
 
-    if (acl_header)
-        free(acl_header);
+    if(user_acl)
+        free(user_acl);
+    if(group_acl)
+        free(group_acl);
     if (meta_listable_header)
         free(meta_listable_header);
     if (meta_header)
@@ -600,17 +659,22 @@ int update_obj(credentials *c, char *object_id, char* content_type, acl* acl,
 
     char **headers = calloc(20, sizeof(char*));
     http_method method = PUT;
-    char *acl_header = NULL;
     char *meta_listable_header = NULL;
     char *meta_header = NULL;
     char *object_path = "/rest/objects/";
     char *obj_uri;
+    char *user_acl = NULL;
+    char *group_acl = NULL;
 
     int header_count = 0;
     if (acl) {
-        headers[header_count] = malloc(1024);
-        add_acl_headers(headers[header_count], acl);
-        header_count++;
+        add_acl_headers(&user_acl, &group_acl, acl);
+        if(user_acl) {
+            headers[header_count++] = user_acl;
+        }
+        if(group_acl) {
+            headers[header_count++] = group_acl;
+        }
     }
     if (meta) {
         //add meta headers on create
@@ -621,8 +685,10 @@ int update_obj(credentials *c, char *object_id, char* content_type, acl* acl,
     http_request(c, method, obj_uri, content_type, headers, header_count, data,
             ws);
 
-    if (acl_header)
-        free(acl_header);
+    if(user_acl)
+        free(user_acl);
+    if(group_acl)
+        free(group_acl);
     if (meta_listable_header)
         free(meta_listable_header);
     if (meta_header)

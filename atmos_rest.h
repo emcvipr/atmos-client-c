@@ -21,9 +21,19 @@ typedef struct requestval {
     char * signature;
 } request;
 
-typedef struct ACLval {
-    char user[1024];
-    char permission[1024];
+#define ACL_GROUP_PUBLIC "other"
+#define ACL_READ "READ"
+#define ACL_WRITE "WRITE"
+#define ACL_FULL "FULL_CONTROL"
+#define ACL_NONE "NONE"
+
+/**
+ * Linked list that defines ACL entries
+ */
+typedef struct {
+    char user[512]; /* The user (or group) name */
+    char permission[32]; /* READ, WRITE, FULL_CONTROL, or NONE */
+    char is_group; /* If true, this is a group ACL, not a user ACL */
     void *next;
 } acl;
 
@@ -37,6 +47,9 @@ typedef struct sys_info {
 #define POLICYSIZE  44
 #define GIDSIZE  44
 #define OBJECTIDSIZE  45
+
+/* Size to allocate for serializing ACL headers */
+#define ACL_SIZE 1024
 
 typedef struct System_meta {
     char atime[TIMESIZE];

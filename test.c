@@ -71,12 +71,15 @@ void testbuildhashstring() {
 void aol_rename() {
     credentials *c = init_ws(user_id, key, endpoint);
     ws_result result;
+    postdata pd;
     char *obj = "/rename_test_object1/a/1/a";
     char *renamed_obj = "1renamed_object";
-	char *renamed_obj1 = "/1renamed_object";
+    char *renamed_obj1 = "/1renamed_object";
+
+    memset(&pd, 0, sizeof(postdata));
 
     //*** Create
-    create_ns(c, obj, NULL,NULL,  NULL, &result);
+    create_ns(c, obj, NULL, NULL, &pd, NULL, &result);
     printf("code: %d==201\t%s\n", result.return_code, result.response_body);
     result_deinit(&result);
     
@@ -118,20 +121,19 @@ int api_testing(){
     char *body2 = NULL;
 
     //*** Create
-  
-    create_ns(c, testdir, NULL,NULL,  NULL, &result);
+    memset(&d, 0, sizeof(postdata));
+    create_ns(c, testdir, NULL, NULL, &d, NULL, &result);
     printf("code: %d==201\t%s\n", result.return_code, result.response_body);
     result_deinit(&result);
 
 
     //*** LIST
-  
-    list_ns(c, testdir,NULL, 0,&result);    
+    list_ns(c, testdir, NULL, 0, 0, NULL, NULL, &result);
     //result body size is not NULL terminated - could be binary
     body = (char*)malloc(result.body_size+1);
     memcpy(body, result.response_body, result.body_size);
     body[result.body_size] = '\0';
-    printf("datum%d:%s\n", result.body_size,body);
+    printf("datum %ld:%s\n", (long)result.body_size, body);
     printf("code: %d==200\n", result.return_code);
     assert(result.return_code ==200);
     free(body);    
@@ -149,14 +151,14 @@ int api_testing(){
     result_deinit(&result);
 
     //*** LIST
-  
-    list_ns(c, testdir, NULL, 0,&result);    
+    list_ns(c, testdir, NULL, 0, 0, NULL, NULL, &result);
     printf("code: %d==404\n", result.return_code);
     assert(result.return_code ==404);
     result_deinit(&result);
 
     //*** Create  
-    create_ns(c, testdir, NULL,NULL,  NULL, &result);
+    memset(&d, 0, sizeof(postdata));
+    create_ns(c, testdir, NULL, NULL, &d, NULL, &result);
     printf("created %s\tcode: %d==201\t%s\n", testdir,result.return_code, result.response_body);
     assert(result.return_code ==201);
     result_deinit(&result);
@@ -177,20 +179,19 @@ int api_testing(){
 #else
     sleep(5);
 #endif    
-	result_init(&result);
-	update_ns(c, testdir,NULL, NULL, &d, NULL,&result);    
+    result_init(&result);
+    update_ns(c, testdir,NULL, NULL, &d, NULL,&result);
     printf("%s\tupdate code: %d==200\t%s\n", testdir,result.return_code, result.response_body);
     assert(result.return_code ==200);
     result_deinit(&result);
 
     //*** LIST
-  
-    list_ns(c, testdir,NULL, 0,&result);    
+    list_ns(c, testdir, NULL, 0, 0, NULL, NULL, &result);
     
     body2 = (char*)malloc(result.body_size+1);
     memcpy(body2, result.response_body, result.body_size);
     body2[result.body_size] = '\0';
-    printf("datum%d:%s\n", result.body_size,body2);
+    printf("datum %ld:%s\n", (long)result.body_size,body2);
     free(body2);
     printf("code: %d\n", result.return_code);
     result_deinit(&result);
@@ -202,8 +203,7 @@ int api_testing(){
     result_deinit(&result);
 
     //*** LIST
-  
-    list_ns(c, testdir,NULL, 0, &result);    
+    list_ns(c, testdir, NULL, 0, 0, NULL, NULL, &result);
     printf("code: %d\n", result.return_code);
     result_deinit(&result);
     free(c);
@@ -220,8 +220,9 @@ void simple_update() {
     postdata d;
     char *body2 = NULL;
 
-    //*** Create  
-    create_ns(c, testdir, NULL,NULL,  NULL, &result);
+    //*** Create
+    memset(&d, 0, sizeof(postdata));
+    create_ns(c, testdir, NULL, NULL, &d, NULL, &result);
     printf("code: %d==201\n", result.return_code);
     result_deinit(&result);
 
@@ -266,11 +267,12 @@ void set_meta_data() {
     user_meta meta,meta1, meta2, meta3;
     user_meta *um = NULL;
     system_meta sm;
-	user_meta *t;
+    user_meta *t;
+    postdata d;
 
     //*** Create
-  
-    create_ns(c, testdir, NULL,NULL,  NULL, &result);
+    memset(&d, 0, sizeof(postdata));
+    create_ns(c, testdir, NULL,NULL, &d, NULL, &result);
     printf("code: %d\n", result.return_code);
     result_deinit(&result);
     t = new_user_meta("meta_test", "meta_pass", 1);
@@ -287,7 +289,7 @@ void set_meta_data() {
     printf("send metadata\n");
 
   
-    list_ns(c, testdir, NULL, 0, &result);    
+    list_ns(c, testdir, NULL, 0, 0, NULL, NULL, &result);
     
     printf("fetched` metadata\n");
     
@@ -317,20 +319,23 @@ void create_test() {
     ws_result result;
     char *testdir="/FUSETEST";
     system_meta sm;
-    user_meta *um = NULL;	
-    //*** Create
+    user_meta *um = NULL;
+    postdata d;
 
-  
-    create_ns(c, testdir, NULL,NULL,  NULL, &result);
+
+
+    //*** Create
+    memset(&d, 0, sizeof(postdata));
+    create_ns(c, testdir, NULL, NULL, &d, NULL, &result);
     printf("result %d\n", result.return_code);
     result_deinit(&result);
 
   
-    create_ns(c, testdir, NULL,NULL,  NULL, &result);
+    create_ns(c, testdir, NULL, NULL, &d, NULL, &result);
     printf("result %d\n ", result.return_code);
     result_deinit(&result);
   
-    list_ns(c, testdir, NULL, 0, &result);
+    list_ns(c, testdir, NULL, 0, 0, NULL, NULL, &result);
 
     memset(&sm, 0, sizeof(sm));
     parse_headers(&result, &sm, &um);
@@ -355,10 +360,11 @@ void list() {
     char big_data[2048];
     const int bd_size = 2048;
     postdata d;
-  	char *char_response_bucket= NULL;
+    char *char_response_bucket= NULL;
 
 
-    create_ns(c, testdir, NULL,NULL,  NULL, &result);
+    memset(&d, 0, sizeof(postdata));
+    create_ns(c, testdir, NULL, NULL, &d, NULL, &result);
     printf("%d\n", result.return_code);
     result_deinit(&result);
     //*** UPDATE  
@@ -374,7 +380,7 @@ void list() {
 
 
     for(loops;loops < 10; loops++) { 
-	list_ns(c, testdir, NULL, 0,&result);    
+        list_ns(c, testdir, NULL, 0, 0, NULL, NULL, &result);
 	if(result.response_body){
 	    char_response_bucket = malloc(result.body_size+1);
 	    memcpy(char_response_bucket, result.response_body, result.body_size);
@@ -396,15 +402,16 @@ void capstest() {
     ws_result result;
     char *testdir="/IAMCAPS";
     system_meta sm;
-    user_meta *um = NULL;	
-    //*** Create
+    user_meta *um = NULL;
+    postdata d;
 
-  
-    create_ns(c, testdir, NULL,NULL,  NULL, &result);
+    //*** Create
+    memset(&d, 0, sizeof(postdata));
+    create_ns(c, testdir, NULL, NULL, &d, NULL, &result);
     result_deinit(&result);
 
   
-    list_ns(c, testdir, NULL, 0, &result);
+    list_ns(c, testdir, NULL, 0, 0, NULL, NULL, &result);
     memset(&sm, 0, sizeof(sm));
     parse_headers(&result, &sm, &um);
     result_deinit(&result);
@@ -413,7 +420,6 @@ void capstest() {
   
     delete_ns(c, testdir, &result);
     result_deinit(&result);
-
 
     free(c);
 
@@ -439,28 +445,21 @@ void rangestest() {
 
     //*** Create
   
-    create_ns(c, testdir, NULL,NULL,  NULL, &result);
-    result_deinit(&result);
-    
-
-  
-    update_ns(c, testdir,NULL, NULL, &pd, NULL,&result);    
-
+    create_ns(c, testdir, NULL, NULL, &pd, NULL, &result);
     result_deinit(&result);
 
     //Now grow the object
     memset(pd.data,1, 32);
     pd.body_size=32;
     pd.offset=31;
-
-  
     update_ns(c, testdir,NULL, NULL, &pd, NULL,&result);    
     result_deinit(&result);
 
   
     rd.offset=31;
     rd.body_size=32;
-    list_ns(c, testdir,&rd, 0, &result);
+    read_obj_ns(c, testdir, &rd, &result);
+
     memset(&sm, 0, sizeof(sm));
     parse_headers(&result, &sm, &um);
     while(um != NULL) {
@@ -472,7 +471,6 @@ void rangestest() {
     result_deinit(&result);
 
     //*** Delete
-  
     delete_ns(c, testdir, &result);
     result_deinit(&result);
 
@@ -481,8 +479,8 @@ void rangestest() {
 
 
 }
-void truncate() {
 
+void truncate_obj() {
     credentials *c = init_ws(user_id, key, endpoint);
     ws_result result;
     char *testfile="/truncate";
@@ -501,17 +499,17 @@ void truncate() {
     //*** Create
 
     result_init(&result);
-    create_ns(c, testfile, NULL,NULL,  NULL, &result);
+    create_ns(c, testfile, NULL,NULL, NULL, NULL, &result);
     result_deinit(&result);
   
     result_init(&result);
     update_ns(c, testfile,NULL, NULL, &pd, NULL,&result);    
     result_deinit(&result);
 
-    result_init(&rd);
+    memset(&rd, 0, sizeof(postdata));
     rd.offset=31;
     rd.body_size=32;
-    list_ns(c, testfile,&rd, 0, &result);
+    read_obj_ns(c, testfile, &rd, &result);
     result_deinit(&result);
 
     result_init(&result);
@@ -519,7 +517,7 @@ void truncate() {
     result_deinit(&result);
 
     result_init(&result);
-    list_ns(c, testfile,&rd, 0, &result);  
+    read_obj_ns(c, testfile, &rd, &result);
     result_deinit(&result);
     //*** Delete
   
@@ -538,20 +536,28 @@ void testacl() {
     ws_result result;
     char *obj = "/rename_test_object1";
     char *renamed_obj = "1renamed_object";
-	acl *acllist, *acllist2;
+	acl *acllist, *acllist2, *acllist3;
     
     acllist = (acl*)malloc(sizeof(acl));
     memset(acllist, 0, sizeof(acl));
-    sprintf(acllist->user,"john");
-    sprintf(acllist->permission,"FULL_CONTROL");
+    strcpy(acllist->user,"john");
+    strcpy(acllist->permission, ACL_FULL);
+
     acllist2 = (acl*)malloc(sizeof(acl));
     memset(acllist2, 0, sizeof(acl));
     acllist->next = acllist2;
-    sprintf(acllist2->user,"mary");
-    sprintf(acllist2->permission,"READ");
+    strcpy(acllist2->user,"mary");
+    strcpy(acllist2->permission, ACL_READ);
+
+    acllist3 = (acl*)malloc(sizeof(acl));
+    memset(acllist3, 0, sizeof(acl));
+    acllist2->next = acllist3;
+    acllist3->is_group = 1;
+    strcpy(acllist3->user, ACL_GROUP_PUBLIC);
+    strcpy(acllist3->permission, ACL_READ);
     
     //*** Create acl
-    create_ns(c, obj, NULL,acllist,  NULL, &result);
+    create_ns(c, obj, NULL, acllist, NULL, NULL, &result);
     printf("code: %d==201\t%s\n", result.return_code, result.response_body);
     result_deinit(&result);
     
@@ -563,10 +569,9 @@ void testacl() {
     free(acllist);
     free(acllist2);
     free(c);
-
 }
 
-void 	get_sys_info() {
+void get_sys_info() {
    credentials *c = init_ws(user_id, key, endpoint);
    ws_result result;
    get_service_info(c, &result);
@@ -582,7 +587,7 @@ int main() {
 	testacl();
 	set_meta_data();
 	testacl();
-	truncate();
+	truncate_obj();
 	api_testing();
 	list();
 	simple_update();

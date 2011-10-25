@@ -480,6 +480,70 @@ void rangestest() {
 
 }
 
+void rangestest_obj() {
+
+    credentials *c = init_ws(user_id, key, endpoint);
+    ws_result result;
+    char objid[OBJECTIDSIZE];
+    system_meta sm;
+    user_meta *um = NULL;
+    postdata pd;
+    postdata rd;
+    int i;
+
+    memset(objid, 0, OBJECTIDSIZE);
+    memset(&pd, 0, sizeof(pd));
+    memset(&rd, 0, sizeof(rd));
+
+    pd.data = malloc(32);
+    memset(pd.data,5, 32);
+    pd.body_size=32;
+    //pd.offset=31;
+
+    //*** Create
+
+    create_obj(c, objid, NULL, NULL, &pd, NULL, &result);
+    result_deinit(&result);
+
+    //Now grow the object
+    memset(pd.data,1, 32);
+    pd.body_size=32;
+    pd.offset=31;
+    update_obj(c, objid, NULL, NULL, &pd, NULL, &result);
+    result_deinit(&result);
+
+
+    printf("Reading back\n");
+    rd.offset=31;
+    rd.body_size=32;
+    read_obj(c, objid, &rd, &result);
+
+    // Check data
+    for(i=0; i<32; i++) {
+    	if(result.response_body[i] != 1) {
+    		printf("rangetest_obj offset %d got %d expected 1\n", i, result.response_body[i]);
+    	}
+    }
+
+    memset(&sm, 0, sizeof(sm));
+    parse_headers(&result, &sm, &um);
+    while(um != NULL) {
+	user_meta *t = um->next;
+	free(um);
+	um=t;
+    }
+
+    result_deinit(&result);
+
+    //*** Delete
+    delete_obj(c, objid, &result);
+    result_deinit(&result);
+
+    free(pd.data);
+    free(c);
+}
+
+
 void truncate_obj() {
     credentials *c = init_ws(user_id, key, endpoint);
     ws_result result;
@@ -579,6 +643,10 @@ void get_sys_info() {
    
 }
 int main() { 
+	printf("rangetest_obj\n");
+	rangestest_obj();
+	printf("-------------\n");
+
 
     if(user_id) {
 	get_sys_info();
@@ -593,6 +661,7 @@ int main() {
 	simple_update();
 
 	rangestest();
+
 	create_test();
 	capstest();
 	api_testing();

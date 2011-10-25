@@ -100,13 +100,34 @@ extern const char* nlink;
 extern const char* policyname;
 
 //Object - CRUD
-int create_obj(credentials *c, char *obj_id, char *content_type, acl *acl,user_meta *meta, ws_result *ws);
-int read_obj(credentials *c, char *object_id, postdata* d, int limit, ws_result* ws);
+
+/**
+ * Creates a new object in the Atmos object space
+ * @param c the Atmos credentials
+ * @param obj_id [out] pointer to receive the object id.  Should be at least
+ * OBJECTIDSIZE.
+ * @param data content for the object.  See the postdata structure for more
+ * information.  If NULL, an empty object will be created.
+ * @param content_type the MIME type of the object.  If NULL, the type will
+ * default to application/octet-stream.
+ * @param acl the ACL to apply to the object.  May be NULL.
+ * @param user_meta user metadata to apply to the object.  May be NULL.
+ * @param ws result information from the operation, including the response
+ * body (if any).  Be sure to call init_ws on the object before calling and
+ * free_ws on the object after you're done with it.
+ * @return the HTTP response code from the operation.
+ */
+int create_obj(credentials *c, char *obj_id, char *content_type, acl *acl,
+		postdata *data, user_meta *meta, ws_result *ws);
+
+int read_obj(credentials *c, char *object_id, postdata* d, ws_result* ws);
+
 int update_obj(credentials *c, char *object_id, char* content_type, acl* acl, postdata* data, user_meta* meta, ws_result *ws);
 int delete_obj(credentials *c, char *object_od, ws_result *ws);
 
 /**
  * Renames an object in the Atmos namespace.
+ * @param c the Atmos credentials
  * @param path The Atmos namespace path.  This should be the relative path of
  * the object, e.g. /foo/bar.txt (not /rest/foo/bar.txt).
  * @param new_path the new Atmos namespace path for the object.

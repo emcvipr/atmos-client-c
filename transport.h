@@ -40,7 +40,7 @@ typedef struct {
 #define MAX_HEADERS 1024
 
 typedef struct {
-    int return_code;
+    long return_code;
     char *response_body;
     size_t body_size;
     char *headers[MAX_HEADERS];

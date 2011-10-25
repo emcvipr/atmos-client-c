@@ -381,9 +381,11 @@ void parse_headers(ws_result* ws, system_meta* sm, user_meta** head_ptr_um) {
                     int meta_index = 0;
                     if (ptr_um) {
                         ptr_um->next = malloc(sizeof(user_meta));
+                        memset(ptr_um->next, 0, sizeof(user_meta));
                         ptr_um = ptr_um->next;
                     } else {
                         *head_ptr_um = malloc(sizeof(user_meta));
+                        memset(*head_ptr_um, 0, sizeof(user_meta));
                         ptr_um = *head_ptr_um;
                     }
                     memset(ptr_um, 0, sizeof(user_meta));
@@ -423,9 +425,11 @@ void parse_headers(ws_result* ws, system_meta* sm, user_meta** head_ptr_um) {
                 int meta_index = 0;
                 if (ptr_um) {
                     ptr_um->next = malloc(sizeof(user_meta));
+                    memset(ptr_um->next, 0, sizeof(user_meta));
                     ptr_um = ptr_um->next;
                 } else {
                     *head_ptr_um = malloc(sizeof(user_meta));
+                    memset(*head_ptr_um, 0, sizeof(user_meta));
                     ptr_um = *head_ptr_um;
                 }
                 memset(ptr_um, 0, sizeof(user_meta));

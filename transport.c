@@ -259,8 +259,8 @@ const char *http_request(credentials *c, http_method method, const char *uri,
 	switch(method) {
 
 	case POST:
-	    curl_easy_setopt(curl, CURLOPT_HTTPPOST, 1l);	
-	    curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE_LARGE, 0L);
+	    curl_easy_setopt(curl, CURLOPT_POST, 1l);
+	    curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE_LARGE, (curl_off_t)0L);
 	    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, NULL);
 
 	    break;

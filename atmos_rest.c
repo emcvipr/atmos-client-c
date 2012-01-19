@@ -558,7 +558,7 @@ void get_service_info(credentials *c, ws_result *result) {
 }
 
 int create_obj(credentials *c, char *obj_id, char *content_type, acl *acl,
-		postdata *data, user_meta *meta, ws_result *ws) {
+        user_meta *meta, ws_result *ws) {
 
     http_method method = POST;
     char **headers = calloc(20, sizeof(char*));
@@ -568,11 +568,6 @@ int create_obj(credentials *c, char *obj_id, char *content_type, acl *acl,
     char *obj_uri = "/rest/objects";
     char *user_acl = NULL;
     char *group_acl = NULL;
-
-    if (data) {
-        // No range on create requests
-        data->offset = -1;
-    }
 
     if (acl) {
         add_acl_headers(&user_acl, &group_acl, acl);
@@ -593,7 +588,7 @@ int create_obj(credentials *c, char *obj_id, char *content_type, acl *acl,
             headers[header_count++] = meta_header;
         }
     }
-    http_request(c, method, obj_uri, content_type, headers, header_count, data,
+    http_request(c, method, obj_uri, content_type, headers, header_count, NULL,
             ws);
     get_object_id(ws->headers, ws->header_count, obj_id);
 
@@ -606,8 +601,7 @@ int create_obj(credentials *c, char *obj_id, char *content_type, acl *acl,
     if (meta_header)
         free(meta_header);
     free(headers);
-
-    return ws->return_code;
+    return 1;
 }
 
 int delete_obj(credentials *c, char *obj, ws_result *ws) {
@@ -621,7 +615,8 @@ int delete_obj(credentials *c, char *obj, ws_result *ws) {
     return ws->return_code;
 }
 
-int read_obj(credentials *c, char *object_id, postdata* pd, ws_result* ws) {
+int read_obj(credentials *c, char *object_id, postdata* pd, int limit,
+        ws_result* ws) {
     char **headers;
     int count;
     char *object_path = "/rest/objects/";
@@ -632,6 +627,9 @@ int read_obj(credentials *c, char *object_id, postdata* pd, ws_result* ws) {
         method = GET;
     headers = (char**) calloc(20, sizeof(char*));
     count = 0;
+    if (limit) {
+        sprintf(headers[count++], "x-emc-limit: %d", limit);
+    }
     obj_uri = (char*) malloc(strlen(object_path) + strlen(object_id) + 1);
     sprintf(obj_uri, "%s%s", object_path, object_id);
     http_request(c, method, obj_uri, NULL, headers, count, pd, ws);

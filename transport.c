@@ -60,8 +60,77 @@ int gettimeofday(struct timeval *tv, struct timezone *tz)
 
 #define HEADER_MAX 1024
 
+typedef struct {
+	FILE *data;
+	struct timespec last_update;
+	off_t last_update_pos;
+} throt_read_data;
+
 static const char *namespace_uri = "/rest/namespace";
 //static const char *object_uri = "/rest/objects";
+
+#if 0
+/**
+ * Throttle the outgoing data with a 90% duty cycle.  We implement this by
+ * tracking the amount of time the last write took and then sleep for 10% of
+ * that before reading the next block of data.
+ */
+size_t readfunc_throttled(void *ptr, size_t size, size_t nmemb, void *stream) {
+	throt_read_data *data = (throt_read_data*)stream;
+	struct timespec now;
+	struct timespec sleeptime;
+
+	/* Get the current time */
+	clock_gettime(CLOCK_REALTIME, &now);
+//	g_debug("Now: %lld %ld Last: %lld %ld", (long long)now.tv_sec, now.tv_nsec,
+//			(long long)data->last_update.tv_sec, data->last_update.tv_nsec);
+
+	/* If this is the first read, we will not have any data yet */
+	if(data->last_update.tv_sec != 0) {
+		long long nsec = (now.tv_sec - data->last_update.tv_sec) * 1000000000;
+		nsec += now.tv_nsec - data->last_update.tv_nsec;
+
+		//g_debug("nsec: %lld", nsec);
+
+		// only sleep if we have more than 500ms has elapsed.
+		if(nsec>500000000) {
+			// Sleep 20% of the time
+			nsec /= 5;
+
+			// Cap it at 500ms (in case there's a lag spike>5s)
+			if(nsec>500000000) {
+				nsec = 500000000;
+			}
+
+			sleeptime.tv_sec = nsec/1000000000;
+			nsec -= nsec/1000000000;
+
+			sleeptime.tv_nsec = nsec;
+
+			//g_debug("Sleeping %lld sec %ld nsec", (long long)sleeptime.tv_sec, sleeptime.tv_nsec);
+			nanosleep(&sleeptime, NULL);
+
+			/*
+			 * Reset the last update now so we don't include the time
+			 * spent sleeping
+			 */
+			clock_gettime(CLOCK_REALTIME, &now);
+			data->last_update.tv_nsec = now.tv_nsec;
+			data->last_update.tv_sec = now.tv_sec;
+			data->last_update_pos = ftello(data->data);
+		}
+
+	} else {
+		data->last_update.tv_nsec = now.tv_nsec;
+		data->last_update.tv_sec = now.tv_sec;
+		data->last_update_pos = ftello(data->data);
+	}
+
+	return fread(ptr, size, nmemb, data->data);
+
+}
+#endif
+
 size_t readfunc(void *ptr, size_t size, size_t nmemb, void *stream)
 {
      if(stream) {
@@ -195,6 +264,7 @@ const char *http_request(credentials *c, http_method method, const char *uri,
     struct timeval end_time;
     char *encoded_uri;
     curl_global_init(CURL_GLOBAL_ALL);
+    throt_read_data *throt_data = NULL;
 
     result_init(ws_result); //MUST DEALLOC
 
@@ -256,6 +326,9 @@ const char *http_request(credentials *c, http_method method, const char *uri,
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, ws_result);
 	curl_easy_setopt(curl, CURLOPT_WRITEHEADER, ws_result);
 	
+	// For Telecom Italia -- Ignore self-signed certificate
+	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
+
 	switch(method) {
 
 	case POST:
@@ -292,6 +365,14 @@ const char *http_request(credentials *c, http_method method, const char *uri,
 	  if(data->data_stream && (method == POST || method == PUT)) {
 		  curl_easy_setopt(curl, CURLOPT_READDATA, data->data_stream);
 		  curl_easy_setopt(curl, CURLOPT_READFUNCTION, NULL);
+
+		  // Use a throttled upload
+//		  throt_data = malloc(sizeof(throt_read_data));
+//		  memset(throt_data, 0, sizeof(throt_read_data));
+//		  throt_data->data = data->data_stream;
+//		  curl_easy_setopt(curl, CURLOPT_READDATA, throt_data);
+//		  curl_easy_setopt(curl, CURLOPT_READFUNCTION, readfunc_throttled);
+
 	  } else if(data->data_stream && method == GET) {
 	      /* Write to the stream */
 	      curl_easy_setopt(curl, CURLOPT_WRITEDATA, data->data_stream);
@@ -363,6 +444,10 @@ const char *http_request(credentials *c, http_method method, const char *uri,
 
 	curl_easy_cleanup(curl);
 	curl_slist_free_all(chunk);
+
+	if(throt_data) {
+		free(throt_data);
+	}
     }
 
     free(endpoint_url);

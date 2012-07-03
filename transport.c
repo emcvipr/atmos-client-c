@@ -423,7 +423,14 @@ const char *http_request(credentials *c, http_method method, const char *uri,
 
 	gettimeofday(&start_time, NULL);
 	result_code = curl_easy_perform(curl);
-	gettimeofday(&end_time, NULL);	
+	gettimeofday(&end_time, NULL);
+
+	ws_result->curl_error_code = result_code;
+	if(result_code) {
+		ws_result->curl_error_message = curl_easy_strerror(result_code);
+	} else {
+		ws_result->curl_error_message = NULL;
+	}
 	
 	ws_result->duration_ms = end_time.tv_usec - start_time.tv_usec ;	
 	ws_result->duration_sec = end_time.tv_sec - start_time.tv_sec ;	

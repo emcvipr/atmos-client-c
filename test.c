@@ -12,15 +12,9 @@
 #include "atmos_rest.h"
 #include "crypto.h"
 
-/*    static const char *user_id = "whitewater";
-      static const char *key = "EIJHmj9JZSGVFQ2Hsl/scAsKm00=";
-      static const char *endpoint = "10.245.35.162";  //*/
-
-static const char *user_id = "9e21feebb9f5455f99cd1ad8c76ebe1e/EMC0056CC2B8DDD13D60";
-static const char *key = "1dz6W6m2GJLcF54xHQfkfyomPrA=";
-//static const char *endpoint = "127.0.0.1";//"accesspoint.emccis.com";//*/
-static const char *endpoint = "accesspoint.emccis.com";//*/
-
+static const char *user_id = NULL;
+static const char *key = NULL;
+static const char *endpoint = NULL;
 
 //hmac validater
 
@@ -578,10 +572,47 @@ void get_sys_info() {
    printf("%s\n", result.response_body);
    
 }
+
+void test_error() {
+   credentials *c = init_ws(user_id, key, "this.host.does.not.exist");
+   ws_result result;
+   printf("Testing bad hostname...");
+   get_service_info(c, &result);
+   if(result.return_code == 0) {
+	   if(result.curl_error_code == 6) {
+		   printf("OK\nHTTP: %ld CURLCode: %d CURL Error: %s\n", result.return_code, result.curl_error_code, result.curl_error_message);
+	   } else {
+		   printf("FAIL got code %d expected 6\nHTTP: %ld CURLCode: %d CURL Error: %s\n", result.curl_error_code, result.return_code, result.curl_error_code, result.curl_error_message);
+	   }
+   } else {
+	   printf("FAIL (Expected error)\nHTTP: %ld CURLCode: %d CURL Error: %s\n", result.return_code, result.curl_error_code, result.curl_error_message);
+   }
+   free_ws(c);
+
+   char badporthost[1024];
+   sprintf(badporthost, "%s:1443", endpoint);
+   //printf("badporthost: %s\n", badporthost);
+   c = init_ws(user_id, key, badporthost);
+   printf("Testing bad port (wait for timeout)...");
+   fflush(stdout);
+   get_service_info(c, &result);
+   if(result.return_code == 0) {
+	   if(result.curl_error_code == 7) {
+		   printf("OK\nHTTP: %ld CURLCode: %d CURL Error: %s\n", result.return_code, result.curl_error_code, result.curl_error_message);
+	   } else {
+		   printf("FAIL got code %d expected 7\nHTTP: %ld CURLCode: %d CURL Error: %s\n", result.curl_error_code, result.return_code, result.curl_error_code, result.curl_error_message);
+	   }
+   } else {
+	   printf("FAIL (Expected error)\nHTTP: %ld CURLCode: %d CURL Error: %s\n", result.return_code, result.curl_error_code, result.curl_error_message);
+   }
+   free_ws(c);
+}
+
 int main() { 
 
     if(user_id) {
 	get_sys_info();
+	test_error();
 	aol_rename();
 	set_meta_data();
 	testacl();

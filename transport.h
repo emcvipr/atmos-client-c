@@ -48,6 +48,8 @@ typedef struct {
     int duration_ms;
     int duration_sec;
     char *content_type;
+    int curl_error_code; /** If return_code is zero, you can check this to get the underlying error from cURL **/
+    char *curl_error_message;
 } ws_result;
 
 

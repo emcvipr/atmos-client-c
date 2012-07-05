@@ -575,6 +575,7 @@ void get_sys_info() {
 
 void test_error() {
    credentials *c = init_ws(user_id, key, "this.host.does.not.exist");
+   c->curl_verbose = 1;
    ws_result result;
    printf("Testing bad hostname...");
    get_service_info(c, &result);
@@ -587,12 +588,14 @@ void test_error() {
    } else {
 	   printf("FAIL (Expected error)\nHTTP: %ld CURLCode: %d CURL Error: %s\n", result.return_code, result.curl_error_code, result.curl_error_message);
    }
+   result_deinit(&result);
    free_ws(c);
 
    char badporthost[1024];
    sprintf(badporthost, "%s:1443", endpoint);
    //printf("badporthost: %s\n", badporthost);
    c = init_ws(user_id, key, badporthost);
+   c->curl_verbose = 1;
    printf("Testing bad port (wait for timeout)...");
    fflush(stdout);
    get_service_info(c, &result);
@@ -605,6 +608,7 @@ void test_error() {
    } else {
 	   printf("FAIL (Expected error)\nHTTP: %ld CURLCode: %d CURL Error: %s\n", result.return_code, result.curl_error_code, result.curl_error_message);
    }
+   result_deinit(&result);
    free_ws(c);
 }
 

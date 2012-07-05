@@ -325,7 +325,12 @@ const char *http_request(credentials *c, http_method method, const char *uri,
 	curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, &headerfunc);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, ws_result);
 	curl_easy_setopt(curl, CURLOPT_WRITEHEADER, ws_result);
+	curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, ws_result->curl_error_message);
 	
+	if(c->curl_verbose) {
+		curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
+	}
+
 	// For Telecom Italia -- Ignore self-signed certificate
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
 
@@ -426,11 +431,6 @@ const char *http_request(credentials *c, http_method method, const char *uri,
 	gettimeofday(&end_time, NULL);
 
 	ws_result->curl_error_code = result_code;
-	if(result_code) {
-		ws_result->curl_error_message = curl_easy_strerror(result_code);
-	} else {
-		ws_result->curl_error_message = NULL;
-	}
 	
 	ws_result->duration_ms = end_time.tv_usec - start_time.tv_usec ;	
 	ws_result->duration_sec = end_time.tv_sec - start_time.tv_sec ;	

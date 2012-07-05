@@ -32,6 +32,7 @@ credentials* init_ws(const char *user_id, const char *key, const char *endpoint)
     strncpy(c->tokenid, user_id, CREDS_SIZE);
     strncpy(c->secret, key, CREDS_SIZE);
     strncpy(c->accesspoint, endpoint, CREDS_SIZE);
+    c->curl_verbose = 0;
     return c;
 }
 

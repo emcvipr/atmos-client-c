@@ -250,7 +250,6 @@ const char *http_request(credentials *c, http_method method, const char *uri,
     char dateheader[HEADER_MAX];
     char *endpoint_url = NULL;
     size_t endpoint_size;
-    char errorbuffer[HEADER_MAX*HEADER_MAX];
     struct curl_slist *chunk = NULL;
     char hash_string[HEADER_MAX];
     char range[HEADER_MAX];
@@ -319,7 +318,6 @@ const char *http_request(credentials *c, http_method method, const char *uri,
 	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 0);
 	curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, connect_timeout);
 	curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1);
-	curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errorbuffer);
 	curl_easy_setopt(curl, CURLOPT_FAILONERROR, false);
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &writefunc);
 	curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, &headerfunc);

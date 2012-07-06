@@ -492,6 +492,7 @@ int get_meta_ns(credentials *c, const char *object_name, ws_result *ws) {
     http_request_ns(c, HEAD, object_name, NULL, headers, header_count, NULL,
             ws);
 
+    free(headers);
     return ws->return_code;
 }
 

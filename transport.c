@@ -223,7 +223,7 @@ void result_deinit(ws_result* result) {
 
 }
 
-const char *http_request_ns(credentials *c, http_method method, const char *uri,char *content_type, char **headers, int header_count, postdata * data, ws_result* ws_result) {
+const char *http_request_ns(credentials *c, http_method method, const char *uri, const char *content_type, char **headers, int header_count, postdata * data, ws_result* ws_result) {
 	
     char * ns_uri = NULL;
     ns_uri = (char*)malloc(strlen(uri)+strlen(namespace_uri)+1);    
@@ -234,7 +234,7 @@ const char *http_request_ns(credentials *c, http_method method, const char *uri,
 }
 
 const char *http_request(credentials *c, http_method method, const char *uri,
-		char *content_type, char **headers, int header_count,
+		const char *content_type, char **headers, int header_count,
 		postdata *data, ws_result* ws_result)
 {
 

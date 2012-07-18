@@ -100,10 +100,10 @@ extern const char* nlink;
 extern const char* policyname;
 
 //Object - CRUD
-int create_obj(credentials *c, char *obj_id, char *content_type, acl *acl,user_meta *meta, ws_result *ws);
+int create_obj(credentials *c, char *obj_id, const char *content_type, acl *acl,user_meta *meta, ws_result *ws);
 int read_obj(credentials *c, char *object_id, postdata* d, int limit, ws_result* ws);
-int update_obj(credentials *c, char *object_id, char* content_type, acl* acl, postdata* data, user_meta* meta, ws_result *ws);
-int delete_obj(credentials *c, char *object_od, ws_result *ws);
+int update_obj(credentials *c, char *object_id, const char* content_type, acl* acl, postdata* data, user_meta* meta, ws_result *ws);
+int delete_obj(credentials *c, char *object_id, ws_result *ws);
 
 /**
  * Renames an object in the Atmos namespace.
@@ -118,7 +118,8 @@ int delete_obj(credentials *c, char *object_od, ws_result *ws);
  * free_ws on the object after you're done with it.
  * @return the HTTP response code from the operation.
  */
-int rename_ns(credentials *c, char *path, char *new_path, int force, ws_result *ws);
+int rename_ns(credentials *c, const char *path, const char *new_path,
+		int force, ws_result *ws);
 
 /**
  * Creates a new object in the Atmos namespace
@@ -136,7 +137,7 @@ int rename_ns(credentials *c, char *path, char *new_path, int force, ws_result *
  * free_ws on the object after you're done with it.
  * @return the HTTP response code from the operation.
  */
-int create_ns(credentials *c, char * uri, char *content_type, acl *acl,
+int create_ns(credentials *c, const char * uri, const char *content_type, acl *acl,
 		postdata *data, user_meta *meta, ws_result *ws);
 
 
@@ -162,7 +163,7 @@ int create_ns(credentials *c, char * uri, char *content_type, acl *acl,
  * to call list_ns again with that token to continue your listing.
  * @return the HTTP response code from the operation.
  */
-int list_ns(credentials *c, char * uri, char *token, int limit, int include_meta,
+int list_ns(credentials *c, const char * uri, const char *token, int limit, int include_meta,
         char *user_tag_list, char *system_tag_list, ws_result *ws);
 
 /**
@@ -181,18 +182,13 @@ int list_ns(credentials *c, char * uri, char *token, int limit, int include_meta
  * free_ws on the object after you're done with it.
  * @return the HTTP response code from the operation.
  */
-int update_ns(credentials *c, char * uri, char *content_type, acl *acl,
+int update_ns(credentials *c, const char * uri, const char *content_type, acl *acl,
 		postdata* data, user_meta *meta, ws_result *ws);
 
 
-int read_obj_ns(credentials *c, char *uri, postdata* d, ws_result* ws);
+int read_obj_ns(credentials *c, const char *uri, postdata* d, ws_result* ws);
 
-int update_from_stream_ns(credentials *c, char *path, FILE *data, off_t offset,
-		off_t data_length, char *content_type, acl *acl, user_meta *meta,
-		ws_result *ws);
-
-int delete_ns(credentials *c, char *object_id, ws_result *ws);
-int set_meta_ns(credentials *c, const char *object_name, const char *key, const char *val);
+int delete_ns(credentials *c, const char *object_id, ws_result *ws);
 
 /**
  * Gets object metadata.  This issues a HEAD call against the object name and
@@ -208,22 +204,22 @@ int set_meta_ns(credentials *c, const char *object_name, const char *key, const 
 int get_meta_ns(credentials *c,const char *object_name, ws_result *ws);
 
 //namespace metadata
-int user_meta_ns(credentials *c, const char *uri, char * content_type, user_meta *meta, ws_result* ws);
+int user_meta_ns(credentials *c, const char *uri, const char * content_type, user_meta *meta, ws_result* ws);
 
-int set_acl_obj(credentials *c, char *objectid, acl* acl, ws_result *ws);
-int get_acl_obj(credentials *c, char *objectid, acl* acl, ws_result *ws);
-int get_info_obj(credentials *c, char *objectid, ws_result* ws);//returns object details - replica's etc
-int list_obj(credentials *c, char* objectid,char *tag, ws_result * ws); //retrieves all obj id's indexed by tag
+//int set_acl_obj(credentials *c, const char *objectid, acl* acl, ws_result *ws);
+//int get_acl_obj(credentials *c, const char *objectid, acl* acl, ws_result *ws);
+//int get_info_obj(credentials *c, char *objectid, ws_result* ws);//returns object details - replica's etc
+//int list_obj(credentials *c, char* objectid,char *tag, ws_result * ws); //retrieves all obj id's indexed by tag
 
-int set_meta_obj(credentials *c, const char *object_name, const char *key, const char *val);
-int get_meta_obj(credentials *c,const char *object_name);
+//int set_meta_obj(credentials *c, const char *object_name, const char *key, const char *val);
+//int get_meta_obj(credentials *c,const char *object_name);
 
 
 //versionining - new
-int create_version();
-int delete_version();
-int list_versions();
-int restore_version();
+//int create_version();
+//int delete_version();
+//int list_versions();
+//int restore_version();
 
 
 //Take a ws_result and break its headers into system and user meta structs

@@ -40,7 +40,7 @@ void free_ws(credentials *c) {
     free(c);
 }
 
-int rename_ns(credentials *c, char * uri, char *new_uri, int force,
+int rename_ns(credentials *c, const char * uri, const char *new_uri, int force,
         ws_result *ws) {
 
     static const char* rename = "?rename";
@@ -180,7 +180,7 @@ void add_meta_headers(char **emc_listable, char **emc_meta, user_meta *meta) {
 
 }
 
-int create_ns(credentials *c, char * uri, char *content_type, acl *acl,
+int create_ns(credentials *c, const char * uri, const char *content_type, acl *acl,
         postdata *data, user_meta *meta, ws_result *ws) {
 
     http_method method = POST;
@@ -233,7 +233,7 @@ int create_ns(credentials *c, char * uri, char *content_type, acl *acl,
     return ws->return_code;
 }
 
-int update_ns(credentials *c, char * uri, char *content_type, acl *acl,
+int update_ns(credentials *c, const char * uri, const char *content_type, acl *acl,
         postdata *data, user_meta *meta, ws_result *ws) {
 
     char **headers = calloc(20, sizeof(char*));
@@ -279,7 +279,7 @@ int update_ns(credentials *c, char * uri, char *content_type, acl *acl,
     return ws->return_code;
 }
 
-int list_ns(credentials *c, char * uri, char *token, int limit,
+int list_ns(credentials *c, const char * uri, const char *token, int limit,
         int include_meta, char *user_tag_list, char *system_tag_list,
         ws_result *ws) {
 
@@ -322,7 +322,7 @@ int list_ns(credentials *c, char * uri, char *token, int limit,
     return ws->return_code;
 }
 
-int delete_ns(credentials *c, char *uri, ws_result *ws) {
+int delete_ns(credentials *c, const char *uri, ws_result *ws) {
     http_method method = aDELETE;
     char **headers = calloc(20, sizeof(char*));
     http_request_ns(c, method, uri, NULL, headers, 0, NULL, ws);
@@ -459,7 +459,7 @@ void parse_headers(ws_result* ws, system_meta* sm, user_meta** head_ptr_um) {
     }
 }
 
-int user_meta_ns(credentials *c, const char *uri, char * content_type,
+int user_meta_ns(credentials *c, const char *uri, const char * content_type,
         user_meta *meta, ws_result * ws) {
     if (meta) {
         static const char* user_meta_uri = "?metadata/user";
@@ -559,8 +559,8 @@ void get_service_info(credentials *c, ws_result *result) {
     free(headers);
 }
 
-int create_obj(credentials *c, char *obj_id, char *content_type, acl *acl,
-        user_meta *meta, ws_result *ws) {
+int create_obj(credentials *c, char *obj_id, const char *content_type,
+		acl *acl, user_meta *meta, ws_result *ws) {
 
     http_method method = POST;
     char **headers = calloc(20, sizeof(char*));
@@ -640,7 +640,7 @@ int read_obj(credentials *c, char *object_id, postdata* pd, int limit,
     return ws->return_code;
 }
 
-int read_obj_ns(credentials *c, char *object_id, postdata* pd, ws_result* ws) {
+int read_obj_ns(credentials *c, const char *object_id, postdata* pd, ws_result* ws) {
     char **headers;
     int count;
     char *object_path = "/rest/namespace/";
@@ -660,7 +660,7 @@ int read_obj_ns(credentials *c, char *object_id, postdata* pd, ws_result* ws) {
 }
 
 
-int update_obj(credentials *c, char *object_id, char* content_type, acl* acl,
+int update_obj(credentials *c, char *object_id, const char* content_type, acl* acl,
         postdata* data, user_meta* meta, ws_result *ws) {
 
     char **headers = calloc(20, sizeof(char*));

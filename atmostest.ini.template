@@ -1,0 +1,5 @@
+subtenantid/uid, e.g. 6c91fae4fc1f427a9b101ae92d35b0b7/test1
+shared secret, e.g. AAasauJZjNuxJrR4et4BezrXyI=
+endpoint, e.g. https://api.atmosonline.com
+uid1 for acl testing, e.g. test1
+uid2 for acl testing, e.g. test2

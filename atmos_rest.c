@@ -29,16 +29,67 @@ const char* policyname = "policyname";
 credentials* init_ws(const char *user_id, const char *key, const char *endpoint) {
 
     credentials *c = malloc(sizeof(credentials));
+    memset(c, 0, sizeof(credentials));
     strncpy(c->tokenid, user_id, CREDS_SIZE);
     strncpy(c->secret, key, CREDS_SIZE);
     strncpy(c->accesspoint, endpoint, CREDS_SIZE);
     c->curl_verbose = 0;
+    c->proxy_port = -1;
     return c;
 }
 
 void free_ws(credentials *c) {
+	if(c->proxy_host) {
+		free(c->proxy_host);
+	}
+	if(c->proxy_user) {
+		free(c->proxy_user);
+	}
+	if(c->proxy_pass) {
+		free(c->proxy_pass);
+	}
     free(c);
 }
+
+/**
+ * Configures the given connection to use a proxy.
+ * @param c the Atmos credentials object
+ * @param proxy_host the host to proxy through.  Set to NULL to disable proxy
+ * support.
+ * @param proxy_port the proxy host.  Set to -1 to use the default port.
+ * @param proxy_user the user to authenticate against the proxy.  Set to NULL
+ * to disable proxy authentication.
+ * @param proxy_pass the password for the proxy user.
+ */
+void config_proxy(credentials *c, const char *proxy_host, int proxy_port,
+		const char *proxy_user, const char *proxy_pass) {
+	// Clear any existing proxy info first
+	if(c->proxy_host) {
+		free(c->proxy_host);
+		c->proxy_host = NULL;
+	}
+	if(c->proxy_user) {
+		free(c->proxy_user);
+		c->proxy_user = NULL;
+	}
+	if(c->proxy_pass) {
+		free(c->proxy_pass);
+		c->proxy_pass = NULL;
+	}
+
+	if(proxy_host) {
+		c->proxy_host = strdup(proxy_host);
+	}
+	c->proxy_port = proxy_port;
+	if(proxy_user) {
+		c->proxy_user = strdup(proxy_user);
+	}
+	if(proxy_pass) {
+		c->proxy_pass = strdup(proxy_pass);
+	}
+
+}
+
 
 int rename_ns(credentials *c, const char * uri, const char *new_uri, int force,
         ws_result *ws) {

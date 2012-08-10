@@ -22,6 +22,22 @@ char endpoint[255];
 char uid1[64];
 char uid2[64];
 
+// Proxy support
+char proxy_host[256];
+char proxy_user[256];
+char proxy_pass[256];
+int proxy_port;
+
+credentials *get_connection() {
+	credentials *c = init_ws(user_id, key, endpoint);
+
+	if(strlen(proxy_host)>0) {
+		config_proxy(c, proxy_host, proxy_port, proxy_user, proxy_pass);
+	}
+
+	return c;
+}
+
 void testhmac() {
 	const char
 			*teststring =
@@ -70,7 +86,7 @@ void testbuildhashstring() {
 }
 
 void aol_rename() {
-	credentials *c = init_ws(user_id, key, endpoint);
+	credentials *c = get_connection();
 	ws_result result;
 	postdata pd;
 	char *obj = "/rename_test_object1/a/1/a";
@@ -110,7 +126,7 @@ void aol_rename() {
 //cycle through series of tests creating,setting meta data updateing deleting and listing objects
 void api_testing() {
 
-	credentials *c = init_ws(user_id, key, endpoint);
+	credentials *c = get_connection();
 	ws_result result;
 	char *testdir = "/trash_test";
 	char *body = NULL;
@@ -205,7 +221,7 @@ void api_testing() {
 }
 
 void simple_update() {
-	credentials *c = init_ws(user_id, key, endpoint);
+	credentials *c = get_connection();
 	ws_result result;
 	char *testdir = "/updateest";
 	const int bd_size = 1024 * 64 + 2;// force boundary condistions in readfunction
@@ -252,7 +268,7 @@ void print_system_meta(system_meta sm) {
 
 void set_meta_data() {
 
-	credentials *c = init_ws(user_id, key, endpoint);
+	credentials *c = get_connection();
 	ws_result result;
 	char *testdir = "/Resources.tgz1";
 	user_meta *um = NULL;
@@ -303,7 +319,7 @@ void set_meta_data() {
 //create -> list -> delete
 void create_test() {
 
-	credentials *c = init_ws(user_id, key, endpoint);
+	credentials *c = get_connection();
 	ws_result result;
 	char *testdir = "/FUSETEST/";
 	system_meta sm;
@@ -338,7 +354,7 @@ void create_test() {
 }
 
 void list() {
-	credentials *c = init_ws(user_id, key, endpoint);
+	credentials *c = get_connection();
 
 	//char *testdir="/apache/A503558331078fce88fc/.mauiws/meta_test/";//
 	char *testdir = "/testdir/";
@@ -395,7 +411,7 @@ void list() {
 }
 
 void capstest() {
-	credentials *c = init_ws(user_id, key, endpoint);
+	credentials *c = get_connection();
 	ws_result result;
 	char *testdir = "/IAMCAPS";
 	system_meta sm;
@@ -426,7 +442,7 @@ void capstest() {
 
 void rangestest() {
 
-	credentials *c = init_ws(user_id, key, endpoint);
+	credentials *c = get_connection();
 	ws_result result;
 	char *testdir = "/test123456/afile2";
 	system_meta sm;
@@ -480,7 +496,7 @@ void rangestest() {
 }
 
 void truncate_obj() {
-	credentials *c = init_ws(user_id, key, endpoint);
+	credentials *c = get_connection();
 	ws_result result;
 	char *testfile = "/truncate";
 	char *testdata = "12345678901234567890123456789012"; // 32 bytes
@@ -539,7 +555,7 @@ void truncate_obj() {
 
 }
 void testacl() {
-	credentials *c = init_ws(user_id, key, endpoint);
+	credentials *c = get_connection();
 	ws_result result;
 	char *obj = "/acltest";
 	acl *acllist, *acllist2, *acllist3;
@@ -577,7 +593,7 @@ void testacl() {
 }
 
 void get_sys_info() {
-	credentials *c = init_ws(user_id, key, endpoint);
+	credentials *c = get_connection();
 	ws_result result;
 	get_service_info(c, &result);
 	assert_int_equal(200, result.return_code);
@@ -649,27 +665,48 @@ void test_error() {
 	free_ws(c);
 }
 
+void start_test_msg(const char *test_name) {
+	printf("\nTEST: %s\n", test_name);
+	printf("================\n");
+	fflush(stdout);
+}
+
 void all_tests(void) {
 	test_fixture_start();
+	start_test_msg("testbuildhashstring");
 	run_test(testbuildhashstring);
+	start_test_msg("testhmac");
 	run_test(testhmac);
+	start_test_msg("get_sys_info");
 	run_test(get_sys_info);
+	start_test_msg("test_error");
 	run_test(test_error);
+	start_test_msg("aol_rename");
 	run_test(aol_rename);
+	start_test_msg("set_meta_data");
 	run_test(set_meta_data);
+	start_test_msg("testacl");
 	run_test(testacl);
+	start_test_msg("truncate_obj");
 	run_test(truncate_obj);
+	start_test_msg("api_testing");
 	run_test(api_testing);
+	start_test_msg("list");
 	run_test(list);
+	start_test_msg("simple_update");
 	run_test(simple_update);
-
+	start_test_msg("rangestest");
 	run_test(rangestest);
+	start_test_msg("create_test");
 	run_test(create_test);
+	start_test_msg("capstest");
 	run_test(capstest);
 	test_fixture_end();
 }
 
 int main() {
+	char proxy_port_str[32];
+
 	FILE *config = fopen("atmostest.ini", "r");
 	if (!config) {
 		fprintf(stderr, "Error opening atmostest.ini: %s\n", strerror(errno));
@@ -686,6 +723,11 @@ int main() {
 	fgets(endpoint, 255, config);
 	fgets(uid1, 64, config);
 	fgets(uid2, 64, config);
+	fgets(proxy_host, 256, config);
+	fgets(proxy_port_str, 32, config);
+	fgets(proxy_user, 256, config);
+	fgets(proxy_pass, 256, config);
+
 
 	// Strip newlines
 	user_id[strlen(user_id) - 1] = 0;
@@ -693,6 +735,21 @@ int main() {
 	endpoint[strlen(endpoint) - 1] = 0;
 	uid1[strlen(uid1) - 1] = 0;
 	uid2[strlen(uid2) - 1] = 0;
+
+	if(strlen(proxy_host)>0) {
+		proxy_host[strlen(proxy_host)-1] = 0;
+	}
+	if(strlen(proxy_user)>0) {
+		proxy_user[strlen(proxy_user)-1] = 0;
+	}
+	if(strlen(proxy_pass)>0) {
+		proxy_pass[strlen(proxy_pass)-1] = 0;
+	}
+	if(strlen(proxy_port_str)>1) {
+		proxy_port = atoi(proxy_port_str);
+	} else {
+		proxy_port = -1;
+	}
 
 	fclose(config);
 
@@ -704,6 +761,11 @@ int main() {
 	printf("endpoint: %s\n", endpoint);
 	printf("uid1: %s\n", uid1);
 	printf("uid2: %s\n", uid2);
+	printf("proxy_host: %s\n", proxy_host);
+	printf("proxy_port: %d\n", proxy_port);
+	printf("proxy_user: %s\n", proxy_user);
+	printf("proxy_pass: %s\n", proxy_pass);
+	fflush(stdout);
 
 	if (strlen(user_id) < 1) {
 		fprintf(stderr, "user_id unset.  Check atmostest.ini\n");

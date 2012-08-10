@@ -229,6 +229,19 @@ void parse_headers(ws_result*, system_meta*, user_meta**);
 credentials* init_ws(const char *user_id, const char *key, const char *endpoint);
 void free_ws(credentials *creds);
 
+/**
+ * Configures the given connection to use a proxy.
+ * @param c the Atmos credentials object
+ * @param proxy_host the host to proxy through.  Set to NULL to disable proxy
+ * support.
+ * @param proxy_port the proxy host.  Set to -1 to use the default port.
+ * @param proxy_user the user to authenticate against the proxy.  Set to NULL
+ * to disable proxy authentication.
+ * @param proxy_pass the password for the proxy user.
+ */
+void config_proxy(credentials *c, const char *proxy_host, int proxy_port,
+		const char *proxy_user, const char *proxy_pass);
+
 //user meta data helpers
 user_meta* new_user_meta(const char *key, const char *value, int listable);
 void add_user_meta(user_meta *head, const char *key, const char *value, int listable);

@@ -332,6 +332,20 @@ const char *http_request(credentials *c, http_method method, const char *uri,
 	// For Telecom Italia -- Ignore self-signed certificate
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
 
+	// Proxy support
+	if(c->proxy_host != NULL) {
+		curl_easy_setopt(curl, CURLOPT_PROXY, c->proxy_host);
+		if(c->proxy_port != -1) {
+			curl_easy_setopt(curl, CURLOPT_PROXYPORT, c->proxy_port);
+		}
+		if(c->proxy_user != NULL) {
+			curl_easy_setopt(curl, CURLOPT_PROXYUSERNAME, c->proxy_user);
+			if(c->proxy_pass != NULL) {
+				curl_easy_setopt(curl, CURLOPT_PROXYPASSWORD, c->proxy_pass);
+			}
+		}
+	}
+
 	switch(method) {
 
 	case POST:

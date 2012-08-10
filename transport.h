@@ -16,6 +16,10 @@ typedef struct credentialsval {
     char secret[CREDS_SIZE];
     char accesspoint[CREDS_SIZE];
     int curl_verbose;
+    char *proxy_host; // NULL = disabled
+    int proxy_port; // -1 = default
+    char *proxy_user; // NULL = no auth
+    char *proxy_pass;
 } credentials;
 
 /**

@@ -339,10 +339,18 @@ const char *http_request(credentials *c, http_method method, const char *uri,
 			curl_easy_setopt(curl, CURLOPT_PROXYPORT, c->proxy_port);
 		}
 		if(c->proxy_user != NULL) {
+#if LIBCURL_VERSION_NUM > 0x071300
 			curl_easy_setopt(curl, CURLOPT_PROXYUSERNAME, c->proxy_user);
 			if(c->proxy_pass != NULL) {
 				curl_easy_setopt(curl, CURLOPT_PROXYPASSWORD, c->proxy_pass);
 			}
+#else
+			// Old way; doesn't accept users with ":" in it (e.g. sip:user@host)
+			char auth[HEADER_MAX];
+			sprintf(auth, "%s:%s", c->proxy_user,
+					c->proxy_pass?c->proxy_pass:"");
+			curl_easy_setopt(curl, CURLOPT_PROXYUSERPWD, auth);
+#endif
 		}
 	}
 

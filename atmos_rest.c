@@ -189,6 +189,7 @@ void add_acl_headers(char **user_acl, char **group_acl, acl *acllist) {
 void add_meta_headers(char **emc_listable, char **emc_meta, user_meta *meta) {
     user_meta *index = meta;
     int emc_meta_loc = 0;
+    int emc_listable_loc = 0;
     for (; index != NULL; index = index->next) {
         char *value, *key;
         value = index->value;
@@ -212,7 +213,6 @@ void add_meta_headers(char **emc_listable, char **emc_meta, user_meta *meta) {
                         "X-Emc-Meta:%s=%s", key, value);
             }
         } else if (index->listable == true) {
-            int emc_listable_loc = 0;
             if (!*emc_listable) {
                 *emc_listable = malloc(8096);
                 memset(*emc_listable, 0, 8096);
@@ -522,6 +522,13 @@ int user_meta_ns(credentials *c, const char *uri, const char * content_type,
         sprintf(meta_uri, "%s%s", uri, user_meta_uri);
 
         add_meta_headers(&listable_meta, &unlistable_meta, meta);
+
+        if (listable_meta) {
+        	headers[header_count++] = listable_meta;
+        }
+        if (unlistable_meta) {
+        	headers[header_count++] = unlistable_meta;
+        }
 
         http_request_ns(c, POST, meta_uri, content_type, headers, header_count,
                 NULL, ws);

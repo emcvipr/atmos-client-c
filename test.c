@@ -284,9 +284,9 @@ void set_meta_data() {
 	t = new_user_meta("meta_test", "meta_pass", 1);
 	add_user_meta(t, "1_test", "1_pass", 0);
 	add_user_meta(t, "2_test", "2_pass", 0);
-	add_user_meta(t, "3_test", "3_pass", 0);
-	add_user_meta(t, "4_test", "4_pass", 0);
-	add_user_meta(t, "5_test", "5_pass", 0);
+	add_user_meta(t, "3_test", "3_pass", 1);
+	add_user_meta(t, "4_test", "4_pass", 1);
+	add_user_meta(t, "5_test", "5_pass", 1);
 	add_user_meta(t, "6_test", "6_pass", 0);
 	user_meta_ns(c, testdir, NULL, t, &result);
 
@@ -294,9 +294,9 @@ void set_meta_data() {
 	result_deinit(&result);
 	printf("send metadata\n");
 
-	list_ns(c, testdir, NULL, 0, 0, NULL, NULL, &result);
+	get_meta_ns(c, testdir, &result);
 
-	printf("fetched` metadata\n");
+	printf("fetched metadata\n");
 
 	parse_headers(&result, &sm, &um);
 
@@ -304,12 +304,17 @@ void set_meta_data() {
 
 	result_deinit(&result);
 	printf("%s\n", sm.objname);
+
+	int mcount = 0;
 	while (um != NULL) {
 		user_meta *t = um->next;
 		printf("%s=%s %d\n", um->key, um->value, um->listable);
 		free(um);
 		um = t;
+		mcount++;
 	}
+
+	assert_int_equal(7, mcount);
 
 	delete_ns(c, testdir, &result);
 	result_deinit(&result);

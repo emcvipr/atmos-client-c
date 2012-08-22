@@ -329,9 +329,6 @@ const char *http_request(credentials *c, http_method method, const char *uri,
 		curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
 	}
 
-	// For Telecom Italia -- Ignore self-signed certificate
-	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
-
 	// Proxy support
 	if(c->proxy_host != NULL) {
 		curl_easy_setopt(curl, CURLOPT_PROXY, c->proxy_host);
@@ -445,6 +442,21 @@ const char *http_request(credentials *c, http_method method, const char *uri,
 	curl_slist_append(chunk, content_type_header);
 	curl_slist_append(chunk,signature);
 	result_code = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, chunk);
+
+	// If a callback was registered, call it now.
+	if(c->curlconfig) {
+		if(((curl_config_callback)c->curlconfig)(c, curl)) {
+			// Handler requested abort
+			ws_result->return_code = 0;
+			ws_result->curl_error_code = CURLE_ABORTED_BY_CALLBACK;
+			sprintf(ws_result->curl_error_message,
+					"Request aborted by request handler");
+			curl_easy_cleanup(curl);
+			curl_slist_free_all(chunk);
+			free(endpoint_url);
+			return NULL;
+		}
+	}
 
 	gettimeofday(&start_time, NULL);
 	result_code = curl_easy_perform(curl);

@@ -670,6 +670,40 @@ void test_error() {
 	free_ws(c);
 }
 
+static int i_was_called;
+
+int curl_test_callback(credentials *c, CURL *handle) {
+	i_was_called = 1;
+	return 0;
+}
+
+int curl_test_callback_abort(credentials *c, CURL *handle) {
+	// Just abort
+	return 1;
+}
+
+void test_curl_callback(void) {
+	credentials *c = get_connection();
+	c->curlconfig = curl_test_callback;
+
+	i_was_called = 0;
+	ws_result result;
+	result_init(&result);
+	get_service_info(c, &result);
+	assert_int_equal(200, result.return_code);
+	assert_int_equal(1, i_was_called);
+	result_deinit(&result);
+
+	i_was_called = 0;
+	c->curlconfig = curl_test_callback_abort;
+	result_init(&result);
+	get_service_info(c, &result);
+	assert_int_equal(0, result.return_code);
+	assert_int_equal(CURLE_ABORTED_BY_CALLBACK, result.curl_error_code);
+	assert_int_equal(0, i_was_called);
+
+}
+
 void start_test_msg(const char *test_name) {
 	printf("\nTEST: %s\n", test_name);
 	printf("================\n");
@@ -706,6 +740,8 @@ void all_tests(void) {
 	run_test(create_test);
 	start_test_msg("capstest");
 	run_test(capstest);
+	start_test_msg("test_curl_callback");
+	run_test(test_curl_callback);
 	test_fixture_end();
 }
 

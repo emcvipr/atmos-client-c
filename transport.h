@@ -11,6 +11,7 @@
 #include "atmos_util.h"
 
 #define CREDS_SIZE 255
+
 typedef struct credentialsval {
     char tokenid[CREDS_SIZE];
     char secret[CREDS_SIZE];
@@ -20,7 +21,21 @@ typedef struct credentialsval {
     int proxy_port; // -1 = default
     char *proxy_user; // NULL = no auth
     char *proxy_pass;
+    void *curlconfig; // Pointer to curl_config_callback function.
 } credentials;
+
+/**
+ * Handler callback to perform some sort of configuration on a request before
+ * it's executed (e.g. set custom headers, authenticate, etc).  Note that a
+ * handler may be called by multiple threads concurrently so it should be
+ * thread-safe.
+ * @param c the pointer to the credentials object.
+ * @param handle the handle to the current cURL connection object.
+ * @return zero to continue processing. Return nonzero to abort processing
+ * the request.
+ */
+typedef int (*curl_config_callback)(credentials *c, CURL *handle);
+
 
 /**
  * Contains request data to be sent to the server.  Note that data and

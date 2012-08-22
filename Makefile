@@ -19,7 +19,7 @@ all: objects lib test
 
 objects: $(SRC)
 	gcc $(FLAGS) $(SRC)
-lib: $(OBJ)
+lib: objects
 	gcc $(SOFLAGS) $(OBJ) 
 test: objects
 	gcc -pg -g -o atmostest ${OBJ} $(LIBS) $(LIBDIR)

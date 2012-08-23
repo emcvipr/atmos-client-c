@@ -674,6 +674,7 @@ static int i_was_called;
 
 int curl_test_callback(credentials *c, CURL *handle) {
 	i_was_called = 1;
+	curl_easy_setopt(handle, CURLOPT_VERBOSE, 1);
 	return 0;
 }
 
@@ -684,7 +685,7 @@ int curl_test_callback_abort(credentials *c, CURL *handle) {
 
 void test_curl_callback(void) {
 	credentials *c = get_connection();
-	c->curlconfig = curl_test_callback;
+	set_config_callback(c, curl_test_callback);
 
 	i_was_called = 0;
 	ws_result result;
@@ -695,13 +696,53 @@ void test_curl_callback(void) {
 	result_deinit(&result);
 
 	i_was_called = 0;
-	c->curlconfig = curl_test_callback_abort;
+	set_config_callback(c, curl_test_callback_abort);
 	result_init(&result);
 	get_service_info(c, &result);
 	assert_int_equal(0, result.return_code);
 	assert_int_equal(CURLE_ABORTED_BY_CALLBACK, result.curl_error_code);
 	assert_int_equal(0, i_was_called);
+}
 
+static int retrycount;
+static char correctsecret[255];
+
+int curl_test_retry_callback(credentials *c, postdata *d,
+		ws_result *result) {
+	if(retrycount != 0) {
+		fprintf(stderr, "Retry count > 0!\n");
+		return 0;
+	}
+
+	// Increment retrycount
+	retrycount++;
+
+	assert_int_equal(403, result->return_code);
+
+	// Fix the credentials object.
+	strcpy(c->secret, correctsecret);
+
+	// Clear the results object
+	result_init(result);
+
+	return 1;
+}
+
+void test_retry_callback(void) {
+	credentials *c = get_connection();
+	ws_result result;
+
+	// Save the secret and then break it
+	strcpy(correctsecret, c->secret);
+	strcpy(c->secret, "THISISNOTAREALSECRETKEYSTRN=");
+
+	// Set the retry handler
+	retrycount = 0;
+	set_retry_callback(c, curl_test_retry_callback);
+	result_init(&result);
+	get_service_info(c, &result);
+	assert_int_equal(200, result.return_code);
+	assert_int_equal(1, retrycount);
 }
 
 void start_test_msg(const char *test_name) {
@@ -742,6 +783,8 @@ void all_tests(void) {
 	run_test(capstest);
 	start_test_msg("test_curl_callback");
 	run_test(test_curl_callback);
+	start_test_msg("test_retry_callback");
+	run_test(test_retry_callback);
 	test_fixture_end();
 }
 

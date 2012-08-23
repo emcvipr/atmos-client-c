@@ -15,14 +15,15 @@ ifeq ($(UNAME), Darwin)
 	SOFLAGS = -dynamiclib -undefined suppress -flat_namespace -o $(LIBNAME)
 endif 
 
-all: objects lib test
+all: objects lib testharness
 
 objects: $(SRC)
 	gcc $(FLAGS) $(SRC)
 lib: objects
 	gcc $(SOFLAGS) $(OBJ) 
-test: objects
+testharness: objects
 	gcc -pg -g -o atmostest ${OBJ} $(LIBS) $(LIBDIR)
+test: testharness
 	./atmostest
 
 terawriter: terawriter.c

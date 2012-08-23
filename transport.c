@@ -223,94 +223,88 @@ void result_deinit(ws_result* result) {
 
 }
 
-const char *http_request_ns(credentials *c, http_method method, const char *uri, const char *content_type, char **headers, int header_count, postdata * data, ws_result* ws_result) {
+void http_request_ns(credentials *c, http_method method, const char *uri, const char *content_type, char **headers, int header_count, postdata * data, ws_result* ws_result) {
 	
     char * ns_uri = NULL;
     ns_uri = (char*)malloc(strlen(uri)+strlen(namespace_uri)+1);    
     sprintf(ns_uri,"%s%s",namespace_uri, uri);
     http_request(c, method, ns_uri, content_type, headers, header_count, data, ws_result);    
     free((char*)ns_uri);
-    return NULL;
 }
 
-const char *http_request(credentials *c, http_method method, const char *uri,
+void do_http_request(credentials *c, http_method method, const char *uri,
 		const char *content_type, char **headers, int header_count,
 		postdata *data, ws_result* ws_result)
 {
+	CURL  *curl;
+	CURLcode result_code;
+	const int connect_timeout = 200;
+	char date[256];
+	char uidheader[HEADER_MAX];
+	char dateheader[HEADER_MAX];
+	char *endpoint_url = NULL;
+	size_t endpoint_size;
+	struct curl_slist *chunk = NULL;
+	char hash_string[HEADER_MAX];
+	char range[HEADER_MAX];
+	char signature[HEADER_MAX];
+	char content_type_header[HEADER_MAX];
+	int i, j;
+	char *signed_hash = NULL;
+	char content_length_header[HEADER_MAX];
+	char range_header[HEADER_MAX];
+	struct timeval start_time;
+	struct timeval end_time;
+	char *encoded_uri;
+	curl_global_init(CURL_GLOBAL_ALL);
+	throt_read_data *throt_data = NULL;
 
-  //    if(!curl_code) {
-  //;
-  //} else {
+	curl = curl_easy_init();
+	result_init(ws_result); //MUST DEALLOC
 
-    CURL  *curl = curl_easy_init();
-    CURLcode result_code;
-    const int connect_timeout = 200;
-    char date[256];
-    char uidheader[HEADER_MAX];
-    char dateheader[HEADER_MAX];
-    char *endpoint_url = NULL;
-    size_t endpoint_size;
-    struct curl_slist *chunk = NULL;
-    char hash_string[HEADER_MAX];
-    char range[HEADER_MAX];
-    char signature[HEADER_MAX];
-    char content_type_header[HEADER_MAX];
-    int i, j;
-    char *signed_hash = NULL;
-    char content_length_header[HEADER_MAX];
-    char range_header[HEADER_MAX];
-    struct timeval start_time;
-    struct timeval end_time;
-    char *encoded_uri;
-    curl_global_init(CURL_GLOBAL_ALL);
-    throt_read_data *throt_data = NULL;
+	memset(range, 0, HEADER_MAX);
+	get_date(date);
+	snprintf(dateheader,HEADER_MAX,"X-Emc-Date:%s", date);
+	snprintf(uidheader,HEADER_MAX,"X-Emc-Uid:%s",c->tokenid);
+	headers[header_count++] = dateheader;
+	//FIXME groupacl headers breaks sig string
+	headers[header_count++] = uidheader;
 
-    result_init(ws_result); //MUST DEALLOC
+	if (!content_type) {
+		content_type = "application/octet-stream";
+	}
 
-    memset(range, 0, HEADER_MAX);
-    get_date(date);
-    snprintf(dateheader,HEADER_MAX,"X-Emc-Date:%s", date);
-    snprintf(uidheader,HEADER_MAX,"X-Emc-Uid:%s",c->tokenid);    
-    headers[header_count++] = dateheader;
-    //FIXME groupacl headers breaks sig string
-    headers[header_count++] = uidheader;
+	/* Encode the URI */
+	encoded_uri = (char*)malloc(strlen(uri)*3+1); /* Worst case if every char was encoded */
+	memset(encoded_uri, 0, strlen(uri)*3+1);
 
-    if (!content_type) {
-	content_type = "application/octet-stream";
-    }
-    
-    /* Encode the URI */
-    encoded_uri = (char*)malloc(strlen(uri)*3+1); /* Worst case if every char was encoded */
-    memset(encoded_uri, 0, strlen(uri)*3+1);
+	for(i=0,j=0; i<strlen(uri); i++) {
+		if(uri[i] == '/') {
+			encoded_uri[j++] = uri[i];
+		} else if(uri[i] == '?') {
+			/* Do the rest */
+			strcat(encoded_uri, uri+i);
+			break;
+		} else {
+			/* Encode the data */
+			char *encoded;
+			encoded = curl_easy_escape(curl, uri+i, 1);
+			strcat(encoded_uri, encoded);
+			curl_free(encoded);
+			j = strlen(encoded_uri);
+		}
+	}
 
-    for(i=0,j=0; i<strlen(uri); i++) {
-        if(uri[i] == '/') {
-            encoded_uri[j++] = uri[i];
-        } else if(uri[i] == '?') {
-            /* Do the rest */
-            strcat(encoded_uri, uri+i);
-            break;
-        } else {
-            /* Encode the data */
-            char *encoded;
-            encoded = curl_easy_escape(curl, uri+i, 1);
-            strcat(encoded_uri, encoded);
-            curl_free(encoded);
-            j = strlen(encoded_uri);
-        }
-    }
 
-    
-    endpoint_size = strlen(c->accesspoint)+strlen(encoded_uri) +1;
-    endpoint_url = (char*)malloc(endpoint_size);
-    
-    snprintf(endpoint_url, endpoint_size, "%s%s", c->accesspoint, encoded_uri);
+	endpoint_size = strlen(c->accesspoint)+strlen(encoded_uri) +1;
+	endpoint_url = (char*)malloc(endpoint_size);
 
-    /* Done with encoded version */
-    free(encoded_uri);
+	snprintf(endpoint_url, endpoint_size, "%s%s", c->accesspoint, encoded_uri);
 
-    // set up flags this should move into transport layercyrk
-    if (curl) {
+	/* Done with encoded version */
+	free(encoded_uri);
+
+	// set up flags this should move into transport layercyrk
 	//curl_version_info_data *version_data = curl_version_info(CURLVERSION_NOW);
 
 	curl_easy_setopt(curl, CURLOPT_VERBOSE, 0);
@@ -324,7 +318,7 @@ const char *http_request(credentials *c, http_method method, const char *uri,
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, ws_result);
 	curl_easy_setopt(curl, CURLOPT_WRITEHEADER, ws_result);
 	curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, ws_result->curl_error_message);
-	
+
 	if(c->curl_verbose) {
 		curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
 	}
@@ -354,89 +348,89 @@ const char *http_request(credentials *c, http_method method, const char *uri,
 	switch(method) {
 
 	case POST:
-	    curl_easy_setopt(curl, CURLOPT_POST, 1l);
-	    curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE_LARGE, (curl_off_t)0L);
-	    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, NULL);
+		curl_easy_setopt(curl, CURLOPT_POST, 1l);
+		curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE_LARGE, (curl_off_t)0L);
+		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, NULL);
 
-	    break;
+		break;
 	case PUT:
-	    curl_easy_setopt(curl, CURLOPT_PUT, 1L); 
-	    break;
+		curl_easy_setopt(curl, CURLOPT_PUT, 1L);
+		break;
 	case aDELETE:
-	    curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE"); 
-	    break;
+		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
+		break;
 	case HEAD:
-	  curl_easy_setopt(curl, CURLOPT_NOBODY, 1l);
-	    break;
+		curl_easy_setopt(curl, CURLOPT_NOBODY, 1l);
+		break;
 	case GET:
 
-	  break;
+		break;
 	case OPTIONS:
-	  break;
+		break;
 	}
 
 	if(data) {
-	  if(data->offset >= 0) {
-	    snprintf(range, HEADER_MAX, "Bytes=%jd-%jd", (intmax_t)data->offset,
-	    		(intmax_t)(data->offset+data->body_size-1));
-	  }
-	  curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE_LARGE,
-			  (curl_off_t)data->body_size);
+		if(data->offset >= 0) {
+			snprintf(range, HEADER_MAX, "Bytes=%jd-%jd", (intmax_t)data->offset,
+					(intmax_t)(data->offset+data->body_size-1));
+		}
+		curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE_LARGE,
+				(curl_off_t)data->body_size);
 
-	  /* If a stream handle is used, let libcurl handle the file I/O */
-	  if(data->data_stream && (method == POST || method == PUT)) {
-		  curl_easy_setopt(curl, CURLOPT_READDATA, data->data_stream);
-		  curl_easy_setopt(curl, CURLOPT_READFUNCTION, NULL);
+		/* If a stream handle is used, let libcurl handle the file I/O */
+		if(data->data_stream && (method == POST || method == PUT)) {
+			curl_easy_setopt(curl, CURLOPT_READDATA, data->data_stream);
+			curl_easy_setopt(curl, CURLOPT_READFUNCTION, NULL);
 
-		  // Use a throttled upload
-//		  throt_data = malloc(sizeof(throt_read_data));
-//		  memset(throt_data, 0, sizeof(throt_read_data));
-//		  throt_data->data = data->data_stream;
-//		  curl_easy_setopt(curl, CURLOPT_READDATA, throt_data);
-//		  curl_easy_setopt(curl, CURLOPT_READFUNCTION, readfunc_throttled);
+			// Use a throttled upload
+			//		  throt_data = malloc(sizeof(throt_read_data));
+			//		  memset(throt_data, 0, sizeof(throt_read_data));
+			//		  throt_data->data = data->data_stream;
+			//		  curl_easy_setopt(curl, CURLOPT_READDATA, throt_data);
+			//		  curl_easy_setopt(curl, CURLOPT_READFUNCTION, readfunc_throttled);
 
-	  } else if(data->data_stream && method == GET) {
-	      /* Write to the stream */
-	      curl_easy_setopt(curl, CURLOPT_WRITEDATA, data->data_stream);
-	      curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, NULL);
-	  } else {
-		  curl_easy_setopt(curl, CURLOPT_READDATA, data);
-		  curl_easy_setopt(curl, CURLOPT_READFUNCTION, readfunc);
-	  }
+		} else if(data->data_stream && method == GET) {
+			/* Write to the stream */
+			curl_easy_setopt(curl, CURLOPT_WRITEDATA, data->data_stream);
+			curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, NULL);
+		} else {
+			curl_easy_setopt(curl, CURLOPT_READDATA, data);
+			curl_easy_setopt(curl, CURLOPT_READFUNCTION, readfunc);
+		}
 	}
- 
+
 	build_hash_string(hash_string, method, content_type, range,NULL,uri, headers,header_count);
 	if(data){
-	  data->bytes_written=0;
-	  data->bytes_remaining=data->body_size;
-	  if(method != GET) {
-	    snprintf(content_length_header,HEADER_MAX, "content-length: %jd",
-	    		(intmax_t)data->body_size);
-	    headers[header_count++]=content_length_header;
-	  }
-	  
-	  if(data->offset >= 0 ) {
-	      memset(range_header, 0, HEADER_MAX);
-	      snprintf(range_header, HEADER_MAX, "range: Bytes=%jd-%jd",
-	    		  (intmax_t)data->offset,
-	    		  (intmax_t)(data->offset+data->body_size-1));
-	      headers[header_count++] = range_header;
-	  }
+		data->bytes_written=0;
+		data->bytes_remaining=data->body_size;
+		if(method != GET) {
+			snprintf(content_length_header,HEADER_MAX, "content-length: %jd",
+					(intmax_t)data->body_size);
+			headers[header_count++]=content_length_header;
+		}
+
+		if(data->offset >= 0 ) {
+			memset(range_header, 0, HEADER_MAX);
+			snprintf(range_header, HEADER_MAX, "range: Bytes=%jd-%jd",
+					(intmax_t)data->offset,
+					(intmax_t)(data->offset+data->body_size-1));
+			headers[header_count++] = range_header;
+		}
 	}
 
 	for(i=0;i<header_count; i++) {
-	    if(headers[i] != NULL) { 
-		chunk = curl_slist_append(chunk, headers[i]);	
-	    } else {
-		; //a null header thats been added to the array is proabbly a bug.
-	    }
+		if(headers[i] != NULL) {
+			chunk = curl_slist_append(chunk, headers[i]);
+		} else {
+			; //a null header thats been added to the array is proabbly a bug.
+		}
 	}
-	
+
 
 	signed_hash = (char*)sign(hash_string,c->secret);
 	snprintf(signature,HEADER_MAX,"X-Emc-Signature:%s", signed_hash);
 	free(signed_hash);
-	snprintf(content_type_header, HEADER_MAX,"content-type:%s", content_type); 
+	snprintf(content_type_header, HEADER_MAX,"content-type:%s", content_type);
 	curl_slist_append(chunk,"Expect:");
 	curl_slist_append(chunk,"Transfer-Encoding:");
 	curl_slist_append(chunk, content_type_header);
@@ -454,7 +448,7 @@ const char *http_request(credentials *c, http_method method, const char *uri,
 			curl_easy_cleanup(curl);
 			curl_slist_free_all(chunk);
 			free(endpoint_url);
-			return NULL;
+			return;
 		}
 	}
 
@@ -463,23 +457,24 @@ const char *http_request(credentials *c, http_method method, const char *uri,
 	gettimeofday(&end_time, NULL);
 
 	ws_result->curl_error_code = result_code;
-	
-	ws_result->duration_ms = end_time.tv_usec - start_time.tv_usec ;	
-	ws_result->duration_sec = end_time.tv_sec - start_time.tv_sec ;	
-	
+
+	ws_result->duration_ms = end_time.tv_usec - start_time.tv_usec ;
+	ws_result->duration_sec = end_time.tv_sec - start_time.tv_sec ;
+
 	if(ws_result->duration_ms  < 0 ) {
-	  ws_result->duration_sec -=1;
-	  ws_result->duration_ms +=1000000;
+		ws_result->duration_sec -=1;
+		ws_result->duration_ms +=1000000;
 	}
-	
+
 	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &ws_result->return_code);
 	curl_easy_getinfo(curl, CURLINFO_CONTENT_TYPE, &ws_result->content_type);
 	/* dup it so we can free later */
 	if(ws_result->content_type) {
-	    ws_result->content_type = strdup(ws_result->content_type);
+		ws_result->content_type = strdup(ws_result->content_type);
 	} else {
-	    ws_result->content_type = NULL;
+		ws_result->content_type = NULL;
 	}
+
 
 	curl_easy_cleanup(curl);
 	curl_slist_free_all(chunk);
@@ -487,10 +482,49 @@ const char *http_request(credentials *c, http_method method, const char *uri,
 	if(throt_data) {
 		free(throt_data);
 	}
-    }
 
-    free(endpoint_url);
-    return  NULL;
+	free(endpoint_url);
+}
+
+void http_request(credentials *c, http_method method, const char *uri,
+		const char *content_type, char **headers, int header_count,
+		postdata *data, ws_result* ws_result) {
+	int retry;
+
+	do {
+		retry = 0;
+		do_http_request(c, method, uri, content_type, headers, header_count, data, ws_result);
+		if(ws_result->curl_error_code != 0 || ws_result->return_code > 299) {
+			if(c->retryhandler) {
+				retry = ((curl_retry_callback)c->retryhandler)(c, data,
+						ws_result);
+			}
+		}
+	} while(retry);
+}
+
+
+/**
+ * Sets a configuration callback to invoke just before we send a request using
+ * cURL.  This can be used to change any settings on the cURL handle like
+ * debugging, certificate validation, etc.
+ * @param c the Atmos credentials object
+ * @param func the configuration callback function
+ */
+void set_config_callback(credentials *c, curl_config_callback func) {
+	c->curlconfig = func;
+}
+
+/**
+ * Sets a callback to invoke in case there is an error invoking an HTTP
+ * request.  This handler will get called whenever the cURL request fails
+ * (e.g. could not connect) or if the HTTP response code is greater than 299.
+ * If it returns nonzero, the request will be retried.  The handler function
+ * is also responsible for resetting the state of any postdata such that the
+ * request can be sent again.
+ */
+void set_retry_callback(credentials *c, curl_retry_callback func) {
+	c->retryhandler = func;
 }
 
 

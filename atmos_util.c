@@ -4,26 +4,34 @@
 #include <stdio.h>
 #include <time.h>
 
-
 #include "atmos_util.h"
+
 static const char *methods[] = {"POST", "GET","PUT", "DELETE","HEAD","OPTIONS"};
+
 int cstring_cmp(const void *a, const void *b)
 {
     return strcmp(* (char * const *) a, * (char * const *) b);
 }
 
 
-int build_hash_string (char *hash_string, http_method method, const char *content_type, const char *range,const char *date, const char *uri, char **emc_sorted_headers, const int header_count) 
+int build_hash_string (char *hash_string, http_method method,
+		const char *content_type, const char *range, const char *date,
+		const char *uri, char **headers, const int header_count)
 {
     char *req_ptr=hash_string;
     char *loweruri = malloc(strlen(uri)+1);
+    char **emc_sorted_headers;
+
     //all lowercase BEFORE entering sort..
     
     int is = 0;
 	int i = 0;	
 	int length = 0;
+
+	emc_sorted_headers = malloc(sizeof(char*)*header_count);
     for(is = 0; is < header_count; is++) {
-	lowercaseheader(emc_sorted_headers[is]);
+    	emc_sorted_headers[is] = strdup(headers[is]);
+    	lowercaseheader(emc_sorted_headers[is]);
     }
 	
     qsort(emc_sorted_headers, header_count, sizeof(char*),cstring_cmp);
@@ -63,6 +71,12 @@ int build_hash_string (char *hash_string, http_method method, const char *conten
     }
     length = (int)(req_ptr-hash_string);
     free(loweruri);
+
+    for(is = 0; is < header_count; is++) {
+    	free(emc_sorted_headers[is]);
+    }
+    free(emc_sorted_headers);
+
     return length;
 
 }

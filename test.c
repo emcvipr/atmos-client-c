@@ -731,18 +731,33 @@ int curl_test_retry_callback(credentials *c, postdata *d,
 void test_retry_callback(void) {
 	credentials *c = get_connection();
 	ws_result result;
+	user_meta *t;
+	char obj_id[64];
 
 	// Save the secret and then break it
 	strcpy(correctsecret, c->secret);
 	strcpy(c->secret, "THISISNOTAREALSECRETKEYSTRN=");
 
+	t = new_user_meta("meta_test", "meta_pass", 1);
+	add_user_meta(t, "1_test", "1_pass", 0);
+	add_user_meta(t, "2_test", "2_pass", 0);
+	add_user_meta(t, "3_test", "3_pass", 1);
+	add_user_meta(t, "4_test", "4_pass", 1);
+	add_user_meta(t, "5_test", "5_pass", 1);
+	add_user_meta(t, "6_test", "6_pass", 0);
+
+
 	// Set the retry handler
 	retrycount = 0;
 	set_retry_callback(c, curl_test_retry_callback);
 	result_init(&result);
-	get_service_info(c, &result);
-	assert_int_equal(200, result.return_code);
+
+	create_obj(c, obj_id, "text/plain", NULL, t, &result);
+
+	assert_int_equal(201, result.return_code);
 	assert_int_equal(1, retrycount);
+
+	free_user_meta(t);
 }
 
 void start_test_msg(const char *test_name) {

@@ -399,6 +399,22 @@ void list() {
 
 	result_deinit(&result);
 
+	// List with meta
+	list_ns(c, testdir, NULL, 0, 1, NULL, NULL, &result);
+	assert_int_equal(200, result.return_code);
+	if (result.response_body) {
+		char_response_bucket = malloc(result.body_size + 1);
+		memcpy(char_response_bucket, result.response_body, result.body_size);
+		char_response_bucket[result.body_size] = '\0';
+		printf("%s\n", char_response_bucket);
+		free(char_response_bucket);
+	} else {
+		assert_fail("error in list_ns with meta no response\n");
+	}
+
+	result_deinit(&result);
+
+
 	delete_ns(c, testdir, &result);
 	// Directory not empty
 	assert_int_equal(400, result.return_code);
@@ -454,12 +470,21 @@ void rangestest() {
 	user_meta *um = NULL;
 	postdata pd;
 	postdata rd;
+	char *data1, *data2, *data3;
 
 	memset(&pd, 0, sizeof(pd));
 
-	pd.data = malloc(32);
-	memset(pd.data,5, 32);
+	data1 = malloc(33);
+	memset(data1, 65, 32); // 'A'*32
+	data1[32] = 0;
+	data2 = malloc(33);
+	memset(data2, 90, 32); // 'Z'*32
+	data2[32] = 0;
+	data3 = malloc(65);
+	sprintf(data3, "%s%s", data1, data2);
+
 	pd.body_size = 32;
+	pd.data = data1;
 	//pd.offset=31;
 
 	//*** Create
@@ -469,16 +494,27 @@ void rangestest() {
 	result_deinit(&result);
 
 	//Now grow the object
-	memset(pd.data,1, 32);
+	pd.data = data2;
 	pd.body_size = 32;
-	pd.offset = 31;
+	pd.offset = 32;
 	update_ns(c, testdir, NULL, NULL, &pd, NULL, &result);
 	assert_int_equal(200, result.return_code);
 	result_deinit(&result);
 
-	rd.offset = 31;
+	// Read back whole object
+	result_init(&result);
+	read_obj_ns(c, testdir, NULL, &result);
+	assert_int_equal(200, result.return_code);
+	assert_string_equal(data3, result.response_body);
+	result_deinit(&result);
+
+	// Read back range.
+	result_init(&result);
+	rd.offset = 32;
 	rd.body_size = 32;
 	read_obj_ns(c, testdir, &rd, &result);
+	assert_int_equal(206, result.return_code); // HTTP 206 -- partial content
+	assert_string_equal(data2, result.response_body);
 
 	memset(&sm, 0, sizeof(sm));
 	parse_headers(&result, &sm, &um);
@@ -487,7 +523,6 @@ void rangestest() {
 		free(um);
 		um = t;
 	}
-
 	result_deinit(&result);
 
 	//*** Delete
@@ -495,7 +530,9 @@ void rangestest() {
 	assert_int_equal(204, result.return_code);
 	result_deinit(&result);
 
-	free(pd.data);
+	free(data1);
+	free(data2);
+	free(data3);
 	free(c);
 
 }
@@ -774,8 +811,8 @@ void all_tests(void) {
 	run_test(testhmac);
 	start_test_msg("get_sys_info");
 	run_test(get_sys_info);
-	start_test_msg("test_error");
-	run_test(test_error);
+//	start_test_msg("test_error");
+//	run_test(test_error);
 	start_test_msg("aol_rename");
 	run_test(aol_rename);
 	start_test_msg("set_meta_data");

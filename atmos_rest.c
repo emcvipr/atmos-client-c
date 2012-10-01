@@ -347,21 +347,21 @@ int list_ns(credentials *c, const char * uri, const char *token, int limit,
     headers = (char**) calloc(20, sizeof(char*));
     count = 0;
     if (limit>0) {
-        snprintf(header_limit, 255, "x-emc-limit: %d", limit);
+        snprintf(header_limit, 255, "x-emc-limit:%d", limit);
         headers[count++] = header_limit;
     }
     if(token) {
-        snprintf(header_token, 255, "x-emc-token: %s", token);
+        snprintf(header_token, 255, "x-emc-token:%s", token);
         headers[count++] = header_token;
     }
     if(include_meta) {
-        snprintf(header_include, 63, "x-emc-include-meta: %d", include_meta);
+        snprintf(header_include, 63, "x-emc-include-meta:%d", include_meta);
         headers[count++] = header_include;
         if(user_tag_list) {
-            snprintf(header_user, 1023, "x-emc-user-tags: %s", user_tag_list);
+            snprintf(header_user, 1023, "x-emc-user-tags:%s", user_tag_list);
             headers[count++] = header_user;
         }
-            snprintf(header_system, 1023, "x-emc-system-tags: %s", system_tag_list);
+            snprintf(header_system, 1023, "x-emc-system-tags:%s", system_tag_list);
         if(system_tag_list) {
             headers[count++] = header_system;
         }
@@ -704,9 +704,7 @@ int read_obj_ns(credentials *c, const char *object_id, postdata* pd, ws_result* 
     char *object_path = "/rest/namespace/";
     char *obj_uri;
 
-    http_method method = HEAD;
-    if (pd)
-        method = GET;
+    http_method method = GET;
     headers = (char**) calloc(20, sizeof(char*));
     count = 0;
     obj_uri = (char*) malloc(strlen(object_path) + strlen(object_id) + 1);

@@ -554,6 +554,54 @@ int get_meta_ns(credentials *c, const char *object_name, ws_result *ws) {
     return ws->return_code;
 }
 
+/**
+ * Gets extended information about an object including replica info, retention,
+ * and expiration policies.
+ * @param c the Atmos credentials
+ * @param object_id the Atmos Object ID to inspect
+ * @param ws the result of the operation.  The object information will be
+ * returned in ws->response_body as an XML blob.  The response is freed by
+ * calling result_deinit().
+ */
+void get_object_info(credentials *c, const char *object_id, ws_result *ws) {
+    static const char *object_path = "/rest/objects/";
+	static const char *uri_params = "?info";
+	int urisize = strlen(object_path) + strlen(object_id) + strlen(uri_params) + 1;
+	char *new_uri = malloc(urisize);
+	snprintf(new_uri, urisize, "%s%s%s", object_path, object_id, uri_params);
+    char **headers = (char**) calloc(20, sizeof(char*));
+    int header_count = 0;
+    http_request(c, GET, new_uri, NULL, headers, header_count, NULL,
+            ws);
+
+    free(headers);
+    free(new_uri);
+}
+
+/**
+ * Gets extended information about an object including replica info, retention,
+ * and expiration policies.
+ * @param c the Atmos credentials
+ * @param object_id the Atmos object path (namespace) to inspect
+ * @param ws the result of the operation.  The object information will be
+ * returned in ws->response_body as an XML blob.  The response is freed by
+ * calling result_deinit().
+ */
+void get_object_info_ns(credentials *c, const char *object_path, ws_result *ws) {
+	static const char *uri_params = "?info";
+	int urisize = strlen(object_path) + strlen(uri_params) + 1;
+	char *new_uri = malloc(urisize);
+	snprintf(new_uri, urisize, "%s%s", object_path, uri_params);
+    char **headers = (char**) calloc(20, sizeof(char*));
+    int header_count = 0;
+    http_request_ns(c, GET, new_uri, NULL, headers, header_count, NULL,
+            ws);
+
+    free(headers);
+    free(new_uri);
+}
+
+
 //int object_get_listable_meta(const char *object_name) 
 //{
 

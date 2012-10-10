@@ -221,6 +221,28 @@ int user_meta_ns(credentials *c, const char *uri, const char * content_type, use
 //int list_versions();
 //int restore_version();
 
+/**
+ * Gets extended information about an object including replica info, retention,
+ * and expiration policies.
+ * @param c the Atmos credentials
+ * @param object_id the Atmos Object ID to inspect
+ * @param ws the result of the operation.  The object information will be
+ * returned in ws->response_body as an XML blob.  The response is freed by
+ * calling result_deinit().
+ */
+void get_object_info(credentials *c, const char *object_id, ws_result *ws);
+
+/**
+ * Gets extended information about an object including replica info, retention,
+ * and expiration policies.
+ * @param c the Atmos credentials
+ * @param object_id the Atmos object path (namespace) to inspect
+ * @param ws the result of the operation.  The object information will be
+ * returned in ws->response_body as an XML blob.  The response is freed by
+ * calling result_deinit().
+ */
+void get_object_info_ns(credentials *c, const char *object_path, ws_result *ws);
+
 
 //Take a ws_result and break its headers into system and user meta structs
 void parse_headers(ws_result*, system_meta*, user_meta**);

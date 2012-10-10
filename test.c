@@ -797,6 +797,63 @@ void test_retry_callback(void) {
 	free_user_meta(t);
 }
 
+void test_object_info() {
+	credentials *c = get_connection();
+	ws_result result1, result2, result3;
+	char *data1;
+	postdata pd;
+	char *testfile = "/test123456/infofile";
+	char objectid[255];
+
+
+	// Create some data so that replica has size.
+	data1 = malloc(33);
+	memset(data1, 65, 32); // 'A'*32
+	data1[32] = 0;
+
+	memset(&pd, 0, sizeof(pd));
+
+	pd.body_size = 32;
+	pd.data = data1;
+
+	// Create the object.
+	result_init(&result1);
+	create_ns(c, testfile, NULL, NULL, &pd, NULL, &result1);
+	assert_int_equal(201, result1.return_code);
+	get_object_id(result1.headers, result1.header_count, objectid);
+	result_deinit(&result1);
+	free(data1);
+
+	// Get object info by namespace
+	result_init(&result2);
+	get_object_info_ns(c, testfile, &result2);
+	assert_int_equal(200, result2.return_code);
+
+	// Get object info by objectid
+	result_init(&result3);
+	get_object_info(c, objectid, &result3);
+	assert_int_equal(200, result3.return_code);
+
+	assert_int_equal(result2.body_size, result3.body_size);
+	assert_true(strcmp(result2.response_body, result3.response_body) == 0);
+
+	// Look for XML tags
+	assert_true(strstr(result2.response_body,
+			"<GetObjectInfoResponse xmlns='http://www.emc.com/cos/'>") != NULL);
+	assert_true(strstr(result2.response_body,
+			"</GetObjectInfoResponse>") != NULL);
+
+	printf("Object info response: %s", result2.response_body);
+
+	result_init(&result1);
+	delete_ns(c, testfile, &result1);
+	assert_int_equal(204, result1.return_code);
+	result_deinit(&result1);
+
+	result_deinit(&result2);
+	result_deinit(&result3);
+}
+
 void start_test_msg(const char *test_name) {
 	printf("\nTEST: %s\n", test_name);
 	printf("================\n");
@@ -837,6 +894,9 @@ void all_tests(void) {
 	run_test(test_curl_callback);
 	start_test_msg("test_retry_callback");
 	run_test(test_retry_callback);
+	start_test_msg("test_object_info");
+	run_test(test_object_info);
+
 	test_fixture_end();
 }
 

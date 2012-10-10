@@ -1,28 +1,32 @@
-SRC=atmos_rest.c atmos_util.c crypto.c seatest.c test.c transport.c
+SRC=atmos_rest.c atmos_util.c crypto.c transport.c
+TESTSRC=seatest.c test.c
 OBJ=$(SRC:.c=.o)
+TESTOBJ=$(TESTSRC:.c=.o)
 
 UNAME := $(shell uname)
 
 VERSION = 1
-LIBNAME = libatmos.so
+SLIBNAME = libatmos.so
+LIBNAME = libatmos.a
 LIBDIR = -L/usr/local/lib
 LIBS= -lssl -lcrypto -lcurl
 FLAGS = -Wall -fPIC -g -c -D_FILE_OFFSET_BITS=64
-SOFLAGS = -shared -Wl,-soname,$(LIBNAME) -o $(LIBNAME)
+SOFLAGS = -shared -Wl,-soname,$(SLIBNAME) -o $(SLIBNAME)
 
 ifeq ($(UNAME), Darwin)
-	LIBNAME = atmos.dylib
-	SOFLAGS = -dynamiclib -undefined suppress -flat_namespace -o $(LIBNAME)
+	SLIBNAME = atmos.dylib
+	SOFLAGS = -dynamiclib -undefined suppress -flat_namespace -o $(SLIBNAME)
 endif 
 
 all: objects lib testharness
 
-objects: $(SRC)
-	gcc $(FLAGS) $(SRC)
+objects: $(SRC) $(TESTSRC)
+	gcc $(FLAGS) $(SRC) $(TESTSRC)
 lib: objects
 	gcc $(SOFLAGS) $(OBJ) 
-testharness: objects
-	gcc -pg -g -o atmostest ${OBJ} $(LIBS) $(LIBDIR)
+	ar rcs $(LIBNAME) $(OBJ)
+testharness: objects lib
+	gcc -pg -g -o atmostest $(TESTOBJ) -L . -l atmos $(LIBS) $(LIBDIR)
 test: testharness
 	./atmostest
 

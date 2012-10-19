@@ -18,7 +18,15 @@ ifeq ($(UNAME), Darwin)
 	SOFLAGS = -dynamiclib -undefined suppress -flat_namespace -o $(SLIBNAME)
 endif 
 
-all: objects lib testharness
+all: dep objects lib testharness
+
+dep: rest-client-c
+
+rest-client-c: dep/rest-client-c/output/librest.a
+
+dep/rest-client-c/output/librest.a:
+	cd dep/rest-client-c; make lib
+
 
 objects: $(SRC) $(TESTSRC)
 	gcc $(FLAGS) $(SRC) $(TESTSRC)

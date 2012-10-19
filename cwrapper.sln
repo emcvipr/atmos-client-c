@@ -1,0 +1,42 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cwrapper", "cwrapper.vcxproj", "{D6B58F57-E552-487B-8692-116A810ADEC8}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "atmos-c-test", "..\atmos-c-test\atmos-c-test\atmos-c-test.vcxproj", "{B78953AC-E209-4879-B39D-79153A8A662C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Mixed Platforms = Debug|Mixed Platforms
+		Debug|Win32 = Debug|Win32
+		Debug|x86 = Debug|x86
+		Release|Mixed Platforms = Release|Mixed Platforms
+		Release|Win32 = Release|Win32
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D6B58F57-E552-487B-8692-116A810ADEC8}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{D6B58F57-E552-487B-8692-116A810ADEC8}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{D6B58F57-E552-487B-8692-116A810ADEC8}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D6B58F57-E552-487B-8692-116A810ADEC8}.Debug|Win32.Build.0 = Debug|Win32
+		{D6B58F57-E552-487B-8692-116A810ADEC8}.Debug|x86.ActiveCfg = Debug|Win32
+		{D6B58F57-E552-487B-8692-116A810ADEC8}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{D6B58F57-E552-487B-8692-116A810ADEC8}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{D6B58F57-E552-487B-8692-116A810ADEC8}.Release|Win32.ActiveCfg = Release|Win32
+		{D6B58F57-E552-487B-8692-116A810ADEC8}.Release|Win32.Build.0 = Release|Win32
+		{D6B58F57-E552-487B-8692-116A810ADEC8}.Release|x86.ActiveCfg = Release|Win32
+		{B78953AC-E209-4879-B39D-79153A8A662C}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{B78953AC-E209-4879-B39D-79153A8A662C}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{B78953AC-E209-4879-B39D-79153A8A662C}.Debug|Win32.ActiveCfg = Debug|Win32
+		{B78953AC-E209-4879-B39D-79153A8A662C}.Debug|Win32.Build.0 = Debug|Win32
+		{B78953AC-E209-4879-B39D-79153A8A662C}.Debug|x86.ActiveCfg = Debug|Win32
+		{B78953AC-E209-4879-B39D-79153A8A662C}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{B78953AC-E209-4879-B39D-79153A8A662C}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{B78953AC-E209-4879-B39D-79153A8A662C}.Release|Win32.ActiveCfg = Release|Win32
+		{B78953AC-E209-4879-B39D-79153A8A662C}.Release|Win32.Build.0 = Release|Win32
+		{B78953AC-E209-4879-B39D-79153A8A662C}.Release|x86.ActiveCfg = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

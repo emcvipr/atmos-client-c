@@ -1,0 +1,45 @@
+#ifndef _ATMOS_UTIL_H_
+#define _ATMOS_UTIL_H_
+
+#include <libxml/parser.h>
+#include <libxml/tree.h>
+#include <libxml/xpath.h>
+#include <libxml/xpathInternals.h>
+
+#include "atmos.h"
+#include "rest_client.h" // For decl of http_method enum
+
+void AtmosUtil_get_date(char *formated);
+void AtmosUtil_lowercase(char *s);
+void AtmosUtil_lowercaseheader(char *s);
+int build_hash_string(char *hash_string, enum http_method method,
+        const char *content_type, const char *range, const char *date,
+        const char *uri, char **emc_sorted_headers, const int header_count);
+
+char *AtmosUtil_base64decode(const char *base64encoded, size_t length);
+char *AtmosUtil_base64encode(const char *normal, size_t length);
+char *AtmosUtil_HMACSHA1(const char *hash_string, const char *key,
+        size_t key_len);
+int AtmosUtil_cstring_cmp(const void *a, const void *b);
+char *AtmosUtil_cstring_append(char *buf, size_t *bufsz, const char *str);
+void AtmosUtil_normalize_whitespace(char *header);
+void AtmosUtil_set_metadata_header(AtmosMetadata *meta, int meta_count,
+        int listable, int utf8, RestRequest *request);
+void AtmosUtil_set_acl_header(AtmosAclEntry *acl, int acl_count,
+        RestRequest *request);
+int AtmosUtil_meta_char_check(const char *str);
+xmlChar *AtmosUtil_select_single_node_value(xmlDocPtr doc, xmlChar *selector,
+        int use_cos_ns);
+
+// Debugging
+void
+AtmosUtil_log(const char *level, const char *file, const int line, const char *fmt, ...);
+#define ATMOS_DEBUG(fmt, ...) do{ AtmosUtil_log("DEBUG", __FILE__, __LINE__, fmt, __VA_ARGS__); }while(0)
+#define ATMOS_WARN(fmt, ...) do{ AtmosUtil_log("WARN", __FILE__, __LINE__, fmt, __VA_ARGS__); }while(0)
+#define ATMOS_ERROR(fmt, ...) do{ AtmosUtil_log("ERROR", __FILE__, __LINE__, fmt, __VA_ARGS__); }while(0)
+
+#if WIN32
+#define snprintf sprintf_s
+#define strtok_r strtok_s
+#endif
+#endif

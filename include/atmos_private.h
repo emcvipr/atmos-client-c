@@ -8,6 +8,9 @@
 #ifndef ATMOS_PRIVATE_H_
 #define ATMOS_PRIVATE_H_
 
+extern const char const *ATMOS_SYSTEM_META_NAMES[];
+extern const int ATMOS_SYSTEM_META_NAME_COUNT;
+
 char *
 AtmosClient_sign(AtmosClient *self, const char *hash_string);
 
@@ -43,7 +46,10 @@ void AtmosFilter_set_create_headers(RestFilter *self, RestClient *rest,
 void AtmosFilter_parse_service_info_response(RestFilter *self, RestClient *rest,
         RestRequest *request, RestResponse *response);
 
-
-
+// Special filters for Read Object
+void AtmosFilter_parse_read_object_response(RestFilter *self, RestClient *rest,
+        RestRequest *request, RestResponse *response);
+void AtmosFilter_set_read_object_headers(RestFilter *self, RestClient *rest,
+        RestRequest *request, RestResponse *response);
 
 #endif /* ATMOS_PRIVATE_H_ */

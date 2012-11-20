@@ -31,6 +31,25 @@ int AtmosUtil_meta_char_check(const char *str);
 xmlChar *AtmosUtil_select_single_node_value(xmlDocPtr doc, xmlChar *selector,
         int use_cos_ns);
 
+void
+AtmosUtil_parse_user_meta_headers(RestResponse *response,
+        AtmosMetadata *meta, int *meta_count,
+        AtmosMetadata *listable_meta, int *listable_meta_count);
+
+void
+AtmosUtil_parse_system_meta_header(RestResponse *response,
+        AtmosSystemMetadata *system_meta);
+
+void
+AtmosUtil_parse_acl_headers(RestResponse *response,
+        AtmosAclEntry *acl, int *acl_count);
+
+int
+AtmosUtil_is_system_meta_name(const char *name);
+
+time_t
+AtmosUtil_parse_xml_datetime(const char *value);
+
 // Debugging
 void
 AtmosUtil_log(const char *level, const char *file, const int line, const char *fmt, ...);

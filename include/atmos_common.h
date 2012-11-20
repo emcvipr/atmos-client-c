@@ -19,7 +19,7 @@ enum atmos_acl_principal_type {
 };
 
 enum atmos_acl_permission {
-    NONE, READ, READ_WRITE, FULL
+    ATMOS_PERM_NONE, ATMOS_PERM_READ, ATMOS_PERM_READ_WRITE, ATMOS_PERM_FULL
 };
 
 typedef struct {
@@ -33,6 +33,22 @@ typedef struct {
     char name[ATMOS_META_NAME_MAX];
     char value[ATMOS_META_VALUE_MAX];
 } AtmosMetadata;
+
+typedef struct {
+    char object_id[ATMOS_OID_LENGTH];
+    char objname[ATMOS_PATH_MAX];
+    time_t atime;
+    time_t ctime;
+    time_t itime;
+    time_t mtime;
+    int64_t size;
+    int nlink;
+    const char *type;
+    char uid[ATMOS_UID_MAX];
+    char gid[ATMOS_UID_MAX];
+    char policyname[ATMOS_UID_MAX];
+    char wschecksum[ATMOS_CHECKSUM_MAX];
+} AtmosSystemMetadata;
 
 AtmosResponse*
 AtmosResponse_init(AtmosResponse *self);

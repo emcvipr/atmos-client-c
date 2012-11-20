@@ -1,3 +1,8 @@
+﻿/******************************************************************************
+ * NOTE: This file contains UTF-8 characters.  If your compiler does not accept
+ * this encoding (most should), comment out:
+ * - test_meta_generator_utf8
+ ******************************************************************************/
 /*
  * test_atmos.c
  *
@@ -8,12 +13,12 @@
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
+
 #include "seatest.h"
 #include "test.h"
 #include "atmos.h"
 #include "atmos_util.h"
 #include "atmos_private.h" // To test private methods
-
 static char user_id[255];
 static char key[64];
 static char endpoint[255];
@@ -28,55 +33,58 @@ char proxy_user[256];
 char proxy_pass[256];
 int proxy_port;
 
-static const char *filechars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~!$&\"()*+,;=:";
+static const char
+        *filechars =
+                "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~!$&\"()*+,;=:";
 
 static void random_file(char *name, int count) {
-    int i=0;
+    int i = 0;
     int num_filechars = strlen(filechars);
-    for(;i<count;i++) {
+    for (; i < count; i++) {
         name[i] = filechars[random() % num_filechars];
     }
     name[i] = 0;
 }
 
 void check_error(AtmosResponse *response) {
-    RestResponse *rest_response = (RestResponse*)response;
-    if(rest_response->http_code == 0) {
+    RestResponse *rest_response = (RestResponse*) response;
+    if (rest_response->http_code == 0) {
         // Transport-level error
         printf("Connection error %d: %s\n", rest_response->curl_error,
                 rest_response->curl_error_message);
-    } else if(rest_response->http_code > 399) {
+    } else if (rest_response->http_code > 399) {
         printf("HTTP error %d: %s\n", rest_response->http_code,
                 rest_response->http_status);
     }
-    if(response->atmos_error > 0) {
+    if (response->atmos_error > 0) {
         printf("Atmos error %d: %s\n", response->atmos_error,
                 response->atmos_error_message);
     }
 }
 
-static const char *string_to_sign =
-        "POST\n"
-        "application/octet-stream\n"
-        "\n"
-        "Thu, 05 Jun 2008 16:38:19 GMT\n"
-        "/rest/objects\n"
-        "x-emc-date:Thu, 05 Jun 2008 16:38:19 GMT\n"
-        "x-emc-groupacl:other=NONE\n"
-        "x-emc-listable-meta:part4/part7/part8=quick\n"
-        "x-emc-meta:part1=buy\n"
-        "x-emc-uid:6039ac182f194e15b9261d73ce044939/user1\n"
-        "x-emc-useracl:john=FULL_CONTROL,mary=WRITE";
+static const char *string_to_sign = "POST\n"
+    "application/octet-stream\n"
+    "\n"
+    "Thu, 05 Jun 2008 16:38:19 GMT\n"
+    "/rest/objects\n"
+    "x-emc-date:Thu, 05 Jun 2008 16:38:19 GMT\n"
+    "x-emc-groupacl:other=NONE\n"
+    "x-emc-listable-meta:part4/part7/part8=quick\n"
+    "x-emc-meta:part1=buy\n"
+    "x-emc-uid:6039ac182f194e15b9261d73ce044939/user1\n"
+    "x-emc-useracl:john=FULL_CONTROL,mary=WRITE";
 
 void get_atmos_client(AtmosClient *atmos) {
     AtmosClient_init(atmos, endpoint, -1, user_id, key);
-    RestClient_add_curl_config_handler((RestClient*)atmos, rest_verbose_config);
+    //RestClient_add_curl_config_handler((RestClient*) atmos, rest_verbose_config);
 
-    if(strlen(proxy_host) > 0) {
-        if(strlen(proxy_user) > 0) {
-            RestClient_set_proxy((RestClient*)atmos, proxy_host, proxy_port, proxy_user, proxy_pass);
+    if (strlen(proxy_host) > 0) {
+        if (strlen(proxy_user) > 0) {
+            RestClient_set_proxy((RestClient*) atmos, proxy_host, proxy_port,
+                    proxy_user, proxy_pass);
         } else {
-            RestClient_set_proxy((RestClient*)atmos, proxy_host, proxy_port, NULL, NULL);
+            RestClient_set_proxy((RestClient*) atmos, proxy_host, proxy_port,
+                    NULL, NULL);
         }
     }
 }
@@ -90,68 +98,52 @@ void do_test_whitespace(const char *input, const char *expected_output) {
 }
 
 void test_normalize_whitespace() {
-    do_test_whitespace(
-            "x-emc-meta:title=Moutain Dew",
+    do_test_whitespace("x-emc-meta:title=Moutain Dew",
             "x-emc-meta:title=Moutain Dew");
 
-    do_test_whitespace(
-            "x-emc-meta: title=Moutain Dew",
+    do_test_whitespace("x-emc-meta: title=Moutain Dew",
             "x-emc-meta:title=Moutain Dew");
 
-    do_test_whitespace(
-            "x-emc-meta : title=Moutain Dew",
+    do_test_whitespace("x-emc-meta : title=Moutain Dew",
             "x-emc-meta:title=Moutain Dew");
 
-    do_test_whitespace(
-            "x-emc-meta:  title=Moutain Dew",
+    do_test_whitespace("x-emc-meta:  title=Moutain Dew",
             "x-emc-meta:title=Moutain Dew");
 
-    do_test_whitespace(
-            "x-emc-meta:   title=Moutain Dew",
+    do_test_whitespace("x-emc-meta:   title=Moutain Dew",
             "x-emc-meta:title=Moutain Dew");
 
-    do_test_whitespace(
-            "x-emc-meta:title=Moutain  Dew",
+    do_test_whitespace("x-emc-meta:title=Moutain  Dew",
             "x-emc-meta:title=Moutain Dew");
 
-    do_test_whitespace(
-            "x-emc-meta:title=Moutain   Dew",
+    do_test_whitespace("x-emc-meta:title=Moutain   Dew",
             "x-emc-meta:title=Moutain Dew");
 
-    do_test_whitespace(
-            "x-emc-meta:title=Moutain Dew ",
+    do_test_whitespace("x-emc-meta:title=Moutain Dew ",
             "x-emc-meta:title=Moutain Dew");
 
-    do_test_whitespace(
-            "x-emc-meta:title=Moutain Dew, type=White Out",
+    do_test_whitespace("x-emc-meta:title=Moutain Dew, type=White Out",
             "x-emc-meta:title=Moutain Dew, type=White Out");
 
-    do_test_whitespace(
-            "x-emc-meta:title=Moutain Dew,type=White Out",
+    do_test_whitespace("x-emc-meta:title=Moutain Dew,type=White Out",
             "x-emc-meta:title=Moutain Dew,type=White Out");
 
-    do_test_whitespace(
-            "x-emc-meta:title=Moutain Dew , type=White Out",
+    do_test_whitespace("x-emc-meta:title=Moutain Dew , type=White Out",
             "x-emc-meta:title=Moutain Dew, type=White Out");
 
-    do_test_whitespace(
-            "x-emc-meta:title=Moutain Dew, type=White  Out",
+    do_test_whitespace("x-emc-meta:title=Moutain Dew, type=White  Out",
             "x-emc-meta:title=Moutain Dew, type=White Out");
 
-    do_test_whitespace(
-            "x-emc-meta:title=Moutain  Dew, type=White  Out",
+    do_test_whitespace("x-emc-meta:title=Moutain  Dew, type=White  Out",
             "x-emc-meta:title=Moutain Dew, type=White Out");
 
-    do_test_whitespace(
-            "x-emc-meta:title=Moutain  Dew , type=White  Out",
+    do_test_whitespace("x-emc-meta:title=Moutain  Dew , type=White  Out",
             "x-emc-meta:title=Moutain Dew, type=White Out");
 
-    do_test_whitespace(
-            "x-emc-meta:title=Moutain   Dew  , type=White  Out  ",
+    do_test_whitespace("x-emc-meta:title=Moutain   Dew  , type=White  Out  ",
             "x-emc-meta:title=Moutain Dew, type=White Out");
 
-    do_test_whitespace(
-            "x-emc-meta:title= Moutain   Dew  , type= White  Out  ",
+    do_test_whitespace("x-emc-meta:title= Moutain   Dew  , type= White  Out  ",
             "x-emc-meta:title= Moutain Dew, type= White Out");
 
     do_test_whitespace(
@@ -182,10 +174,13 @@ void test_sign_request() {
     RestRequest_add_header(&request, "Content-Type: application/octet-stream");
     RestRequest_add_header(&request, "Date: Thu, 05 Jun 2008 16:38:19 GMT");
     RestRequest_add_header(&request, "x-emc-date:Thu, 05 Jun 2008 16:38:19 GMT");
-    RestRequest_add_header(&request, "x-emc-uid:6039ac182f194e15b9261d73ce044939/user1");
+    RestRequest_add_header(&request,
+            "x-emc-uid:6039ac182f194e15b9261d73ce044939/user1");
     RestRequest_add_header(&request, "x-emc-meta:part1=buy");
-    RestRequest_add_header(&request, "x-emc-listable-meta:part4/part7/part8=quick");
-    RestRequest_add_header(&request, "x-emc-useracl:john=FULL_CONTROL,mary=WRITE");
+    RestRequest_add_header(&request,
+            "x-emc-listable-meta:part4/part7/part8=quick");
+    RestRequest_add_header(&request,
+            "x-emc-useracl:john=FULL_CONTROL,mary=WRITE");
     RestRequest_add_header(&request, "x-emc-groupacl:other=NONE");
     RestRequest_add_header(&request, "Accept: */*"); // This header is not signed.
     RestRequest_add_header(&request, "x-some-other-header: bogus"); // Ditto
@@ -209,7 +204,6 @@ void test_sign_request() {
     RestRequest_destroy(&request);
 }
 
-
 void test_get_service_info() {
     AtmosClient atmos;
     AtmosServiceInfoResponse res;
@@ -220,12 +214,12 @@ void test_get_service_info() {
 
     AtmosClient_get_service_information(&atmos, &res);
 
-    check_error((AtmosResponse*)&res);
+    check_error((AtmosResponse*) &res);
     assert_int_equal(200, res.parent.parent.http_code);
     assert_true(strlen(res.version) > 0);
     printf("Atmos Version %s\n", res.version);
 
-    if(res.version[0] >= 50) { // '2'
+    if (res.version[0] >= 50) { // '2'
         // Atmos >= 2.x should support this
         assert_int_equal(1, res.utf8_metadata_supported);
     }
@@ -256,6 +250,318 @@ void test_parse_error() {
 
 }
 
+/**
+ * Test the function that generates ACL headers.
+ */
+void test_acl_generator() {
+    AtmosAclEntry acl[4];
+    RestRequest request;
+    const char *header_value;
+
+    acl[0].type = ATMOS_GROUP;
+    strcpy(acl[0].principal, ATMOS_ACL_GROUP_OTHER);
+    acl[0].permission = ATMOS_PERM_READ;
+
+    acl[1].type = ATMOS_USER;
+    strcpy(acl[1].principal, "alice");
+    acl[1].permission = ATMOS_PERM_FULL;
+
+    acl[2].type = ATMOS_USER;
+    strcpy(acl[2].principal, "bob");
+    acl[2].permission = ATMOS_PERM_READ_WRITE;
+
+    acl[3].type = ATMOS_USER;
+    strcpy(acl[3].principal, "charlie");
+    acl[3].permission = ATMOS_PERM_NONE;
+
+    RestRequest_init(&request, "http://www.google.com", HTTP_GET);
+    AtmosUtil_set_acl_header(acl, 4, &request);
+
+    header_value = RestRequest_get_header_value(&request,
+            ATMOS_HEADER_GROUP_ACL);
+    assert_string_equal("other=READ", header_value);
+
+    header_value
+            = RestRequest_get_header_value(&request, ATMOS_HEADER_USER_ACL);
+    assert_string_equal("alice=FULL_CONTROL, bob=WRITE, charlie=NONE",
+            header_value);
+
+    RestRequest_destroy(&request);
+}
+
+/**
+ * Test the function that generates metadata headers.
+ */
+void test_meta_generator() {
+    AtmosMetadata meta[4];
+    RestRequest request;
+    const char *header_value;
+
+    printf("Ignore any warnings about invalid characters\n");
+
+    strcpy(meta[0].name, "name1");
+    strcpy(meta[0].value, "value1");
+
+    strcpy(meta[1].name, "name 2");
+    strcpy(meta[1].value, "Value with space");
+
+    strcpy(meta[2].name, "name_3");
+    strcpy(meta[2].value, "character test 1!2@3#4$5%6^7&8*9(0)`~-_+\\|]}[{;:'\"/?.><");
+
+    strcpy(meta[3].name, "name4");
+    strcpy(meta[3].value, "invalid character test ,=\v\x80\n");
+
+    RestRequest_init(&request, "http://www.google.com", HTTP_GET);
+    AtmosUtil_set_metadata_header(meta, 4, 0, 0, &request);
+    header_value = RestRequest_get_header_value(&request, ATMOS_HEADER_META);
+    assert_string_equal("name1=value1,name 2=Value with space,"
+            "name_3=character test 1!2@3#4$5%6^7&8*9(0)`~-_+\\|]}[{;:'\"/?.><",
+            header_value);
+    AtmosUtil_set_metadata_header(meta, 4, 1, 0, &request);
+    header_value = RestRequest_get_header_value(&request,
+            ATMOS_HEADER_LISTABLE_META);
+    assert_string_equal("name1=value1,name 2=Value with space,"
+            "name_3=character test 1!2@3#4$5%6^7&8*9(0)`~-_+\\|]}[{;:'\"/?.><",
+            header_value);
+    RestRequest_destroy(&request);
+}
+
+/**
+ * Test the function that generates metadata headers in UTF-8 mode.
+ */
+void test_meta_generator_utf8() {
+    AtmosMetadata meta[4];
+    RestRequest request;
+    const char *header_value;
+
+    strcpy(meta[0].name, "cryllic");
+    strcpy(meta[0].value, "спасибо");
+
+    strcpy(meta[1].name, "Japanese");
+    strcpy(meta[1].value, "どうもありがとう");
+
+    strcpy(meta[2].name, "Composed accents");
+    strcpy(meta[2].value, "éêëè");
+
+    strcpy(meta[3].name, "Special Characters");
+    strcpy(meta[3].value, "invalid character test ,=\v\x80\n");
+
+    RestRequest_init(&request, "http://www.google.com", HTTP_GET);
+    AtmosUtil_set_metadata_header(meta, 4, 1, 1, &request);
+    header_value = RestRequest_get_header_value(&request,
+            ATMOS_HEADER_LISTABLE_META);
+    assert_string_equal("cryllic=%D1%81%D0%BF%D0%B0%D1%81%D0%B8%D0%B1%D0%BE,"
+            "Japanese=%E3%81%A9%E3%81%86%E3%82%82%E3%81%82%E3%82%8A%E3%81%8C%E3%81%A8%E3%81%86,"
+            "Composed%20accents=%C3%A9%C3%AA%C3%AB%C3%A8,"
+            "Special%20Characters=invalid%20character%20test%20%2C%3D%0B%80%0A",
+            header_value);
+    RestRequest_destroy(&request);
+}
+
+// Test the metadata parser
+void test_parse_meta() {
+    AtmosMetadata meta[4], listable_meta[4];
+    int meta_count = 0, listable_meta_count = 0;
+
+    RestResponse response;
+
+    RestResponse_init(&response);
+
+    RestResponse_add_header(&response, ATMOS_HEADER_META ":"
+    "name1=value1,name 2=Value with space,"
+    "name_3=character test 1!2@3#4$5%6^7&8*9(0)`~-_+\\|]}[{;:'\"/?.><");
+    RestResponse_add_header(&response, ATMOS_HEADER_LISTABLE_META ":"
+    "name1=value1,name 2=Value with space,"
+    "name_3=character test 1!2@3#4$5%6^7&8*9(0)`~-_+\\|]}[{;:'\"/?.><");
+    AtmosUtil_parse_user_meta_headers(&response, meta, &meta_count,
+            listable_meta, &listable_meta_count);
+
+    assert_int_equal(3, meta_count);
+    assert_int_equal(3, listable_meta_count);
+    assert_string_equal("name1", meta[0].name);
+    assert_string_equal("name 2", meta[1].name);
+    assert_string_equal("name_3", meta[2].name);
+    assert_string_equal("value1", meta[0].value);
+    assert_string_equal("Value with space", meta[1].value);
+    assert_string_equal("character test 1!2@3#4$5%6^7&8*9(0)`~-_+\\|]}[{;:'\"/?.><", meta[2].value);
+    assert_string_equal("name1", listable_meta[0].name);
+    assert_string_equal("name 2", listable_meta[1].name);
+    assert_string_equal("name_3", listable_meta[2].name);
+    assert_string_equal("value1", listable_meta[0].value);
+    assert_string_equal("Value with space", listable_meta[1].value);
+    assert_string_equal("character test 1!2@3#4$5%6^7&8*9(0)`~-_+\\|]}[{;:'\"/?.><", listable_meta[2].value);
+
+    RestResponse_destroy(&response);
+}
+
+// Test the metadata parser in UTF-8 mode
+void test_parse_meta_utf8() {
+    AtmosMetadata meta[4], listable_meta[4];
+    int meta_count = 0, listable_meta_count = 0;
+
+    RestResponse response;
+
+    RestResponse_init(&response);
+
+    RestResponse_add_header(
+            &response,
+            ATMOS_HEADER_META ":"
+            "%D1%80%D1%83%D1%81%D1%81%D0%BA%D0%B8%D0%B9=%D1%81%D0%BF%D0%B0%D1%81%D0%B8%D0%B1%D0%BE,"
+            "Japanese=%E3%81%A9%E3%81%86%E3%82%82%E3%81%82%E3%82%8A%E3%81%8C%E3%81%A8%E3%81%86,"
+            "Composed%20accents=%C3%A9%C3%AA%C3%AB%C3%A8,"
+            "Special%20Characters=invalid%20character%20test%20%2C%3D%0B%80%0A");
+    RestResponse_add_header(
+            &response,
+            ATMOS_HEADER_LISTABLE_META ":"
+            "%D1%80%D1%83%D1%81%D1%81%D0%BA%D0%B8%D0%B9=%D1%81%D0%BF%D0%B0%D1%81%D0%B8%D0%B1%D0%BE,"
+            "Japanese=%E3%81%A9%E3%81%86%E3%82%82%E3%81%82%E3%82%8A%E3%81%8C%E3%81%A8%E3%81%86,"
+            "Composed%20accents=%C3%A9%C3%AA%C3%AB%C3%A8,"
+            "Special%20Characters=invalid%20character%20test%20%2C%3D%0B%80%0A");
+    // Indicate that the response was encoded.
+    RestResponse_add_header(&response, ATMOS_HEADER_UTF8 ":true");
+
+    AtmosUtil_parse_user_meta_headers(&response, meta, &meta_count,
+            listable_meta, &listable_meta_count);
+    assert_int_equal(4, meta_count);
+    assert_int_equal(4, listable_meta_count);
+    assert_string_equal("русский", meta[0].name);
+    assert_string_equal("Japanese", meta[1].name);
+    assert_string_equal("Composed accents", meta[2].name);
+    assert_string_equal("Special Characters", meta[3].name);
+    assert_string_equal("спасибо", meta[0].value);
+    assert_string_equal("どうもありがとう", meta[1].value);
+    assert_string_equal("éêëè", meta[2].value);
+    assert_string_equal("invalid character test ,=\v\x80\n", meta[3].value);
+    assert_string_equal("русский", listable_meta[0].name);
+    assert_string_equal("Japanese", listable_meta[1].name);
+    assert_string_equal("Composed accents", listable_meta[2].name);
+    assert_string_equal("Special Characters", listable_meta[3].name);
+    assert_string_equal("спасибо", listable_meta[0].value);
+    assert_string_equal("どうもありがとう", listable_meta[1].value);
+    assert_string_equal("éêëè", listable_meta[2].value);
+    assert_string_equal("invalid character test ,=\v\x80\n", listable_meta[3].value);
+
+    RestResponse_destroy(&response);
+}
+
+void test_parse_system_meta() {
+    AtmosMetadata meta[4], listable_meta[4];
+    int meta_count = 0, listable_meta_count = 0;
+    AtmosSystemMetadata system_meta;
+    RestResponse response;
+
+    memset(&system_meta, 0, sizeof(AtmosSystemMetadata));
+
+    RestResponse_init(&response);
+
+    RestResponse_add_header(&response, ATMOS_HEADER_META ":"
+    "atime=2009-02-18T16:27:24Z, mtime=2009-02-18T16:03:52Z,"
+    "ctime=2009-02-18T16:27:24Z, itime=2009-02-18T16:03:52Z,"
+    "type=regular, uid=user1, gid=apache,"
+    "objectid=499ad542a1a8bc200499ad5a6b05580499c3168560a4, objname=,"
+    "size=211, nlink=0, policyname=default,"
+    "x-emc-wschecksum=sha0/1037/87hn7kkdd9d982f031qwe9ab224abjd6h1276nj9");
+
+    AtmosUtil_parse_user_meta_headers(&response, meta, &meta_count,
+            listable_meta, &listable_meta_count);
+    assert_int_equal(0, meta_count);
+    assert_int_equal(0, listable_meta_count);
+
+    AtmosUtil_parse_system_meta_header(&response, &system_meta);
+    assert_int_equal(1234974444, system_meta.atime);
+    assert_int_equal(1234974444, system_meta.ctime);
+    assert_string_equal("apache", system_meta.gid);
+    assert_int_equal(1234973032, system_meta.itime);
+    assert_int_equal(1234973032, system_meta.mtime);
+    assert_int_equal(0, system_meta.nlink);
+    assert_string_equal("499ad542a1a8bc200499ad5a6b05580499c3168560a4", system_meta.object_id);
+    assert_string_equal("", system_meta.objname);
+    assert_string_equal("default", system_meta.policyname);
+    assert_int_equal(211, system_meta.size);
+    assert_string_equal("regular", system_meta.type);
+    assert_string_equal("user1", system_meta.uid);
+    assert_string_equal("sha0/1037/87hn7kkdd9d982f031qwe9ab224abjd6h1276nj9", system_meta.wschecksum);
+
+    RestResponse_destroy(&response);
+}
+
+void test_parse_system_meta_utf8() {
+    AtmosMetadata meta[4], listable_meta[4];
+    int meta_count = 0, listable_meta_count = 0;
+    AtmosSystemMetadata system_meta;
+    RestResponse response;
+
+    memset(&system_meta, 0, sizeof(AtmosSystemMetadata));
+
+    RestResponse_init(&response);
+
+    RestResponse_add_header(&response, ATMOS_HEADER_META ":"
+    "atime=2012-01-06T16:16:00Z, mtime=2012-01-06T15:59:28Z,"
+    "ctime=2012-01-06T16:16:00Z, itime=2012-01-06T15:59:27Z,"
+    "type=regular, uid=user1, gid=apache,"
+    "objectid=4ef49feaa106904c04ef4a066e778104f071a5ff0c85,"
+    "objname=%cf%85%cf%80%ce%bf%ce%bb%ce%bf%ce%b3%ce%b9%cf%83%cf%84%ce%b7%cc%81.jpg,"
+    "size=459, nlink=1, policyname=default");
+    RestResponse_add_header(&response, ATMOS_HEADER_UTF8 ": true");
+
+    AtmosUtil_parse_user_meta_headers(&response, meta, &meta_count,
+            listable_meta, &listable_meta_count);
+    assert_int_equal(0, meta_count);
+    assert_int_equal(0, listable_meta_count);
+
+    AtmosUtil_parse_system_meta_header(&response, &system_meta);
+    assert_int_equal(1325866560, system_meta.atime);
+    assert_int_equal(1325866560, system_meta.ctime);
+    assert_string_equal("apache", system_meta.gid);
+    assert_int_equal(1325865567, system_meta.itime);
+    assert_int_equal(1325865568, system_meta.mtime);
+    assert_int_equal(1, system_meta.nlink);
+    assert_string_equal("4ef49feaa106904c04ef4a066e778104f071a5ff0c85", system_meta.object_id);
+    assert_string_equal("υπολογιστή.jpg", system_meta.objname);
+    assert_string_equal("default", system_meta.policyname);
+    assert_int_equal(459, system_meta.size);
+    assert_string_equal("regular", system_meta.type);
+    assert_string_equal("user1", system_meta.uid);
+    assert_string_equal("", system_meta.wschecksum);
+
+    RestResponse_destroy(&response);
+}
+
+void test_parse_acl() {
+    RestResponse response;
+    AtmosAclEntry acl[6];
+    int acl_count=0;
+
+    RestResponse_init(&response);
+
+    RestResponse_add_header(&response, ATMOS_HEADER_USER_ACL ": "
+            "fred=FULL_CONTROL, john=FULL_CONTROL,mary=READ,"
+            "user1=WRITE");
+    RestResponse_add_header(&response, ATMOS_HEADER_GROUP_ACL ": "
+            "other=NONE");
+
+    AtmosUtil_parse_acl_headers(&response, acl, &acl_count);
+
+    assert_int_equal(5, acl_count);
+    assert_string_equal("fred", acl[0].principal);
+    assert_int_equal(ATMOS_USER, acl[0].type);
+    assert_int_equal(ATMOS_PERM_FULL, acl[0].permission);
+    assert_string_equal("john", acl[1].principal);
+    assert_int_equal(ATMOS_USER, acl[1].type);
+    assert_int_equal(ATMOS_PERM_FULL, acl[1].permission);
+    assert_string_equal("mary", acl[2].principal);
+    assert_int_equal(ATMOS_USER, acl[2].type);
+    assert_int_equal(ATMOS_PERM_READ, acl[2].permission);
+    assert_string_equal("user1", acl[3].principal);
+    assert_int_equal(ATMOS_USER, acl[3].type);
+    assert_int_equal(ATMOS_PERM_READ_WRITE, acl[3].permission);
+    assert_string_equal("other", acl[4].principal);
+    assert_int_equal(ATMOS_GROUP, acl[4].type);
+    assert_int_equal(ATMOS_PERM_NONE, acl[4].permission);
+
+    RestResponse_destroy(&response);
+}
+
 void test_create_object() {
     AtmosClient atmos;
     AtmosCreateObjectResponse response;
@@ -266,6 +572,7 @@ void test_create_object() {
 
     AtmosClient_create_object_simple(&atmos, "test", 4, "text/plain", &response);
 
+    assert_int_equal(201, response.parent.parent.http_code);
     assert_true(strlen(response.object_id) > 0);
 
     printf("Created object: %s\n", response.object_id);
@@ -276,6 +583,7 @@ void test_create_object() {
     RestResponse_destroy(&delete_response);
 
     AtmosCreateObjectResponse_destroy(&response);
+    AtmosClient_destroy(&atmos);
 }
 
 void test_create_object_ns() {
@@ -290,12 +598,12 @@ void test_create_object_ns() {
     printf("Creating object: %s\n", path);
 
     get_atmos_client(&atmos);
-    atmos.signature_debug = 1;
+    //atmos.signature_debug = 1;
     AtmosCreateObjectResponse_init(&response);
 
-    AtmosClient_create_object_simple_ns(&atmos, path, "test", 4,
-            "text/plain", &response);
-
+    AtmosClient_create_object_simple_ns(&atmos, path, "test", 4, "text/plain",
+            &response);
+    assert_int_equal(201, response.parent.parent.http_code);
     assert_true(strlen(response.object_id) > 0);
 
     printf("Created object: %s\n", response.object_id);
@@ -306,8 +614,135 @@ void test_create_object_ns() {
     RestResponse_destroy(&delete_response);
 
     AtmosCreateObjectResponse_destroy(&response);
+    AtmosClient_destroy(&atmos);
 }
 
+/**
+ * Test creating an object with metadata.
+ */
+void test_create_object_meta() {
+    AtmosClient atmos;
+    AtmosCreateObjectRequest request;
+    AtmosCreateObjectResponse response;
+    RestResponse delete_response;
+    get_atmos_client(&atmos);
+
+    AtmosCreateObjectRequest_init(&request);
+    AtmosCreateObjectResponse_init(&response);
+
+    // some test strings
+    AtmosCreateObjectRequest_add_metadata(&request, "meta1",
+            "Value  with   spaces", 0);
+    AtmosCreateObjectRequest_add_metadata(&request, "meta2",
+            "character test 1!2@3#4$5%6^7&8*9(0)`~-_+\\|]}[{;:'\"/?.><", 0);
+    AtmosCreateObjectRequest_add_metadata(&request, "name  with   spaces",
+            "value", 0);
+    AtmosCreateObjectRequest_add_metadata(&request, "empty value", "", 0);
+    AtmosCreateObjectRequest_add_metadata(&request, "listable1", "value1", 1);
+    AtmosCreateObjectRequest_add_metadata(&request, "listable2", "", 1);
+
+    AtmosClient_create_object(&atmos, &request, &response);
+    assert_int_equal(201, response.parent.parent.http_code);
+    assert_true(strlen(response.object_id) > 0);
+    printf("Created object: %s\n", response.object_id);
+
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_object(&atmos, response.object_id, &delete_response);
+    assert_int_equal(204, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    AtmosCreateObjectRequest_destroy(&request);
+    AtmosCreateObjectResponse_destroy(&response);
+
+    AtmosClient_destroy(&atmos);
+}
+
+/**
+ * Test creating an object with UTF8 metadata.
+ */
+void test_create_object_meta_utf8() {
+    AtmosClient atmos;
+    AtmosServiceInfoResponse service_info;
+    AtmosCreateObjectRequest request;
+    AtmosCreateObjectResponse response;
+    RestResponse delete_response;
+
+    get_atmos_client(&atmos);
+    AtmosServiceInfoResponse_init(&service_info);
+    AtmosClient_get_service_information(&atmos, &service_info);
+    if (!service_info.utf8_metadata_supported) {
+        printf("...skipped (UTF8 metadata not supported)\n");
+        AtmosServiceInfoResponse_destroy(&service_info);
+        AtmosClient_destroy(&atmos);
+        return;
+    }
+    AtmosServiceInfoResponse_destroy(&service_info);
+
+    // Turn on UTF-8 metadata handling
+    atmos.enable_utf8_metadata = 1;
+
+    AtmosCreateObjectRequest_init(&request);
+    AtmosCreateObjectResponse_init(&response);
+
+    AtmosCreateObjectRequest_add_metadata(&request, "русский", "спасибо", 0);
+    AtmosCreateObjectRequest_add_metadata(&request, "日本語", "どうもありがとう", 0);
+    AtmosCreateObjectRequest_add_metadata(&request, "Composed accents", "éêëè",
+            0);
+    AtmosCreateObjectRequest_add_metadata(&request, "Special Characters",
+            "invalid character test ,=\v\x80\n", 0);
+
+    AtmosClient_create_object(&atmos, &request, &response);
+    assert_int_equal(201, response.parent.parent.http_code);
+    assert_true(strlen(response.object_id) > 0);
+    printf("Created object: %s\n", response.object_id);
+
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_object(&atmos, response.object_id, &delete_response);
+    assert_int_equal(204, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    AtmosCreateObjectRequest_destroy(&request);
+    AtmosCreateObjectResponse_destroy(&response);
+
+    AtmosClient_destroy(&atmos);
+}
+
+/**
+ * Test creating an object with an ACL
+ */
+void test_create_object_acl() {
+    AtmosClient atmos;
+    AtmosCreateObjectRequest request;
+    AtmosCreateObjectResponse response;
+    RestResponse delete_response;
+    get_atmos_client(&atmos);
+
+    AtmosCreateObjectRequest_init(&request);
+    AtmosCreateObjectResponse_init(&response);
+
+    // Build an ACL
+    AtmosCreateObjectRequest_add_acl(&request, uid1, ATMOS_USER,
+            ATMOS_PERM_FULL);
+    AtmosCreateObjectRequest_add_acl(&request, uid2, ATMOS_USER,
+            ATMOS_PERM_READ_WRITE);
+    AtmosCreateObjectRequest_add_acl(&request, ATMOS_ACL_GROUP_OTHER,
+            ATMOS_GROUP, ATMOS_PERM_NONE);
+
+    AtmosClient_create_object(&atmos, &request, &response);
+    assert_int_equal(201, response.parent.parent.http_code);
+    assert_true(strlen(response.object_id) > 0);
+    printf("Created object: %s\n", response.object_id);
+
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_object(&atmos, response.object_id, &delete_response);
+    assert_int_equal(204, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    AtmosCreateObjectRequest_destroy(&request);
+    AtmosCreateObjectResponse_destroy(&response);
+
+    AtmosClient_destroy(&atmos);
+}
 
 void test_atmos_suite() {
     char proxy_port_str[32];
@@ -333,7 +768,6 @@ void test_atmos_suite() {
     fgets(proxy_user, 256, config);
     fgets(proxy_pass, 256, config);
 
-
     // Strip newlines
     user_id[strlen(user_id) - 1] = 0;
     key[strlen(key) - 1] = 0;
@@ -341,16 +775,16 @@ void test_atmos_suite() {
     uid1[strlen(uid1) - 1] = 0;
     uid2[strlen(uid2) - 1] = 0;
 
-    if(strlen(proxy_host)>0) {
-        proxy_host[strlen(proxy_host)-1] = 0;
+    if (strlen(proxy_host) > 0) {
+        proxy_host[strlen(proxy_host) - 1] = 0;
     }
-    if(strlen(proxy_user)>0) {
-        proxy_user[strlen(proxy_user)-1] = 0;
+    if (strlen(proxy_user) > 0) {
+        proxy_user[strlen(proxy_user) - 1] = 0;
     }
-    if(strlen(proxy_pass)>0) {
-        proxy_pass[strlen(proxy_pass)-1] = 0;
+    if (strlen(proxy_pass) > 0) {
+        proxy_pass[strlen(proxy_pass) - 1] = 0;
     }
-    if(strlen(proxy_port_str)>1) {
+    if (strlen(proxy_port_str) > 1) {
         proxy_port = atoi(proxy_port_str);
     } else {
         proxy_port = -1;
@@ -413,6 +847,30 @@ void test_atmos_suite() {
     start_test_msg("test_sign_request");
     run_test(test_sign_request);
 
+    start_test_msg("test_acl_generator");
+    run_test(test_acl_generator);
+
+    start_test_msg("test_meta_generator");
+    run_test(test_meta_generator);
+
+    start_test_msg("test_meta_generator_utf8");
+    run_test(test_meta_generator_utf8);
+
+    start_test_msg("test_parse_meta");
+    run_test(test_parse_meta);
+
+    start_test_msg("test_parse_meta_utf8");
+    run_test(test_parse_meta_utf8);
+
+    start_test_msg("test_parse_system_meta");
+    run_test(test_parse_system_meta);
+
+    start_test_msg("test_parse_system_meta_utf8");
+    run_test(test_parse_system_meta_utf8);
+
+    start_test_msg("test_parse_acl");
+    run_test(test_parse_acl);
+
     start_test_msg("test_get_service_info");
     run_test(test_get_service_info);
 
@@ -424,6 +882,15 @@ void test_atmos_suite() {
 
     start_test_msg("test_create_object_ns");
     run_test(test_create_object_ns);
+
+    start_test_msg("test_create_object_meta");
+    run_test(test_create_object_meta);
+
+    start_test_msg("test_create_object_meta_utf8");
+    run_test(test_create_object_meta_utf8);
+
+    start_test_msg("test_create_object_acl");
+    run_test(test_create_object_acl);
 
     test_fixture_end();
 

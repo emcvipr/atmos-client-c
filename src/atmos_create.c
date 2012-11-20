@@ -31,7 +31,7 @@ AtmosCreateObjectRequest_init(AtmosCreateObjectRequest *self) {
 AtmosCreateObjectRequest*
 AtmosCreateObjectRequest_init_ns(AtmosCreateObjectRequest *self,
         const char *path) {
-    char uri[ATMOS_PATH_MAX];
+    char uri[ATMOS_PATH_MAX + 15];
 
     if(path[0] != '/') {
         fprintf(stderr, "Path must start with a '/'\n");
@@ -156,6 +156,11 @@ void AtmosFilter_set_create_headers(RestFilter *self, RestClient *rest,
         AtmosUtil_set_metadata_header(req->listable_meta,
                 req->listable_meta_count, 1,
                 atmos->enable_utf8_metadata, request);
+    }
+
+    if(atmos->enable_utf8_metadata) {
+        RestRequest_add_header((RestRequest*)request,
+                ATMOS_HEADER_UTF8 ": true");
     }
 
     if(req->acl_count > 0) {

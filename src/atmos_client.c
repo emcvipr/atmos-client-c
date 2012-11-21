@@ -294,3 +294,41 @@ void AtmosClient_delete_object_ns(AtmosClient *self, const char *path,
     RestRequest_destroy(&request);
 }
 
+void
+AtmosClient_read_object(AtmosClient *self, AtmosReadObjectRequest *request,
+        AtmosReadObjectResponse *response) {
+    RestFilter *chain = NULL;
+
+    chain = AtmosClient_add_default_filters(self, chain);
+    chain = RestFilter_add(chain, AtmosFilter_set_read_object_headers);
+    chain = RestFilter_add(chain, AtmosFilter_parse_read_object_response);
+
+    RestClient_execute_request((RestClient*)self, chain,
+            (RestRequest*)request, (RestResponse*)response);
+
+    RestFilter_free(chain);
+}
+
+void
+AtmosClient_read_object_simple(AtmosClient *self, const char *object_id,
+        AtmosReadObjectResponse *response) {
+    AtmosReadObjectRequest request;
+
+    AtmosReadObjectRequest_init(&request, object_id);
+
+    AtmosClient_read_object(self, &request, response);
+
+    AtmosReadObjectRequest_destroy(&request);
+}
+
+void
+AtmosClient_read_object_simple_ns(AtmosClient *self, const char *path,
+        AtmosReadObjectResponse *response) {
+    AtmosReadObjectRequest request;
+
+    AtmosReadObjectRequest_init_ns(&request, path);
+
+    AtmosClient_read_object(self, &request, response);
+
+    AtmosReadObjectRequest_destroy(&request);
+}

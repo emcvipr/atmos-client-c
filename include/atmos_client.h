@@ -59,4 +59,18 @@ void
 AtmosClient_delete_object_ns(AtmosClient *self, const char *path,
         RestResponse *response);
 
+void
+AtmosClient_read_object(AtmosClient *self, AtmosReadObjectRequest *request,
+        AtmosReadObjectResponse *response);
+
+void
+AtmosClient_read_object_simple(AtmosClient *self, const char *object_id,
+        AtmosReadObjectResponse *response);
+
+void
+AtmosClient_read_object_simple_ns(AtmosClient *self, const char *path,
+        AtmosReadObjectResponse *response);
+
+
+
 #endif /* ATMOS_CLIENT_H_ */

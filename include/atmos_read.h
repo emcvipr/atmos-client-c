@@ -57,4 +57,27 @@ AtmosReadObjectResponse_init(AtmosReadObjectResponse *self);
 void
 AtmosReadObjectResponse_destroy(AtmosReadObjectResponse *self);
 
+/**
+ * Convenience method to read user metadata from the response.
+ * @param self the AtmosReadObjectResponse to search
+ * @param name the name of the metadata item
+ * @param listable set to 1 to search listable metadata, 0 to search regular.
+ * @return the value of the metadata, or NULL if the metadata was not found.
+ */
+const char *
+AtmosReadObjectResponse_get_metadata_value(AtmosReadObjectResponse *self,
+        const char *name, int listable);
+
+/**
+ * Convenience method to read the ACL permission granted to a principal.
+ * @param self the AtmosReadObjectResponse to search
+ * @param principal the principal name to look for
+ * @param principal_type the type of principal (ATMOS_USER or ATMOS_GROUP)
+ * @return the permissions granted to the principal.  If the principal is not
+ * found in the ACL, the permission NONE is returned.
+ */
+enum atmos_acl_permission
+AtmosReadObjectResponse_get_acl_permission(AtmosReadObjectResponse *self,
+        const char *principal, enum atmos_acl_principal_type principal_type);
+
 #endif /* ATMOS_READ_H_ */

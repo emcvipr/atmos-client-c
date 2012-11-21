@@ -50,6 +50,14 @@ AtmosUtil_is_system_meta_name(const char *name);
 time_t
 AtmosUtil_parse_xml_datetime(const char *value);
 
+const char *
+AtmosUtil_get_metadata_value(const char *name, AtmosMetadata *meta,
+        int meta_count);
+
+enum atmos_acl_permission
+AtmosUtil_get_acl_permission(AtmosAclEntry *acl, int acl_count,
+        const char *principal, enum atmos_acl_principal_type principal_type);
+
 // Debugging
 void
 AtmosUtil_log(const char *level, const char *file, const int line, const char *fmt, ...);

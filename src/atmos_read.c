@@ -4,8 +4,12 @@
  *  Created on: Nov 19, 2012
  *      Author: cwikj
  */
+#include <stdlib.h>
+#include <string.h>
+
 #include "atmos.h"
 #include "atmos_private.h"
+#include "atmos_util.h"
 
 static AtmosReadObjectRequest*
 AtmosReadObjectRequest_init_common(AtmosReadObjectRequest *self) {
@@ -20,7 +24,12 @@ AtmosReadObjectRequest_init_common(AtmosReadObjectRequest *self) {
 
 AtmosReadObjectRequest*
 AtmosReadObjectRequest_init(AtmosReadObjectRequest *self, const char *object_id) {
-    char uri[ATMOS_PATH_MAX + ATMOS_OID_LENGTH + 1];
+    char uri[15+ATMOS_OID_LENGTH];
+
+    snprintf(uri, 15+ATMOS_OID_LENGTH, "/rest/objects/%s", object_id);
+
+    RestRequest_init((RestRequest*) self, uri, HTTP_GET);
+    return AtmosReadObjectRequest_init_common(self);
 }
 
 AtmosReadObjectRequest*
@@ -91,11 +100,12 @@ void AtmosFilter_parse_read_object_response(RestFilter *self, RestClient *rest,
     }
 
     // Parse out the metadata and ACL.
-    AtmosUtil_parse_system_meta_header(res, &(res->system_metadata));
-    AtmosUtil_parse_user_meta_headers(response, &(res->meta),
-            &(res->meta_count), &(res->listable_meta),
+    AtmosUtil_parse_system_meta_header(response,
+            &(res->system_metadata));
+    AtmosUtil_parse_user_meta_headers(response, res->meta,
+            &(res->meta_count), res->listable_metadata,
             &(res->listable_meta_count));
-    AtmosUtil_parse_acl_headers(res, &(res->acl), &(res->acl_count));
+    AtmosUtil_parse_acl_headers(response, res->acl, &(res->acl_count));
 }
 
 void AtmosFilter_set_read_object_headers(RestFilter *self, RestClient *rest,
@@ -105,12 +115,20 @@ void AtmosFilter_set_read_object_headers(RestFilter *self, RestClient *rest,
 
     // Build a range header.
     if(req->range_start != -1 && req->range_end != -1) {
-        snprintf("%s: %lld-%lld", HTTP_HEADER_RANGE, req->range_start,
+        snprintf(buffer, ATMOS_SIMPLE_HEADER_MAX, "%s: Bytes=%lld-%lld", HTTP_HEADER_RANGE, req->range_start,
                 req->range_end);
+        RestRequest_add_header(request, buffer);
     } else if(req->range_start != -1) {
-        snprintf("%s: %lld-", HTTP_HEADER_RANGE, req->range_start);
+        snprintf(buffer, ATMOS_SIMPLE_HEADER_MAX, "%s: Bytes=%lld-", HTTP_HEADER_RANGE, req->range_start);
+        RestRequest_add_header(request, buffer);
     } else if(req->range_end != -1) {
-        snprintf("%s: -%lld", HTTP_HEADER_RANGE, req->range_end);
+        snprintf(buffer, ATMOS_SIMPLE_HEADER_MAX, "%s: Bytes=-%lld", HTTP_HEADER_RANGE, req->range_end);
+        RestRequest_add_header(request, buffer);
+    }
+
+    if(((AtmosClient*)rest)->enable_utf8_metadata) {
+        RestRequest_add_header((RestRequest*)request,
+                ATMOS_HEADER_UTF8 ": true");
     }
 
     // Pass to the next filter
@@ -118,4 +136,20 @@ void AtmosFilter_set_read_object_headers(RestFilter *self, RestClient *rest,
         ((rest_http_filter)self->next->func)(self->next, rest, request, response);
     }
 }
+
+const char *
+AtmosReadObjectResponse_get_metadata_value(AtmosReadObjectResponse *self,
+        const char *name, int listable) {
+    return AtmosUtil_get_metadata_value(name,
+            listable?self->listable_metadata:self->meta,
+            listable?self->listable_meta_count:self->meta_count);
+}
+
+enum atmos_acl_permission
+AtmosReadObjectResponse_get_acl_permission(AtmosReadObjectResponse *self,
+        const char *principal, enum atmos_acl_principal_type principal_type) {
+    return AtmosUtil_get_acl_permission(self->acl, self->acl_count,
+            principal, principal_type);
+}
+
 

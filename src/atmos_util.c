@@ -643,8 +643,6 @@ void AtmosUtil_parse_system_meta_header(RestResponse *response,
             strlcpy(system_meta->uid, entry_value, ATMOS_UID_MAX);
         } else if (!strcmp(ATMOS_SYSTEM_META_WSCHECKSUM, entry_name)) {
             strlcpy(system_meta->wschecksum, entry_value, ATMOS_CHECKSUM_MAX);
-        } else {
-            ATMOS_WARN("Unknown system metadata '%s'\n", entry_name);
         }
     }
 
@@ -714,3 +712,28 @@ AtmosUtil_parse_acl_headers(RestResponse *response,
     }
 }
 
+
+const char *
+AtmosUtil_get_metadata_value(const char *name, AtmosMetadata *meta, int meta_count) {
+    int i;
+    for(i=0; i<meta_count; i++) {
+        if(!strcmp(name, meta[i].name)) {
+            return meta[i].value;
+        }
+    }
+    return NULL;
+}
+
+enum atmos_acl_permission
+AtmosUtil_get_acl_permission(AtmosAclEntry *acl, int acl_count,
+        const char *principal, enum atmos_acl_principal_type principal_type) {
+    int i;
+
+    for(i=0; i<acl_count; i++) {
+        if(!strcmp(principal, acl[i].principal)
+                && acl[i].type == principal_type) {
+            return acl[i].permission;
+        }
+    }
+    return ATMOS_PERM_NONE;
+}

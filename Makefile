@@ -1,4 +1,5 @@
-SRC=atmos.c atmos_util.c atmos_client.c atmos_common.c atmos_create.c atmos_service_info.c
+SRC=atmos.c atmos_util.c atmos_client.c atmos_common.c atmos_create.c \
+	atmos_service_info.c atmos_read.c 
 TESTSRC=seatest.c test.c test_atmos.c
 
 OUTPUT_DIR=output

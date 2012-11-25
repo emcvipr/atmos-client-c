@@ -872,7 +872,7 @@ void test_read_object_with_meta_and_acl() {
         AtmosCreateObjectRequest_add_metadata(&request, "Composed accents", "éêëè",
                 0);
         AtmosCreateObjectRequest_add_metadata(&request, "Special Characters",
-                "invalid\ncharacter test ,=\v", 0);
+                "invalid\ncharacter test ,=AAA", 0);
     }
 
     // Put an ACL on the object.
@@ -929,7 +929,7 @@ void test_read_object_with_meta_and_acl() {
         assert_string_equal("éêëè",
                 AtmosReadObjectResponse_get_metadata_value(&read_response,
                         "Composed accents", 0));
-        assert_string_equal("invalid\ncharacter test ,=\v",
+        assert_string_equal("invalid\ncharacter test ,=AAA",
                 AtmosReadObjectResponse_get_metadata_value(&read_response,
                         "Special Characters", 0));
     }

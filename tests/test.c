@@ -43,7 +43,6 @@ void start_test_msg(const char *test_name) {
 
 int main() {
 	// Run tests
-	run_tests(test_atmos_suite);
+	return run_tests(test_atmos_suite);
 
-	return 0;
 }

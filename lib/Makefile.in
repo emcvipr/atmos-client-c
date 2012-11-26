@@ -52,8 +52,9 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 subdir = lib
-DIST_COMMON = $(include_HEADERS) $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in $(top_srcdir)/build-aux/depcomp
+DIST_COMMON = $(include_HEADERS) $(noinst_HEADERS) \
+	$(srcdir)/Makefile.am $(srcdir)/Makefile.in \
+	$(top_srcdir)/build-aux/depcomp
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
 	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
@@ -98,7 +99,9 @@ libatmos_la_LIBADD =
 am_libatmos_la_OBJECTS = libatmos_la-atmos.lo \
 	libatmos_la-atmos_client.lo libatmos_la-atmos_common.lo \
 	libatmos_la-atmos_create.lo libatmos_la-atmos_read.lo \
-	libatmos_la-atmos_service_info.lo libatmos_la-atmos_util.lo
+	libatmos_la-atmos_service_info.lo libatmos_la-atmos_util.lo \
+	libatmos_la-atmos_access_tokens.lo libatmos_la-atmos_update.lo \
+	libatmos_la-atmos_versions.lo
 libatmos_la_OBJECTS = $(am_libatmos_la_OBJECTS)
 libatmos_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(libatmos_la_CFLAGS) \
@@ -123,7 +126,7 @@ am__can_run_installinfo = \
     n|no|NO) false;; \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
-HEADERS = $(include_HEADERS)
+HEADERS = $(include_HEADERS) $(noinst_HEADERS)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -248,10 +251,17 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 lib_LTLIBRARIES = libatmos.la
-libatmos_la_SOURCES = atmos.c atmos_client.c atmos_common.c atmos_create.c atmos_read.c atmos_service_info.c atmos_util.c
+libatmos_la_SOURCES = atmos.c atmos_client.c atmos_common.c atmos_create.c \
+ atmos_read.c atmos_service_info.c atmos_util.c atmos_access_tokens.c \
+ atmos_update.c atmos_versions.c
+
 libatmos_la_LDFLAGS = -version-info 0:0:0
 libatmos_la_CFLAGS = $(XML_CFLAGS) -I$(top_srcdir)/dep/rest-client-c/lib
-include_HEADERS = atmos.h atmos_client.h atmos_common.h atmos_constants.h atmos_create.h atmos_private.h atmos_read.h atmos_service_info.h atmos_util.h
+include_HEADERS = atmos.h atmos_client.h atmos_common.h atmos_constants.h \
+ atmos_create.h atmos_read.h atmos_service_info.h atmos_util.h \
+ atmos_access_tokens.h atmos_update.h atmos_versions.h
+
+noinst_HEADERS = atmos_private.h
 all: all-am
 
 .SUFFIXES:
@@ -330,12 +340,15 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libatmos_la-atmos.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libatmos_la-atmos_access_tokens.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libatmos_la-atmos_client.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libatmos_la-atmos_common.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libatmos_la-atmos_create.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libatmos_la-atmos_read.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libatmos_la-atmos_service_info.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libatmos_la-atmos_update.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libatmos_la-atmos_util.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libatmos_la-atmos_versions.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -406,6 +419,27 @@ libatmos_la-atmos_util.lo: atmos_util.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='atmos_util.c' object='libatmos_la-atmos_util.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libatmos_la_CFLAGS) $(CFLAGS) -c -o libatmos_la-atmos_util.lo `test -f 'atmos_util.c' || echo '$(srcdir)/'`atmos_util.c
+
+libatmos_la-atmos_access_tokens.lo: atmos_access_tokens.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libatmos_la_CFLAGS) $(CFLAGS) -MT libatmos_la-atmos_access_tokens.lo -MD -MP -MF $(DEPDIR)/libatmos_la-atmos_access_tokens.Tpo -c -o libatmos_la-atmos_access_tokens.lo `test -f 'atmos_access_tokens.c' || echo '$(srcdir)/'`atmos_access_tokens.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libatmos_la-atmos_access_tokens.Tpo $(DEPDIR)/libatmos_la-atmos_access_tokens.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='atmos_access_tokens.c' object='libatmos_la-atmos_access_tokens.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libatmos_la_CFLAGS) $(CFLAGS) -c -o libatmos_la-atmos_access_tokens.lo `test -f 'atmos_access_tokens.c' || echo '$(srcdir)/'`atmos_access_tokens.c
+
+libatmos_la-atmos_update.lo: atmos_update.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libatmos_la_CFLAGS) $(CFLAGS) -MT libatmos_la-atmos_update.lo -MD -MP -MF $(DEPDIR)/libatmos_la-atmos_update.Tpo -c -o libatmos_la-atmos_update.lo `test -f 'atmos_update.c' || echo '$(srcdir)/'`atmos_update.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libatmos_la-atmos_update.Tpo $(DEPDIR)/libatmos_la-atmos_update.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='atmos_update.c' object='libatmos_la-atmos_update.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libatmos_la_CFLAGS) $(CFLAGS) -c -o libatmos_la-atmos_update.lo `test -f 'atmos_update.c' || echo '$(srcdir)/'`atmos_update.c
+
+libatmos_la-atmos_versions.lo: atmos_versions.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libatmos_la_CFLAGS) $(CFLAGS) -MT libatmos_la-atmos_versions.lo -MD -MP -MF $(DEPDIR)/libatmos_la-atmos_versions.Tpo -c -o libatmos_la-atmos_versions.lo `test -f 'atmos_versions.c' || echo '$(srcdir)/'`atmos_versions.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libatmos_la-atmos_versions.Tpo $(DEPDIR)/libatmos_la-atmos_versions.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='atmos_versions.c' object='libatmos_la-atmos_versions.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libatmos_la_CFLAGS) $(CFLAGS) -c -o libatmos_la-atmos_versions.lo `test -f 'atmos_versions.c' || echo '$(srcdir)/'`atmos_versions.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

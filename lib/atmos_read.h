@@ -34,8 +34,7 @@
 
 /**
  * @file atmos_read.h
- * @brief This module contains the AtmosReadObjectRequest class that is used
- * to read objects from Atmos.
+ * @brief This file contains the classes used to read objects from Atmos.
  * @defgroup AtmosReadObjectRequest AtmosReadObjectRequest
  * @brief This module contains the AtmosReadObjectRequest class that is used
  * to read objects from Atmos.
@@ -112,6 +111,15 @@ AtmosReadObjectRequest_set_range_offset_size(AtmosReadObjectRequest *self,
         int64_t offset, int64_t size);
 
 /**
+ * @}
+ * @defgroup AtmosReadObjectResponse AtmosReadObjectResponse
+ * @brief This module contains the AtmosReadObjectResponse class that is used
+ * to capture the read object response from Atmos.
+ * @{
+ */
+
+
+/**
  * Receives data from the read object operation.
  */
 typedef struct {
@@ -171,5 +179,278 @@ AtmosReadObjectResponse_get_metadata_value(AtmosReadObjectResponse *self,
 enum atmos_acl_permission
 AtmosReadObjectResponse_get_acl_permission(AtmosReadObjectResponse *self,
         const char *principal, enum atmos_acl_principal_type principal_type);
+
+
+/**
+ * @}
+ * @defgroup AtmosGetAclResponse AtmosGetAclResponse
+ * @brief This module contains the AtmosGetAclResponse class that is used
+ * to capture the get ACL response from Atmos.
+ * @{
+ */
+typedef struct {
+    AtmosResponse parent;
+    AtmosAclEntry acl[ATMOS_ACL_COUNT_MAX];
+    /** Number of ACL entries. */
+    int acl_count;
+} AtmosGetAclResponse;
+
+AtmosGetAclResponse*
+AtmosGetAclResponse_init(AtmosGetAclResponse *self);
+
+void
+AtmosGetAclResponse_destroy(AtmosGetAclResponse *self);
+
+/**
+ * @}
+ * @defgroup AtmosGetUserMetaRequest AtmosGetUserMetaRequest
+ * @brief This module contains the AtmosGetUserMetaRequest class that is used
+ * to get user metadata from Atmos.
+ * @{
+ */
+
+typedef struct {
+    RestRequest parent;
+    char object_id[ATMOS_OID_LENGTH];
+    char path[ATMOS_PATH_MAX];
+    char tags[ATMOS_META_COUNT_MAX][ATMOS_META_NAME_MAX];
+    int tag_count;
+} AtmosGetUserMetaRequest;
+
+AtmosGetUserMetaRequest*
+AtmosGetUserMetaRequest_init(AtmosGetUserMetaRequest *self,
+        const char *object_id);
+
+AtmosGetUserMetaRequest*
+AtmosGetUserMetaRequest_init_ns(AtmosGetUserMetaRequest *self, const char *path);
+
+void
+AtmosGetUserMetaRequest_destroy(AtmosGetUserMetaRequest *self);
+
+
+/**
+ * @}
+ * @defgroup AtmosGetUserMetaResponse AtmosGetUserMetaResponse
+ * @brief This module contains the AtmosGetUserMetaResponse class that is used
+ * to capture the user metadata response from Atmos.
+ * @{
+ */
+typedef struct {
+    AtmosResponse parent;
+    AtmosMetadata meta[ATMOS_META_COUNT_MAX];
+    /** Number of metadata elements in meta */
+    int meta_count;
+    /** Object listable metadata */
+    AtmosMetadata listable_metadata[ATMOS_META_COUNT_MAX];
+    /** Number of elements in listable_meta */
+    int listable_meta_count;
+} AtmosGetUserMetaResponse;
+
+AtmosGetUserMetaResponse*
+AtmosGetUserMetaResponse_init(AtmosGetUserMetaResponse *self);
+
+void
+AtmosGetUserMetaResponse_destroy(AtmosGetUserMetaResponse *self);
+
+/**
+ * @}
+ * @defgroup AtmosGetSystemMetaRequest AtmosGetSystemMetaRequest
+ * @brief This module contains the AtmosGetSystemMetaRequest class that is used
+ * to request the system metadata from Atmos.
+ * @{
+ */
+
+typedef struct {
+    RestRequest parent;
+    char object_id[ATMOS_OID_LENGTH];
+    char path[ATMOS_PATH_MAX];
+    char tags[ATMOS_META_COUNT_MAX][ATMOS_META_NAME_MAX];
+    int tag_count;
+} AtmosGetSystemMetaRequest;
+
+AtmosGetSystemMetaRequest*
+AtmosGetSystemMetaRequest_init(AtmosGetSystemMetaRequest *self,
+        const char *object_id);
+
+AtmosGetSystemMetaRequest*
+AtmosGetSystemMetaRequest_init_ns(AtmosGetSystemMetaRequest *self,
+        const char *path);
+
+void
+AtmosGetSystemMetaRequest_destroy(AtmosGetSystemMetaRequest self);
+
+/**
+ * @}
+ * @defgroup AtmosGetSystemMetaResponse AtmosGetSystemMetaResponse
+ * @brief This module contains the AtmosGetSystemMetaResponse class that is used
+ * to capture the system metadata response from Atmos.
+ * @{
+ */
+
+typedef struct {
+    AtmosResponse parent;
+    AtmosSystemMetadata system_metadata;
+} AtmosGetSystemMetaResponse;
+
+AtmosGetSystemMetaResponse*
+AtmosGetSystemMetaResponse_init(AtmosGetSystemMetaResponse *self);
+
+void
+AtmosGetSystemMetaResponse_destroy(AtmosGetSystemMetaResponse *self);
+
+/**
+ * @}
+ * @defgroup AtmosGetObjectInfoResponse AtmosGetObjectInfoResponse
+ * @brief This module contains the AtmosGetObjectInfoResponse class that is used
+ * to capture the object info response from Atmos.
+ * @{
+ */
+
+typedef struct {
+    AtmosResponse parent;
+    // TODO: finish
+} AtmosGetObjectInfoResponse;
+
+AtmosGetObjectInfoResponse*
+AtmosGetObjectInfoResponse_init(AtmosGetObjectInfoResponse *self);
+
+void
+AtmosGetObjectInfoResponse_destroy(AtmosGetObjectInfoResponse *self);
+
+/**
+ * @}
+ * @defgroup AtmosListDirectoryRequest AtmosListDirectoryRequest
+ * @brief This module contains the AtmosListDirectoryRequest class that is used
+ * to request a directory listing from Atmos.
+ * @{
+ */
+typedef struct {
+    RestRequest parent;
+    char path[ATMOS_PATH_MAX];
+    char token[ATMOS_OID_LENGTH];
+    int limit;
+    int include_meta;
+    char user_tags[ATMOS_META_COUNT_MAX][ATMOS_META_NAME_MAX];
+    int user_tag_count;
+    char system_tags[ATMOS_SYSTEM_META_COUNT_MAX][ATMOS_META_NAME_MAX];
+    int system_tag_count;
+} AtmosListDirectoryRequest;
+
+AtmosListDirectoryRequest*
+AtmosListDirectoryRequest_init(AtmosListDirectoryRequest *self,
+        const char *path);
+
+void
+AtmosListDirectoryRequest_destroy(AtmosListDirectoryRequest *self);
+
+/**
+ * @}
+ * @defgroup AtmosListDirectoryResponse AtmosListDirectoryResponse
+ * @brief This module contains the AtmosListDirectoryResponse class that is used
+ * to capture a directory listing response from Atmos.
+ * @{
+ */
+typedef struct {
+    AtmosResponse parent;
+    const char *token;
+
+    // TODO: finish
+} AtmosListDirectoryResponse;
+
+AtmosListDirectoryResponse*
+AtmosListDirectoryResponse_init(AtmosListDirectoryResponse *self);
+
+void
+AtmosListDirectoryResponse_destroy(AtmosListDirectoryResponse *self);
+
+/**
+ * @}
+ * @defgroup AtmosGetListableTagsRequest AtmosGetListableTagsRequest
+ * @brief This module contains the AtmosGetListableTagsRequest class that is
+ * used to request the set of listable tags from Atmos.
+ * @{
+ */
+typedef struct {
+    RestRequest parent;
+    char parent_tag[ATMOS_PATH_MAX];
+    char token[ATMOS_OID_LENGTH];
+    int limit;
+} AtmosGetListableTagsRequest;
+
+AtmosGetListableTagsRequest*
+AtmosGetListableTagsRequest_init(AtmosGetListableTagsRequest *self,
+        const char *parent_tag);
+
+void
+AtmosGetListableTagsRequest_destroy(AtmosGetListableTagsRequest *self);
+
+/**
+ * @}
+ * @defgroup AtmosGetListableTagsResponse AtmosGetListableTagsResponse
+ * @brief This module contains the AtmosGetListableTagsResponse class that is
+ * used to capture a listable tag listing response from Atmos.
+ * @{
+ */
+
+typedef struct {
+    AtmosResponse parent;
+    const char *token;
+    char **tags;
+    int tag_count;
+} AtmosGetListableTagsResponse;
+
+AtmosGetListableTagsResponse*
+AtmosGetListableTagsResponse_init(AtmosGetListableTagsResponse *self);
+
+void
+AtmosGetListableTagsResponse_destroy(AtmosGetListableTagsResponse *self);
+
+/**
+ * @}
+ * @defgroup AtmosListObjectsRequest AtmosListObjectsRequest
+ * @brief This module contains the AtmosListObjectsRequest class that is
+ * used to list objects indexed by a tag in Atmos.
+ * @{
+ */
+typedef struct {
+    RestRequest parent;
+    char tag[ATMOS_PATH_MAX];
+    char token[ATMOS_OID_LENGTH];
+    int limit;
+    int include_meta;
+    char user_tags[ATMOS_META_COUNT_MAX][ATMOS_META_NAME_MAX];
+    int user_tag_count;
+    char system_tags[ATMOS_SYSTEM_META_COUNT_MAX][ATMOS_META_NAME_MAX];
+    int system_tag_count;
+} AtmosListObjectsRequest;
+
+AtmosListObjectsRequest*
+AtmosListObjectsRequest_init(AtmosListObjectsRequest *self, const char *tag);
+
+void
+AtmosListObjectsRequest_destroy(AtmosListObjectsRequest *self);
+
+/**
+ * @}
+ * @defgroup AtmosListObjectsResponse AtmosListObjectsResponse
+ * @brief This module contains the AtmosListObjectsResponse class that is
+ * used to capture the list of objects in a tag from Atmos.
+ * @{
+ */
+typedef struct {
+    AtmosResponse parent;
+    // TODO: finish
+} AtmosListObjectsResponse;
+
+AtmosListObjectsResponse*
+AtmosListObjectsResponse_init(AtmosListObjectsResponse *self);
+
+void
+AtmosListObjectsResponse_destroy(AtmosListObjectsResponse *self);
+
+/**
+ * @}
+ */
+
 
 #endif /* ATMOS_READ_H_ */

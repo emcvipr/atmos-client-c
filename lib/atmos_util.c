@@ -737,3 +737,29 @@ AtmosUtil_get_acl_permission(AtmosAclEntry *acl, int acl_count,
     }
     return ATMOS_PERM_NONE;
 }
+
+void
+AtmosUtil_set_tags_header(RestRequest *request, const char const **tags,
+        int tag_count) {
+    char *header;
+    size_t header_size;
+    int i;
+
+    if(!tags || tag_count < 1) {
+        return;
+    }
+
+    header = AtmosUtil_cstring_append(header, &header_size,
+            ATMOS_HEADER_TAGS ": ");
+
+    for(i=0; i<tag_count; i++) {
+        if(i>0) {
+            header = AtmosUtil_cstring_append(header, &header_size, ", ");
+        }
+        header = AtmosUtil_cstring_append(header, &header_size, tags[i]);
+    }
+
+    RestRequest_add_header(request, header);
+
+    free(header);
+}

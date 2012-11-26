@@ -58,6 +58,10 @@ enum atmos_acl_permission
 AtmosUtil_get_acl_permission(AtmosAclEntry *acl, int acl_count,
         const char *principal, enum atmos_acl_principal_type principal_type);
 
+void
+AtmosUtil_set_tags_header(RestRequest *request, const char const **tags,
+        int tag_count);
+
 // Debugging
 void
 AtmosUtil_log(const char *level, const char *file, const int line, const char *fmt, ...);

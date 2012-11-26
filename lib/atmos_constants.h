@@ -40,6 +40,7 @@
 #define ATMOS_HEADER_UTF8 "x-emc-utf8"
 #define ATMOS_HEADER_USER_ACL "x-emc-useracl"
 #define ATMOS_HEADER_GROUP_ACL "x-emc-groupacl"
+#define ATMOS_HEADER_TAGS "x-emc-tags"
 
 #define ATMOS_UID_MAX 255
 #define ATMOS_SECRET_MAX 64
@@ -48,6 +49,7 @@
 #define ATMOS_META_VALUE_MAX 1024
 #define ATMOS_META_NAME_MAX 255
 #define ATMOS_META_COUNT_MAX 127
+#define ATMOS_SYSTEM_META_COUNT_MAX 20
 #define ATMOS_ACL_COUNT_MAX 64
 #define ATMOS_CHECKSUM_MAX 128
 
@@ -74,6 +76,7 @@
 #define CLASS_ATMOS_CREATE_OBJECT_RESPONSE "AtmosCreateObjectResponse"
 #define CLASS_ATMOS_READ_OBJECT_REQUEST "AtmosReadObjectRequest"
 #define CLASS_ATMOS_READ_OBJECT_RESPONSE "AtmosReadObjectResponse"
+#define CLASS_ATMOS_GET_USER_META_REQUEST "AtmosGetUserMetaRequest"
 
 #define ATMOS_OID_LOCATION_PREFIX "/rest/objects/"
 #define ATMOS_OID_LOCATION_PREFIX_SIZE 14

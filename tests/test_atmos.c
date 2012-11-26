@@ -1151,6 +1151,18 @@ void test_read_object_file() {
     fclose(f2);
 }
 
+void test_get_user_meta() {
+}
+
+void test_get_user_meta_ns() {
+}
+
+void test_delete_user_meta() {
+}
+
+void test_delete_user_meta_ns() {
+}
+
 void test_atmos_suite() {
     char proxy_port_str[32];
 
@@ -1313,6 +1325,18 @@ void test_atmos_suite() {
 
     start_test_msg("test_read_object_file");
     run_test(test_read_object_file);
+
+    start_test_msg("test_get_user_meta");
+    run_test(test_get_user_meta);
+
+    start_test_msg("test_get_user_meta_ns");
+    run_test(test_get_user_meta_ns);
+
+    start_test_msg("test_delete_user_meta");
+    run_test(test_delete_user_meta);
+
+    start_test_msg("test_delete_user_meta_ns");
+    run_test(test_delete_user_meta_ns);
 
     test_fixture_end();
 

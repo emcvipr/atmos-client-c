@@ -145,7 +145,7 @@ void
 AtmosCreateObjectResponse_destroy(AtmosCreateObjectResponse *self);
 
 /**
- * }@
+ * @}
  */
 
 #endif /* ATMOS_CREATE_H_ */

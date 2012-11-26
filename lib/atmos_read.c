@@ -11,7 +11,7 @@
 #include "atmos_private.h"
 #include "atmos_util.h"
 
-static AtmosReadObjectRequest*
+static void
 AtmosReadObjectRequest_init_common(AtmosReadObjectRequest *self) {
     memset(((void*) self) + sizeof(RestRequest), 0,
             sizeof(AtmosReadObjectRequest) - sizeof(RestRequest));
@@ -19,7 +19,6 @@ AtmosReadObjectRequest_init_common(AtmosReadObjectRequest *self) {
     self->range_end = -1;
 
     ((Object*) self)->class_name = CLASS_ATMOS_READ_OBJECT_REQUEST;
-    return self;
 }
 
 AtmosReadObjectRequest*
@@ -29,7 +28,11 @@ AtmosReadObjectRequest_init(AtmosReadObjectRequest *self, const char *object_id)
     snprintf(uri, 15+ATMOS_OID_LENGTH, "/rest/objects/%s", object_id);
 
     RestRequest_init((RestRequest*) self, uri, HTTP_GET);
-    return AtmosReadObjectRequest_init_common(self);
+    AtmosReadObjectRequest_init_common(self);
+
+    strncpy(self->object_id, object_id, ATMOS_OID_LENGTH);
+
+    return self;
 }
 
 AtmosReadObjectRequest*
@@ -44,7 +47,9 @@ AtmosReadObjectRequest_init_ns(AtmosReadObjectRequest *self, const char *path) {
     snprintf(uri, ATMOS_PATH_MAX + 15, "/rest/namespace%s", path);
 
     RestRequest_init((RestRequest*) self, uri, HTTP_GET);
-    return AtmosReadObjectRequest_init_common(self);
+    AtmosReadObjectRequest_init_common(self);
+
+    strncpy(self->path, path, ATMOS_PATH_MAX);
 }
 
 void AtmosReadObjectRequest_destroy(AtmosReadObjectRequest *self) {
@@ -152,4 +157,88 @@ AtmosReadObjectResponse_get_acl_permission(AtmosReadObjectResponse *self,
             principal, principal_type);
 }
 
+static void
+AtmosGetUserMetaRequest_common_init(AtmosGetUserMetaRequest *self) {
+    ((Object*)self)->class_name = CLASS_ATMOS_GET_USER_META_REQUEST;
+
+    memset(((void*)self)+sizeof(RestRequest), 0,
+            sizeof(AtmosGetUserMetaRequest)-sizeof(RestRequest));
+
+}
+
+AtmosGetUserMetaRequest*
+AtmosGetUserMetaRequest_init(AtmosGetUserMetaRequest *self,
+        const char *object_id) {
+    char uri[ATMOS_OID_LENGTH+64];
+
+    snprintf(uri, ATMOS_OID_LENGTH+64, "/rest/objects/%s?metadata/user", object_id);
+    RestRequest_init((RestRequest*)self, uri, HTTP_GET);
+
+    AtmosGetUserMetaRequest_common_init(self);
+
+    strncpy(self->object_id, object_id, ATMOS_OID_LENGTH);
+}
+
+AtmosGetUserMetaRequest*
+AtmosGetUserMetaRequest_init_ns(AtmosGetUserMetaRequest *self,
+        const char *path) {
+    char uri[ATMOS_PATH_MAX+64];
+    RestFilter *chain = NULL;
+
+    snprintf(uri, ATMOS_PATH_MAX+64, "/rest/namespace/%s?metadata/user", path);
+    RestRequest_init((RestRequest*)self, uri, HTTP_GET);
+
+    AtmosGetUserMetaRequest_common_init(self);
+
+    strncpy(self->path, path, ATMOS_PATH_MAX);
+}
+
+void
+AtmosGetUserMetaRequest_destroy(AtmosGetUserMetaRequest *self) {
+    memset(((void*)self)+sizeof(RestRequest), 0,
+            sizeof(AtmosGetUserMetaRequest)-sizeof(RestRequest));
+    RestRequest_destroy((RestRequest*)self);
+}
+
+
+void AtmosFilter_parse_get_user_meta_response(RestFilter *self, RestClient *rest,
+        RestRequest *request, RestResponse *response) {
+
+    // Pass to the next filter
+    if(self->next) {
+        ((rest_http_filter)self->next->func)(self->next, rest, request, response);
+    }
+
+    // Now we're on the response.
+
+    // Check to make sure we had success before parsing.
+    if(response->http_code > 299) {
+        return;
+    }
+
+    // Parse out the metadata and ACL.
+    AtmosUtil_parse_user_meta_headers(response, res->meta,
+            &(res->meta_count), res->listable_metadata,
+            &(res->listable_meta_count));
+}
+
+void AtmosFilter_set_get_user_meta_headers(RestFilter *self, RestClient *rest,
+        RestRequest *request, RestResponse *response) {
+    AtmosGetUserMetaRequest *req = (AtmosGetUserMetaRequest*)request;
+
+    if(((AtmosClient*)rest)->enable_utf8_metadata) {
+        RestRequest_add_header((RestRequest*)request,
+                ATMOS_HEADER_UTF8 ": true");
+    }
+
+    if(req->tags && req->tag_count > 0) {
+        AtmosUtil_set_tags_header(request, req->tags, req->tag_count);
+    }
+
+    // Pass to the next filter
+    if(self->next) {
+        ((rest_http_filter)self->next->func)(self->next, rest, request, response);
+    }
+
+}
 

@@ -20,6 +20,9 @@
 #include "atmos_create.h"
 #include "atmos_service_info.h"
 #include "atmos_read.h"
+#include "atmos_update.h"
+#include "atmos_versions.h"
+#include "atmos_access_tokens.h"
 #include "atmos_client.h"
 
 #endif /* ATMOS_H_ */

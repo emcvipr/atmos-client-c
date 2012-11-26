@@ -105,6 +105,12 @@ void AtmosFilter_parse_atmos_error(RestFilter *self, RestClient *rest,
         ((rest_http_filter)self->next->func)(self->next, rest, request, response);
     }
 
+    // HEAD, PUT, and DELETE requests do not have a body to parse.
+    if(request->method == HTTP_DELETE || request->method == HTTP_PUT
+            || request->method == HTTP_HEAD) {
+        return;
+    }
+
     // If HTTP code >399, there's probably an associated Atmos error in the
     // response body.
     if(response->http_code > 399) {

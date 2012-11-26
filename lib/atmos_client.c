@@ -332,3 +332,93 @@ AtmosClient_read_object_simple_ns(AtmosClient *self, const char *path,
 
     AtmosReadObjectRequest_destroy(&request);
 }
+
+void
+AtmosClient_delete_user_meta(AtmosClient *self, const char *object_id,
+        const char const **meta_names, int meta_name_count, RestResponse *response) {
+    char uri[ATMOS_OID_LENGTH+64];
+    RestFilter *chain = NULL;
+    RestRequest request;
+
+    snprintf(uri, ATMOS_OID_LENGTH+64, "/rest/objects/%s?metadata/user", object_id);
+    RestRequest_init(&request, uri, HTTP_DELETE);
+
+    // Set the headers
+    if(meta_names && meta_name_count > 0) {
+        AtmosUtil_set_tags_header(&request, meta_names, meta_name_count);
+    }
+
+    chain = AtmosClient_add_default_filters(self, chain);
+
+    RestClient_execute_request((RestClient*)self, chain,
+            &request, response);
+
+    RestFilter_free(chain);
+    RestRequest_destroy(&request);
+}
+
+void
+AtmosClient_delete_user_meta_ns(AtmosClient *self, const char *path,
+        const char const **meta_names, int meta_name_count,
+        RestResponse *response) {
+    char uri[ATMOS_PATH_MAX+64];
+    RestFilter *chain = NULL;
+    RestRequest request;
+
+    snprintf(uri, ATMOS_PATH_MAX+64, "/rest/namespace/%s?metadata/user", path);
+    RestRequest_init(&request, uri, HTTP_DELETE);
+
+    // Set the headers
+    if(meta_names && meta_name_count > 0) {
+        AtmosUtil_set_tags_header(&request, meta_names, meta_name_count);
+    }
+
+    chain = AtmosClient_add_default_filters(self, chain);
+
+    RestClient_execute_request((RestClient*)self, chain,
+            &request, response);
+
+    RestFilter_free(chain);
+    RestRequest_destroy(&request);
+
+}
+
+void
+AtmosClient_get_user_meta(AtmosClient *self, AtmosGetUserMetaRequest *request,
+        AtmosGetUserMetaResponse *response) {
+    RestFilter *chain = NULL;
+
+    chain = AtmosClient_add_default_filters(self, chain);
+    chain = RestFilter_add(chain, AtmosFilter_set_get_user_meta_headers);
+    chain = RestFilter_add(chain, AtmosFilter_parse_get_user_meta_response);
+
+    RestClient_execute_request((RestClient*)self, chain,
+            (RestRequest*)request, (RestResponse*)response);
+
+    RestFilter_free(chain);
+}
+
+void
+AtmosClient_get_user_meta_simple(AtmosClient *self, const char *object_id,
+        AtmosGetUserMetaResponse *response) {
+    AtmosGetUserMetaRequest request;
+
+    AtmosGetUserMetaRequest_init(&request, object_id);
+
+    AtmosClient_get_user_meta(self, &request, response);
+
+    AtmosGetUserMetaRequest_destroy(&request);
+}
+
+void
+AtmosClient_get_user_meta_simple_ns(AtmosClient *self, const char *path,
+        AtmosGetUserMetaResponse *response) {
+    AtmosGetUserMetaRequest request;
+
+    AtmosGetUserMetaRequest_init_ns(&request, object_id);
+
+    AtmosClient_get_user_meta(self, &request, response);
+
+    AtmosGetUserMetaRequest_destroy(&request);
+
+}

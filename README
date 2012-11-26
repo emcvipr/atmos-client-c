@@ -8,12 +8,14 @@ Requirements
 libcurl 7.20 or greater
 openssl-dev .9.8k or greater
 
-================
-Building (linux)
-================
-To build the API, run make to build the library.  
-Your build process then needs to dynamically link against the resulting 
-library named libatmos.so or the static library libatmos.a
+=========
+Building 
+=========
+This package uses autotools, so the standard GNU build procedure can be used:
+
+./configure
+make
+sudo make install
 
 =============
 Documentation
@@ -30,8 +32,8 @@ replace the values with ones suitable for your environment.  You will need at
 least two UIDs in the same subtenant.  The proxy support lines are optional and
 can be omitted if you don't have a proxy.
 
-Once the atmostest.ini file is configured, you can run the unit tests with
-'make test'.
+Once the tests/atmostest.ini file is configured, you can run the unit tests with
+'make check'.
 
 ================
 Getting Started
@@ -164,7 +166,3 @@ int check_error(AtmosResponse *response) {
 ==============
 Todo:
 shared urls
-autoconf
-
-
-

@@ -59,12 +59,12 @@ AtmosCreateObjectRequest_add_metadata(AtmosCreateObjectRequest *self,
         int listable) {
     if(listable) {
         int i = self->listable_meta_count++;
-        strcpy(self->listable_meta[i].name, name);
-        strcpy(self->listable_meta[i].value, value);
+        strncpy(self->listable_meta[i].name, name, ATMOS_META_NAME_MAX);
+        strncpy(self->listable_meta[i].value, value, ATMOS_META_VALUE_MAX);
     } else {
         int i = self->meta_count++;
-        strcpy(self->meta[i].name, name);
-        strcpy(self->meta[i].value, value);
+        strncpy(self->meta[i].name, name, ATMOS_META_NAME_MAX);
+        strncpy(self->meta[i].value, value, ATMOS_META_VALUE_MAX);
     }
 }
 

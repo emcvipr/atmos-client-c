@@ -319,35 +319,13 @@ AtmosClient_update_object_file_ns(AtmosClient *self, const char *path,
  * the object that are not referenced when calling this method will remain
  * unmodified.  To remove metadata use AtmosClient_delete_user_meta().
  * @param self the AtmosClient object pointer
- * @param object_id the object ID to update
- * @param meta regular metadata for the object.  May be NULL.
- * @param meta_count number of items in 'meta'.
- * @param listable_meta listable metadata for the object.  May be NULL.
- * @param listable_meta_count number of items in 'listable_meta'.
+ * @param request the AtmosSetUserMetaRequest object containing the metadata
+ * to set on the object.
  * @param response the AtmosResponse object to receive the response.
  */
 void
-AtmosClient_set_user_meta(AtmosClient *self, const char *object_id,
-        AtmosMetadata *meta, int meta_count, AtmosMetadata *listable_meta,
-        int listable_meta_count, AtmosResponse *response);
-
-
-/**
- * Sets user metadata on an object.  Note that existing metadata elements on
- * the object that are not referenced when calling this method will remain
- * unmodified.  To remove metadata use AtmosClient_delete_user_meta_ns().
- * @param self the AtmosClient object pointer
- * @param path the namespace path to the object to update
- * @param meta regular metadata for the object.  May be NULL.
- * @param meta_count number of items in 'meta'.
- * @param listable_meta listable metadata for the object.  May be NULL.
- * @param listable_meta_count number of items in 'listable_meta'.
- * @param response the AtmosResponse object to receive the response.
- */
-void
-AtmosClient_set_user_meta_ns(AtmosClient *self, const char *path,
-        AtmosMetadata *meta, int meta_count, AtmosMetadata *listable_meta,
-        int listable_meta_count, AtmosResponse *response);
+AtmosClient_set_user_meta(AtmosClient *self, AtmosSetUserMetaRequest *request,
+        AtmosResponse *response);
 
 /**
  * Sets the ACL on an object.

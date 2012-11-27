@@ -57,7 +57,53 @@ typedef struct {
     int acl_count;
 } AtmosUpdateObjectRequest;
 
+AtmosUpdateObjectRequest*
+AtmosUpdateObjectRequest_init(AtmosUpdateObjectRequest *self,
+        const char *object_id);
 
+AtmosUpdateObjectRequest*
+AtmosUpdateObjectRequest_init_ns(AtmosUpdateObjectRequest *self,
+        const char *path);
 
+void
+AtmosUpdateObjectRequest_destroy(AtmosUpdateObjectRequest *self);
+
+typedef struct {
+    RestRequest parent;
+    char object_id[ATMOS_UID_MAX];
+    char path[ATMOS_PATH_MAX];
+    /** Metadata entries for the new object */
+    AtmosMetadata meta[ATMOS_META_COUNT_MAX];
+    /** Number of metadata entries */
+    int meta_count;
+    /** Listable metadata entries for the new object */
+    AtmosMetadata listable_meta[ATMOS_META_COUNT_MAX];
+    /** Number of listable metadata entries */
+    int listable_meta_count;
+} AtmosSetUserMetaRequest;
+
+AtmosSetUserMetaRequest*
+AtmosSetUserMetaRequest_init(AtmosSetUserMetaRequest *self,
+        const char *object_id);
+
+AtmosSetUserMetaRequest*
+AtmosSetUserMetaRequest_init_ns(AtmosSetUserMetaRequest *self,
+        const char *path);
+
+void
+AtmosSetUserMetaRequest_destroy(AtmosSetUserMetaRequest *self);
+
+/**
+ * Adds a metadata entry to the set user metadata request.
+ * @param self the AtmosSetUserMetaRequest to modify.
+ * @param name name for the metadata entry.
+ * @param value value for the metadata entry.
+ * @param listable nonzero if this entry's name should be 'listable'.  Use with
+ * caution.  See programmer's documentation.
+ */
+void
+AtmosSetUserMetaRequest_add_metadata(AtmosSetUserMetaRequest *self,
+        const char *name, const char *value,
+        int listable);
 
 #endif /* ATMOS_UPDATE_H_ */

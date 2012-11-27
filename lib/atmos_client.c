@@ -422,3 +422,19 @@ AtmosClient_get_user_meta_simple_ns(AtmosClient *self, const char *path,
     AtmosGetUserMetaRequest_destroy(&request);
 
 }
+
+void
+AtmosClient_set_user_meta(AtmosClient *self, AtmosSetUserMetaRequest *request,
+        AtmosResponse *response) {
+    RestFilter *chain = NULL;
+
+    chain = AtmosClient_add_default_filters(self, chain);
+    chain = RestFilter_add(chain, AtmosFilter_set_user_meta_headers);
+
+    RestClient_execute_request((RestClient*)self, chain,
+            (RestRequest*)request, (RestResponse*)response);
+
+    RestFilter_free(chain);
+
+}
+

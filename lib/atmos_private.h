@@ -165,5 +165,17 @@ void AtmosFilter_parse_get_user_meta_response(RestFilter *self, RestClient *rest
 void AtmosFilter_set_get_user_meta_headers(RestFilter *self, RestClient *rest,
         RestRequest *request, RestResponse *response);
 
+// Special filter for Set User Metadata
+/**
+ * Sets the HTTP headers generated from the AtmosSetUserMetaRequest.
+ * @param self the current filter element in the chain.
+ * @param rest the RestClient executing the request.
+ * @param request the RestRequest to execute.
+ * @param response the RestResponse receiving the response.
+ */
+void AtmosFilter_set_user_meta_headers(RestFilter *self, RestClient *rest,
+        RestRequest *request, RestResponse *response);
+
+
 
 #endif /* ATMOS_PRIVATE_H_ */

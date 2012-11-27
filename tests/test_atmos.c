@@ -1475,7 +1475,147 @@ void test_delete_user_meta_ns() {
     AtmosCreateObjectRequest_destroy(&request);
     AtmosCreateObjectResponse_destroy(&response);
 
-    AtmosClient_destroy(&atmos);}
+    AtmosClient_destroy(&atmos);
+}
+
+void test_set_user_meta() {
+    AtmosClient atmos;
+    AtmosCreateObjectRequest request;
+    AtmosCreateObjectResponse response;
+    AtmosGetUserMetaResponse meta_response;
+    AtmosSetUserMetaRequest set_request;
+    AtmosResponse set_response;
+
+    RestResponse delete_response;
+    get_atmos_client(&atmos);
+
+    AtmosCreateObjectRequest_init(&request);
+    AtmosCreateObjectResponse_init(&response);
+
+    // some test strings
+    AtmosCreateObjectRequest_add_metadata(&request, "meta1",
+            "Value  with   spaces", 0);
+    AtmosCreateObjectRequest_add_metadata(&request, "meta2",
+            "character test 1!2@3#4$5%6^7&8*9(0)`~-_+\\|]}[{;:'\"/?.><", 0);
+
+    AtmosClient_create_object(&atmos, &request, &response);
+    check_error((AtmosResponse*)&response);
+    assert_int_equal(201, response.parent.parent.http_code);
+    assert_true(strlen(response.object_id) > 0);
+    printf("Created object: %s\n", response.object_id);
+
+    // Set some items
+    AtmosSetUserMetaRequest_init(&set_request, response.object_id);
+    AtmosSetUserMetaRequest_add_metadata(&set_request, "meta1", "changed value", 0);
+    AtmosSetUserMetaRequest_add_metadata(&set_request, "new meta", "new value", 1);
+    AtmosResponse_init(&set_response);
+
+    AtmosClient_set_user_meta(&atmos, &set_request, &set_response);
+    check_error(&set_response);
+    assert_int_equal(200, set_response.parent.http_code);
+
+    AtmosSetUserMetaRequest_destroy(&set_request);
+    AtmosResponse_destroy(&set_response);
+
+    // Read back and check.
+    AtmosGetUserMetaResponse_init(&meta_response);
+    AtmosClient_get_user_meta_simple(&atmos, response.object_id, &meta_response);
+    check_error((AtmosResponse*)&meta_response);
+    assert_int_equal(200, meta_response.parent.parent.http_code);
+
+    assert_string_equal("changed value",
+            AtmosGetUserMetaResponse_get_metadata_value(&meta_response, "meta1", 0));
+    assert_string_equal("character test 1!2@3#4$5%6^7&8*9(0)`~-_+\\|]}[{;:'\"/?.><",
+            AtmosGetUserMetaResponse_get_metadata_value(&meta_response, "meta2", 0));
+    assert_string_equal("new value",
+            AtmosGetUserMetaResponse_get_metadata_value(&meta_response, "new meta", 1));
+
+    AtmosGetUserMetaResponse_destroy(&meta_response);
+
+    // Cleanup
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_object(&atmos, response.object_id, &delete_response);
+    assert_int_equal(204, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    AtmosCreateObjectRequest_destroy(&request);
+    AtmosCreateObjectResponse_destroy(&response);
+
+    AtmosClient_destroy(&atmos);
+}
+
+void test_set_user_meta_ns() {
+    AtmosClient atmos;
+    AtmosCreateObjectRequest request;
+    AtmosCreateObjectResponse response;
+    AtmosGetUserMetaResponse meta_response;
+    AtmosSetUserMetaRequest set_request;
+    AtmosResponse set_response;
+    char path[ATMOS_PATH_MAX];
+    char randfile[9];
+    RestResponse delete_response;
+
+    random_file(randfile, 8);
+    sprintf(path, "/atmos-c-unittest/%s.txt", randfile);
+    printf("Creating object: %s\n", path);
+    get_atmos_client(&atmos);
+
+    AtmosCreateObjectRequest_init_ns(&request, path);
+    AtmosCreateObjectResponse_init(&response);
+
+    // some test strings
+    AtmosCreateObjectRequest_add_metadata(&request, "meta1",
+            "Value  with   spaces", 0);
+    AtmosCreateObjectRequest_add_metadata(&request, "meta2",
+            "character test 1!2@3#4$5%6^7&8*9(0)`~-_+\\|]}[{;:'\"/?.><", 0);
+
+    AtmosClient_create_object(&atmos, &request, &response);
+    check_error((AtmosResponse*)&response);
+    assert_int_equal(201, response.parent.parent.http_code);
+    assert_true(strlen(response.object_id) > 0);
+    printf("Created object: %s\n", response.object_id);
+
+    // Set some items
+    AtmosSetUserMetaRequest_init_ns(&set_request, path);
+    AtmosSetUserMetaRequest_add_metadata(&set_request, "meta1", "changed value", 0);
+    AtmosSetUserMetaRequest_add_metadata(&set_request, "new meta", "new value", 1);
+    AtmosResponse_init(&set_response);
+
+    AtmosClient_set_user_meta(&atmos, &set_request, &set_response);
+    check_error(&set_response);
+    assert_int_equal(200, set_response.parent.http_code);
+
+    AtmosSetUserMetaRequest_destroy(&set_request);
+    AtmosResponse_destroy(&set_response);
+
+    // Read back and check.
+    AtmosGetUserMetaResponse_init(&meta_response);
+    AtmosClient_get_user_meta_simple_ns(&atmos, path, &meta_response);
+    check_error((AtmosResponse*)&meta_response);
+    assert_int_equal(200, meta_response.parent.parent.http_code);
+
+    assert_string_equal("changed value",
+            AtmosGetUserMetaResponse_get_metadata_value(&meta_response, "meta1", 0));
+    assert_string_equal("character test 1!2@3#4$5%6^7&8*9(0)`~-_+\\|]}[{;:'\"/?.><",
+            AtmosGetUserMetaResponse_get_metadata_value(&meta_response, "meta2", 0));
+    assert_string_equal("new value",
+            AtmosGetUserMetaResponse_get_metadata_value(&meta_response, "new meta", 1));
+
+    AtmosGetUserMetaResponse_destroy(&meta_response);
+
+    // Cleanup
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_object_ns(&atmos, path, &delete_response);
+    assert_int_equal(204, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    AtmosCreateObjectRequest_destroy(&request);
+    AtmosCreateObjectResponse_destroy(&response);
+
+    AtmosClient_destroy(&atmos);
+
+}
+
 
 void test_atmos_suite() {
     char proxy_port_str[32];
@@ -1651,6 +1791,12 @@ void test_atmos_suite() {
 
     start_test_msg("test_delete_user_meta_ns");
     run_test(test_delete_user_meta_ns);
+
+    start_test_msg("test_set_user_meta");
+    run_test(test_set_user_meta);
+
+    start_test_msg("test_set_user_meta_ns");
+    run_test(test_set_user_meta_ns);
 
     test_fixture_end();
 

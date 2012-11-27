@@ -276,3 +276,106 @@ AtmosGetUserMetaResponse_get_metadata_value(AtmosGetUserMetaResponse *self,
             listable?self->listable_metadata:self->meta,
             listable?self->listable_meta_count:self->meta_count);
 }
+
+static void
+AtmosGetSystemMetaRequest_init_common(AtmosGetSystemMetaRequest *self) {
+    OBJECT_ZERO(self, AtmosGetSystemMetaRequest, RestRequest);
+
+    ((Object*)self)->class_name = CLASS_ATMOS_GET_SYSTEM_META_REQUEST;
+}
+
+AtmosGetSystemMetaRequest*
+AtmosGetSystemMetaRequest_init(AtmosGetSystemMetaRequest *self,
+        const char *object_id) {
+    char uri[ATMOS_OID_LENGTH+64];
+
+    snprintf(uri, ATMOS_OID_LENGTH+64, "/rest/objects/%s?metadata/system", object_id);
+    RestRequest_init((RestRequest*)self, uri, HTTP_GET);
+
+    AtmosGetSystemMetaRequest_init_common(self);
+
+    strncpy(self->object_id, object_id, ATMOS_OID_LENGTH);
+
+    return self;
+}
+
+AtmosGetSystemMetaRequest*
+AtmosGetSystemMetaRequest_init_ns(AtmosGetSystemMetaRequest *self,
+        const char *path) {
+    char uri[ATMOS_PATH_MAX+64];
+
+    snprintf(uri, ATMOS_PATH_MAX+64, "/rest/namespace/%s?metadata/system", path);
+    RestRequest_init((RestRequest*)self, uri, HTTP_GET);
+
+    AtmosGetSystemMetaRequest_init_common(self);
+
+    strncpy(self->path, path, ATMOS_PATH_MAX);
+
+    return self;
+}
+
+void
+AtmosGetSystemMetaRequest_destroy(AtmosGetSystemMetaRequest *self) {
+    OBJECT_ZERO(self, AtmosGetSystemMetaRequest, RestRequest);
+
+    RestRequest_destroy((RestRequest*)self);
+}
+
+void
+AtmosGetSystemMetaRequest_add_tag(AtmosGetSystemMetaRequest *self,
+        const char *tag) {
+    strncpy(self->tags[self->tag_count++], tag, ATMOS_META_NAME_MAX);
+}
+
+AtmosGetSystemMetaResponse*
+AtmosGetSystemMetaResponse_init(AtmosGetSystemMetaResponse *self) {
+    AtmosResponse_init((AtmosResponse*)self);
+
+    OBJECT_ZERO(self, AtmosGetSystemMetaResponse, AtmosResponse);
+
+    ((Object*)self)->class_name = CLASS_ATMOS_GET_SYSTEM_META_RESPONSE;
+
+    return self;
+}
+
+void
+AtmosGetSystemMetaResponse_destroy(AtmosGetSystemMetaResponse *self) {
+    OBJECT_ZERO(self, AtmosGetSystemMetaResponse, AtmosResponse);
+
+    AtmosResponse_destroy((AtmosResponse*)self);
+}
+
+
+void
+AtmosFilter_get_system_metadata(RestFilter *self, RestClient *rest,
+        RestRequest *request, RestResponse *response) {
+    AtmosGetSystemMetaRequest *req = (AtmosGetSystemMetaRequest*)request;
+    AtmosGetSystemMetaResponse *res = (AtmosGetSystemMetaResponse*)response;
+
+    if(((AtmosClient*)rest)->enable_utf8_metadata) {
+        RestRequest_add_header((RestRequest*)request,
+                ATMOS_HEADER_UTF8 ": true");
+    }
+
+    if(req->tags && req->tag_count > 0) {
+        AtmosUtil_set_tags_header(request, req->tags, req->tag_count);
+    }
+
+    // Pass to the next filter
+    if(self->next) {
+        ((rest_http_filter)self->next->func)(self->next, rest, request, response);
+    }
+
+    // Now we're on the response.
+
+    // Check to make sure we had success before parsing.
+    if(response->http_code > 299) {
+        return;
+    }
+
+    // Parse out the metadata
+    AtmosUtil_parse_system_meta_header(response,
+            &(res->system_metadata));
+}
+
+

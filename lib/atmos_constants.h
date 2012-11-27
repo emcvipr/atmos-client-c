@@ -79,6 +79,8 @@
 #define CLASS_ATMOS_GET_USER_META_REQUEST "AtmosGetUserMetaRequest"
 #define CLASS_ATMOS_GET_USER_META_RESPONSE "AtmosGetUserMetaResponse"
 #define CLASS_ATMOS_SET_USER_META_REQUEST "AtmosSetUserMetaRequest"
+#define CLASS_ATMOS_GET_SYSTEM_META_REQUEST "AtmosGetSystemMetaRequest"
+#define CLASS_ATMOS_GET_SYSTEM_META_RESPONSE "AtmosGetSystemMetaResponse"
 
 #define ATMOS_OID_LOCATION_PREFIX "/rest/objects/"
 #define ATMOS_OID_LOCATION_PREFIX_SIZE 14

@@ -209,21 +209,43 @@ AtmosGetAclResponse_destroy(AtmosGetAclResponse *self);
  * @{
  */
 
+/** Contains the parameters for a get user metadata request */
 typedef struct {
+    /** Parent object */
     RestRequest parent;
+    /** Object ID requested.  Should be empty if path is not */
     char object_id[ATMOS_OID_LENGTH];
+    /** Namespace path requested.  Should be empty if object_id is not */
     char path[ATMOS_PATH_MAX];
+    /** Names of the user metadata elements (tags) to load */
     char tags[ATMOS_META_COUNT_MAX][ATMOS_META_NAME_MAX];
+    /** Number of tags to load.  If zero, all tags will be fetched */
     int tag_count;
 } AtmosGetUserMetaRequest;
 
+/**
+ * Initializes a new AtmosGetUserMetaRequest object.
+ * @param self the AtmosGetUserMetaRequest object to initialize.
+ * @param object_id the Atmos object ID to load user metadata for.
+ * @return the AtmosGetUserMetaRequest object (same as 'self')
+ */
 AtmosGetUserMetaRequest*
 AtmosGetUserMetaRequest_init(AtmosGetUserMetaRequest *self,
         const char *object_id);
 
+/**
+ * Initializes a new AtmosGetUserMetaRequest object.
+ * @param self the AtmosGetUserMetaRequest object to initialize.
+ * @param path the Atmos namespace path to the object to load user metadata for.
+ * @return the AtmosGetUserMetaRequest object (same as 'self')
+ */
 AtmosGetUserMetaRequest*
 AtmosGetUserMetaRequest_init_ns(AtmosGetUserMetaRequest *self, const char *path);
 
+/**
+ * Destroys a AtmosGetUserMetaRequest object.
+ * @param self the AtmosGetUserMetaRequest object to destroy.
+ */
 void
 AtmosGetUserMetaRequest_destroy(AtmosGetUserMetaRequest *self);
 
@@ -245,20 +267,35 @@ AtmosGetUserMetaRequest_add_tag(AtmosGetUserMetaRequest *self, const char *tag);
  * to capture the user metadata response from Atmos.
  * @{
  */
+
+/**
+ * Contains the response from a get user metadata operation.
+ */
 typedef struct {
+    /** Parent object */
     AtmosResponse parent;
+    /** Regular metadata items returned in the response */
     AtmosMetadata meta[ATMOS_META_COUNT_MAX];
     /** Number of metadata elements in meta */
     int meta_count;
-    /** Object listable metadata */
+    /** Listable metadata items returned in the response */
     AtmosMetadata listable_metadata[ATMOS_META_COUNT_MAX];
     /** Number of elements in listable_meta */
     int listable_meta_count;
 } AtmosGetUserMetaResponse;
 
+/**
+ * Initializes a new AtmosGetUserMetaResponse object.
+ * @param self the AtmosGetUserMetaResponse object to initialize
+ * @return the AtmosGetUserMetaResponse object (same as 'self')
+ */
 AtmosGetUserMetaResponse*
 AtmosGetUserMetaResponse_init(AtmosGetUserMetaResponse *self);
 
+/**
+ * Destroys a AtmosGetUserMetaResponse object.
+ * @param self the AtmosGetUserMetaResponse object to destroy.
+ */
 void
 AtmosGetUserMetaResponse_destroy(AtmosGetUserMetaResponse *self);
 
@@ -282,24 +319,61 @@ AtmosGetUserMetaResponse_get_metadata_value(AtmosGetUserMetaResponse *self,
  * @{
  */
 
+/**
+ * Contains the request parameters to get the system metadata for an object.
+ */
 typedef struct {
+    /** Parent object */
     RestRequest parent;
+    /** object_id requested. Should be empty if path is not */
     char object_id[ATMOS_OID_LENGTH];
+    /** path requested. Should be empty if object_id is not */
     char path[ATMOS_PATH_MAX];
+    /** Array of tags requested.  See ATMOS_SYSTEM_META* macros */
     char tags[ATMOS_META_COUNT_MAX][ATMOS_META_NAME_MAX];
+    /** Number of tags requested.  If zero, all tags will be fetched */
     int tag_count;
 } AtmosGetSystemMetaRequest;
 
+/**
+ * Initializes a new AtmosGetSystemMetaRequest.
+ * @param self the AtmosGetSystemMetaRequest object pointer to initialize.
+ * @param object_id the Atmos object ID to request system metadata for.
+ * @return the AtmosGetSystemMetaRequest object (same as 'self').
+ */
 AtmosGetSystemMetaRequest*
 AtmosGetSystemMetaRequest_init(AtmosGetSystemMetaRequest *self,
         const char *object_id);
 
+/**
+ * Initializes a new AtmosGetSystemMetaRequest.
+ * @param self the AtmosGetSystemMetaRequest object pointer to initialize.
+ * @param path the Atmos namespace path to the object to request system
+ * metadata for.
+ * @return the AtmosGetSystemMetaRequest object (same as 'self').
+ */
 AtmosGetSystemMetaRequest*
 AtmosGetSystemMetaRequest_init_ns(AtmosGetSystemMetaRequest *self,
         const char *path);
 
+/**
+ * Destroys a AtmosGetSystemMetaRequest object.
+ * @param self the AtmosGetSystemMetaRequest object to destroy.
+ */
 void
-AtmosGetSystemMetaRequest_destroy(AtmosGetSystemMetaRequest self);
+AtmosGetSystemMetaRequest_destroy(AtmosGetSystemMetaRequest *self);
+
+/**
+ * Adds a tag to the list of system metadata items to fetch.  Note if you call
+ * this method, only the requested tags will be valid in the result.  If you
+ * do not call this method, all metadata tags will be returned by default.
+ * @param self the AtmosGetSystemMetaRequest object to modify.
+ * @param tag the name of the system metadata field to request.  See the
+ * ATMOS_SYSTEM_META* macros for valid values.
+ */
+void
+AtmosGetSystemMetaRequest_add_tag(AtmosGetSystemMetaRequest *self,
+        const char *tag);
 
 /**
  * @}
@@ -309,14 +383,28 @@ AtmosGetSystemMetaRequest_destroy(AtmosGetSystemMetaRequest self);
  * @{
  */
 
+/**
+ * Contains the result from a get system metadata operation.
+ */
 typedef struct {
+    /** Parent object */
     AtmosResponse parent;
+    /** System metadata for the requested object */
     AtmosSystemMetadata system_metadata;
 } AtmosGetSystemMetaResponse;
 
+/**
+ * Initializes a new AtmosGetSystemMetaRequest object.
+ * @param self the AtmosGetSystemMetaRequest to initialize
+ * @return the AtmosGetSystemMetaRequest object (same as 'self')
+ */
 AtmosGetSystemMetaResponse*
 AtmosGetSystemMetaResponse_init(AtmosGetSystemMetaResponse *self);
 
+/**
+ * Destroys a AtmosGetSystemMetaRequest object.
+ * @param self the AtmosGetSystemMetaRequest object to destroy.
+ */
 void
 AtmosGetSystemMetaResponse_destroy(AtmosGetSystemMetaResponse *self);
 

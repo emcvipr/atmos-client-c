@@ -438,3 +438,45 @@ AtmosClient_set_user_meta(AtmosClient *self, AtmosSetUserMetaRequest *request,
 
 }
 
+void
+AtmosClient_get_system_meta(AtmosClient *self,
+        AtmosGetSystemMetaRequest *request,
+        AtmosGetSystemMetaResponse *response) {
+
+    RestFilter *chain = NULL;
+
+    chain = AtmosClient_add_default_filters(self, chain);
+    chain = RestFilter_add(chain, AtmosFilter_get_system_metadata);
+
+    RestClient_execute_request((RestClient*)self, chain,
+            (RestRequest*)request, (RestResponse*)response);
+
+    RestFilter_free(chain);
+
+}
+
+void
+AtmosClient_get_system_meta_simple(AtmosClient *self, const char *object_id,
+        AtmosGetSystemMetaResponse *response) {
+    AtmosGetSystemMetaRequest request;
+
+    AtmosGetSystemMetaRequest_init(&request, object_id);
+
+    AtmosClient_get_system_meta(self, &request, response);
+
+    AtmosGetSystemMetaRequest_destroy(&request);
+}
+
+void
+AtmosClient_get_system_meta_simple_ns(AtmosClient *self, const char *path,
+        AtmosGetSystemMetaResponse *response) {
+    AtmosGetSystemMetaRequest request;
+
+    AtmosGetSystemMetaRequest_init_ns(&request, path);
+
+    AtmosClient_get_system_meta(self, &request, response);
+
+    AtmosGetSystemMetaRequest_destroy(&request);
+
+}
+

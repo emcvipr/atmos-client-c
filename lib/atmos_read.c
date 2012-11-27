@@ -50,6 +50,8 @@ AtmosReadObjectRequest_init_ns(AtmosReadObjectRequest *self, const char *path) {
     AtmosReadObjectRequest_init_common(self);
 
     strncpy(self->path, path, ATMOS_PATH_MAX);
+
+    return self;
 }
 
 void AtmosReadObjectRequest_destroy(AtmosReadObjectRequest *self) {
@@ -177,13 +179,14 @@ AtmosGetUserMetaRequest_init(AtmosGetUserMetaRequest *self,
     AtmosGetUserMetaRequest_common_init(self);
 
     strncpy(self->object_id, object_id, ATMOS_OID_LENGTH);
+
+    return self;
 }
 
 AtmosGetUserMetaRequest*
 AtmosGetUserMetaRequest_init_ns(AtmosGetUserMetaRequest *self,
         const char *path) {
     char uri[ATMOS_PATH_MAX+64];
-    RestFilter *chain = NULL;
 
     snprintf(uri, ATMOS_PATH_MAX+64, "/rest/namespace/%s?metadata/user", path);
     RestRequest_init((RestRequest*)self, uri, HTTP_GET);
@@ -191,6 +194,8 @@ AtmosGetUserMetaRequest_init_ns(AtmosGetUserMetaRequest *self,
     AtmosGetUserMetaRequest_common_init(self);
 
     strncpy(self->path, path, ATMOS_PATH_MAX);
+
+    return self;
 }
 
 void
@@ -200,9 +205,14 @@ AtmosGetUserMetaRequest_destroy(AtmosGetUserMetaRequest *self) {
     RestRequest_destroy((RestRequest*)self);
 }
 
+void
+AtmosGetUserMetaRequest_add_tag(AtmosGetUserMetaRequest *self, const char *tag) {
+    strncpy(self->tags[self->tag_count++], tag, ATMOS_META_NAME_MAX);
+}
 
 void AtmosFilter_parse_get_user_meta_response(RestFilter *self, RestClient *rest,
         RestRequest *request, RestResponse *response) {
+    AtmosGetUserMetaResponse *res = (AtmosGetUserMetaResponse*)response;
 
     // Pass to the next filter
     if(self->next) {
@@ -242,3 +252,27 @@ void AtmosFilter_set_get_user_meta_headers(RestFilter *self, RestClient *rest,
 
 }
 
+AtmosGetUserMetaResponse*
+AtmosGetUserMetaResponse_init(AtmosGetUserMetaResponse *self) {
+    AtmosResponse_init((AtmosResponse*)self);
+
+    OBJECT_ZERO(self, AtmosGetUserMetaResponse, AtmosResponse);
+    ((Object*)self)->class_name = CLASS_ATMOS_GET_USER_META_RESPONSE;
+
+    return self;
+}
+
+void
+AtmosGetUserMetaResponse_destroy(AtmosGetUserMetaResponse *self) {
+    OBJECT_ZERO(self, AtmosGetUserMetaResponse, AtmosResponse);
+    AtmosResponse_destroy((AtmosResponse*)self);
+}
+
+
+const char *
+AtmosGetUserMetaResponse_get_metadata_value(AtmosGetUserMetaResponse *self,
+        const char *name, int listable) {
+    return AtmosUtil_get_metadata_value(name,
+            listable?self->listable_metadata:self->meta,
+            listable?self->listable_meta_count:self->meta_count);
+}

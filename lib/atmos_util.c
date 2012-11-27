@@ -739,13 +739,13 @@ AtmosUtil_get_acl_permission(AtmosAclEntry *acl, int acl_count,
 }
 
 void
-AtmosUtil_set_tags_header(RestRequest *request, const char const **tags,
-        int tag_count) {
-    char *header;
-    size_t header_size;
+AtmosUtil_set_tags_header(RestRequest *request,
+        char tags[][ATMOS_META_NAME_MAX], int tag_count) {
+    char *header = NULL;
+    size_t header_size = 0;
     int i;
 
-    if(!tags || tag_count < 1) {
+    if(tags == NULL || tag_count < 1) {
         return;
     }
 
@@ -763,3 +763,30 @@ AtmosUtil_set_tags_header(RestRequest *request, const char const **tags,
 
     free(header);
 }
+
+void
+AtmosUtil_set_tags_header2(RestRequest *request,
+        const char const **tags, int tag_count) {
+    char *header = NULL;
+    size_t header_size = 0;
+    int i;
+
+    if(tags==NULL || tag_count < 1) {
+        return;
+    }
+
+    header = AtmosUtil_cstring_append(header, &header_size,
+            ATMOS_HEADER_TAGS ": ");
+
+    for(i=0; i<tag_count; i++) {
+        if(i>0) {
+            header = AtmosUtil_cstring_append(header, &header_size, ", ");
+        }
+        header = AtmosUtil_cstring_append(header, &header_size, tags[i]);
+    }
+
+    RestRequest_add_header(request, header);
+
+    free(header);
+}
+

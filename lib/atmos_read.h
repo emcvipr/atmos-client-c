@@ -227,6 +227,16 @@ AtmosGetUserMetaRequest_init_ns(AtmosGetUserMetaRequest *self, const char *path)
 void
 AtmosGetUserMetaRequest_destroy(AtmosGetUserMetaRequest *self);
 
+/**
+ * Adds a user metadata name (tag) to the list of tags to fetch with the
+ * request.  Note that by default, all metadata entries will be fetched.  By
+ * setting this, only the specified entries will be fetched.
+ * @param self the AtmosGetUserMetaRequest to modify
+ * @param tag the user metadata name add to the tag list.
+ */
+void
+AtmosGetUserMetaRequest_add_tag(AtmosGetUserMetaRequest *self, const char *tag);
+
 
 /**
  * @}
@@ -251,6 +261,18 @@ AtmosGetUserMetaResponse_init(AtmosGetUserMetaResponse *self);
 
 void
 AtmosGetUserMetaResponse_destroy(AtmosGetUserMetaResponse *self);
+
+/**
+ * Convenience method to read user metadata from the response.
+ * @param self the AtmosGetUserMetaResponse to search
+ * @param name the name of the metadata item
+ * @param listable set to 1 to search listable metadata, 0 to search regular.
+ * @return the value of the metadata, or NULL if the metadata was not found.
+ */
+const char *
+AtmosGetUserMetaResponse_get_metadata_value(AtmosGetUserMetaResponse *self,
+        const char *name, int listable);
+
 
 /**
  * @}

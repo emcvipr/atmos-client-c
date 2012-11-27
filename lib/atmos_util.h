@@ -59,8 +59,12 @@ AtmosUtil_get_acl_permission(AtmosAclEntry *acl, int acl_count,
         const char *principal, enum atmos_acl_principal_type principal_type);
 
 void
-AtmosUtil_set_tags_header(RestRequest *request, const char const **tags,
-        int tag_count);
+AtmosUtil_set_tags_header(RestRequest *request,
+        char tags[][ATMOS_META_NAME_MAX], int tag_count);
+
+void
+AtmosUtil_set_tags_header2(RestRequest *request,
+        const char const **tags, int tag_count);
 
 // Debugging
 void

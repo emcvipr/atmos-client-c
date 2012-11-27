@@ -35,6 +35,15 @@ can be omitted if you don't have a proxy.
 Once the tests/atmostest.ini file is configured, you can run the unit tests with
 'make check'.
 
+To run the unit tests under GDB, do the following
+
+make
+cd tests
+libtool --mode execute gdb check_atmos
+
+On OSX, you need to use ../libtool to use the GNU version of libtool instead
+of OSX's libtool.
+
 ================
 Getting Started
 ================

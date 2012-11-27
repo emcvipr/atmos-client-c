@@ -6,6 +6,7 @@ AM_INIT_AUTOMAKE([foreign -Wall -Werror])
 LT_INIT
 AC_PROG_CC
 AM_PROG_CC_C_O
+CFLAGS="$CFLAGS -Wall -Werror"
 AC_CHECK_LIB([curl], [curl_easy_init], [CURLLIB=-lcurl])
 AC_SUBST([CURLLIB])
 PKG_CHECK_MODULES(XML, libxml-2.0 >= 2.4)

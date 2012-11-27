@@ -345,7 +345,7 @@ AtmosClient_delete_user_meta(AtmosClient *self, const char *object_id,
 
     // Set the headers
     if(meta_names && meta_name_count > 0) {
-        AtmosUtil_set_tags_header(&request, meta_names, meta_name_count);
+        AtmosUtil_set_tags_header2(&request, meta_names, meta_name_count);
     }
 
     chain = AtmosClient_add_default_filters(self, chain);
@@ -370,7 +370,7 @@ AtmosClient_delete_user_meta_ns(AtmosClient *self, const char *path,
 
     // Set the headers
     if(meta_names && meta_name_count > 0) {
-        AtmosUtil_set_tags_header(&request, meta_names, meta_name_count);
+        AtmosUtil_set_tags_header2(&request, meta_names, meta_name_count);
     }
 
     chain = AtmosClient_add_default_filters(self, chain);
@@ -415,7 +415,7 @@ AtmosClient_get_user_meta_simple_ns(AtmosClient *self, const char *path,
         AtmosGetUserMetaResponse *response) {
     AtmosGetUserMetaRequest request;
 
-    AtmosGetUserMetaRequest_init_ns(&request, object_id);
+    AtmosGetUserMetaRequest_init_ns(&request, path);
 
     AtmosClient_get_user_meta(self, &request, response);
 

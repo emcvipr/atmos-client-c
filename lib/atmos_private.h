@@ -187,6 +187,17 @@ void AtmosFilter_set_user_meta_headers(RestFilter *self, RestClient *rest,
 void AtmosFilter_get_system_metadata(RestFilter *self, RestClient *rest,
         RestRequest *request, RestResponse *response);
 
+// Special filter for Get ACL
+/**
+ * Processes the response headers for get_acl.
+ * @param self the current filter element in the chain.
+ * @param rest the RestClient executing the request.
+ * @param request the RestRequest to execute.
+ * @param response the RestResponse receiving the response.
+ */
+void AtmosFilter_parse_get_acl_response(RestFilter *self, RestClient *rest,
+        RestRequest *request, RestResponse *response);
+
 
 
 #endif /* ATMOS_PRIVATE_H_ */

@@ -571,7 +571,7 @@ void test_create_object() {
     AtmosCreateObjectResponse_init(&response);
 
     AtmosClient_create_object_simple(&atmos, "test", 4, "text/plain", &response);
-
+    check_error((AtmosResponse*)&response);
     assert_int_equal(201, response.parent.parent.http_code);
     assert_true(strlen(response.object_id) > 0);
 
@@ -603,6 +603,7 @@ void test_create_object_ns() {
 
     AtmosClient_create_object_simple_ns(&atmos, path, "test", 4, "text/plain",
             &response);
+    check_error((AtmosResponse*)&response);
     assert_int_equal(201, response.parent.parent.http_code);
     assert_true(strlen(response.object_id) > 0);
 
@@ -1774,6 +1775,159 @@ void test_get_system_meta_ns() {
     AtmosClient_destroy(&atmos);
 }
 
+void test_set_get_acl() {
+    AtmosClient atmos;
+    AtmosCreateObjectResponse response;
+    RestResponse delete_response;
+    AtmosResponse set_acl_response;
+    AtmosGetAclResponse acl_response;
+    AtmosAclEntry acl[3];
+
+    get_atmos_client(&atmos);
+    AtmosCreateObjectResponse_init(&response);
+
+    AtmosClient_create_object_simple(&atmos, "test", 4, "text/plain", &response);
+    check_error((AtmosResponse*)&response);
+    assert_int_equal(201, response.parent.parent.http_code);
+    assert_true(strlen(response.object_id) > 0);
+
+    printf("Created object: %s\n", response.object_id);
+
+    // Read ACL.  Should be default (uid=FULL,other=NONE).
+    AtmosGetAclResponse_init(&acl_response);
+    AtmosClient_get_acl(&atmos, response.object_id, &acl_response);
+    check_error((AtmosResponse*)&acl_response);
+    assert_int_equal(200, acl_response.parent.parent.http_code);
+    assert_int_equal(2, acl_response.acl_count);
+    assert_int_equal(ATMOS_PERM_FULL, AtmosGetAclResponse_get_acl_permission(
+            &acl_response, uid1, ATMOS_USER));
+    assert_int_equal(ATMOS_PERM_NONE, AtmosGetAclResponse_get_acl_permission(
+            &acl_response, ATMOS_ACL_GROUP_OTHER, ATMOS_GROUP));
+    assert_int_equal(ATMOS_PERM_NONE, AtmosGetAclResponse_get_acl_permission(
+            &acl_response, "dummy_user_that_does_not_exist", ATMOS_USER));
+    AtmosGetAclResponse_destroy(&acl_response);
+
+    // Build a new ACL and set it on the object.
+    acl[0].permission = ATMOS_PERM_FULL;
+    acl[0].type = ATMOS_USER;
+    strcpy(acl[0].principal, uid1);
+    acl[1].permission = ATMOS_PERM_READ_WRITE;
+    acl[1].type = ATMOS_USER;
+    strcpy(acl[1].principal, uid2);
+    acl[2].permission = ATMOS_PERM_READ;
+    acl[2].type = ATMOS_GROUP;
+    strcpy(acl[2].principal, ATMOS_ACL_GROUP_OTHER);
+    AtmosResponse_init(&set_acl_response);
+    AtmosClient_set_acl(&atmos, response.object_id, acl, 3, &set_acl_response);
+    check_error(&set_acl_response);
+    assert_int_equal(200, set_acl_response.parent.http_code);
+    AtmosResponse_destroy(&set_acl_response);
+
+    // Check new ACL
+    AtmosGetAclResponse_init(&acl_response);
+    AtmosClient_get_acl(&atmos, response.object_id, &acl_response);
+    check_error((AtmosResponse*)&acl_response);
+    assert_int_equal(200, acl_response.parent.parent.http_code);
+    assert_int_equal(3, acl_response.acl_count);
+    assert_int_equal(ATMOS_PERM_FULL, AtmosGetAclResponse_get_acl_permission(
+            &acl_response, uid1, ATMOS_USER));
+    assert_int_equal(ATMOS_PERM_READ_WRITE, AtmosGetAclResponse_get_acl_permission(
+            &acl_response, uid2, ATMOS_USER));
+    assert_int_equal(ATMOS_PERM_READ, AtmosGetAclResponse_get_acl_permission(
+            &acl_response, ATMOS_ACL_GROUP_OTHER, ATMOS_GROUP));
+    assert_int_equal(ATMOS_PERM_NONE, AtmosGetAclResponse_get_acl_permission(
+            &acl_response, "dummy_user_that_does_not_exist", ATMOS_USER));
+    AtmosGetAclResponse_destroy(&acl_response);
+
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_object(&atmos, response.object_id, &delete_response);
+    assert_int_equal(204, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    AtmosCreateObjectResponse_destroy(&response);
+    AtmosClient_destroy(&atmos);
+}
+
+void test_set_get_acl_ns() {
+    AtmosClient atmos;
+    AtmosCreateObjectResponse response;
+    RestResponse delete_response;
+    AtmosResponse set_acl_response;
+    AtmosGetAclResponse acl_response;
+    AtmosAclEntry acl[3];
+    char path[ATMOS_PATH_MAX];
+    char randfile[9];
+
+    random_file(randfile, 8);
+    sprintf(path, "/atmos-c-unittest/%s.txt", randfile);
+    printf("Creating object: %s\n", path);
+
+    get_atmos_client(&atmos);
+    AtmosCreateObjectResponse_init(&response);
+
+    AtmosClient_create_object_simple_ns(&atmos, path, "test", 4,
+            "text/plain", &response);
+    check_error((AtmosResponse*)&response);
+    assert_int_equal(201, response.parent.parent.http_code);
+    assert_true(strlen(response.object_id) > 0);
+
+    printf("Created object: %s\n", response.object_id);
+
+    // Read ACL.  Should be default (uid=FULL).
+    AtmosGetAclResponse_init(&acl_response);
+    AtmosClient_get_acl_ns(&atmos, path, &acl_response);
+    check_error((AtmosResponse*)&acl_response);
+    assert_int_equal(200, acl_response.parent.parent.http_code);
+    assert_int_equal(2, acl_response.acl_count);
+    assert_int_equal(ATMOS_PERM_FULL, AtmosGetAclResponse_get_acl_permission(
+            &acl_response, uid1, ATMOS_USER));
+    assert_int_equal(ATMOS_PERM_NONE, AtmosGetAclResponse_get_acl_permission(
+            &acl_response, ATMOS_ACL_GROUP_OTHER, ATMOS_GROUP));
+    assert_int_equal(ATMOS_PERM_NONE, AtmosGetAclResponse_get_acl_permission(
+            &acl_response, "dummy_user_that_does_not_exist", ATMOS_USER));
+    AtmosGetAclResponse_destroy(&acl_response);
+
+    // Build a new ACL and set it on the object.
+    acl[0].permission = ATMOS_PERM_FULL;
+    acl[0].type = ATMOS_USER;
+    strcpy(acl[0].principal, uid1);
+    acl[1].permission = ATMOS_PERM_READ_WRITE;
+    acl[1].type = ATMOS_USER;
+    strcpy(acl[1].principal, uid2);
+    acl[2].permission = ATMOS_PERM_READ;
+    acl[2].type = ATMOS_GROUP;
+    strcpy(acl[2].principal, ATMOS_ACL_GROUP_OTHER);
+    AtmosResponse_init(&set_acl_response);
+    AtmosClient_set_acl_ns(&atmos, path, acl, 3, &set_acl_response);
+    check_error(&set_acl_response);
+    assert_int_equal(200, set_acl_response.parent.http_code);
+    AtmosResponse_destroy(&set_acl_response);
+
+    // Check new ACL
+    AtmosGetAclResponse_init(&acl_response);
+    AtmosClient_get_acl_ns(&atmos, path, &acl_response);
+    check_error((AtmosResponse*)&acl_response);
+    assert_int_equal(200, acl_response.parent.parent.http_code);
+    assert_int_equal(3, acl_response.acl_count);
+    assert_int_equal(ATMOS_PERM_FULL, AtmosGetAclResponse_get_acl_permission(
+            &acl_response, uid1, ATMOS_USER));
+    assert_int_equal(ATMOS_PERM_READ_WRITE, AtmosGetAclResponse_get_acl_permission(
+            &acl_response, uid2, ATMOS_USER));
+    assert_int_equal(ATMOS_PERM_READ, AtmosGetAclResponse_get_acl_permission(
+            &acl_response, ATMOS_ACL_GROUP_OTHER, ATMOS_GROUP));
+    assert_int_equal(ATMOS_PERM_NONE, AtmosGetAclResponse_get_acl_permission(
+            &acl_response, "dummy_user_that_does_not_exist", ATMOS_USER));
+    AtmosGetAclResponse_destroy(&acl_response);
+
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_object_ns(&atmos, path, &delete_response);
+    assert_int_equal(204, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    AtmosCreateObjectResponse_destroy(&response);
+    AtmosClient_destroy(&atmos);
+}
+
 void test_atmos_suite() {
     char proxy_port_str[32];
 
@@ -1960,6 +2114,12 @@ void test_atmos_suite() {
 
     start_test_msg("test_get_system_meta_ns");
     run_test(test_get_system_meta_ns);
+
+    start_test_msg("test_set_get_acl");
+    run_test(test_set_get_acl);
+
+    start_test_msg("test_set_get_acl_ns");
+    run_test(test_set_get_acl_ns);
 
     test_fixture_end();
 

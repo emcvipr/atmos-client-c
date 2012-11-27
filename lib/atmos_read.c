@@ -378,4 +378,49 @@ AtmosFilter_get_system_metadata(RestFilter *self, RestClient *rest,
             &(res->system_metadata));
 }
 
+void
+AtmosFilter_parse_get_acl_response(RestFilter *self, RestClient *rest,
+        RestRequest *request, RestResponse *response) {
+    AtmosGetAclResponse *res = (AtmosGetAclResponse*)response;
+
+    // Pass to the next filter
+    if(self->next) {
+        ((rest_http_filter)self->next->func)(self->next, rest, request, response);
+    }
+
+    // Now we're on the response.
+
+    // Check to make sure we had success before parsing.
+    if(response->http_code > 299) {
+        return;
+    }
+
+    AtmosUtil_parse_acl_headers(response, res->acl, &(res->acl_count));
+}
+
+AtmosGetAclResponse*
+AtmosGetAclResponse_init(AtmosGetAclResponse *self) {
+    AtmosResponse_init((AtmosResponse*)self);
+
+    OBJECT_ZERO(self, AtmosGetAclResponse, AtmosResponse);
+
+    ((Object*)self)->class_name = CLASS_ATMOS_GET_ACL_RESPONSE;
+
+    return self;
+}
+
+void
+AtmosGetAclResponse_destroy(AtmosGetAclResponse *self) {
+    AtmosResponse_destroy((AtmosResponse*)self);
+
+    OBJECT_ZERO(self, AtmosGetAclResponse, AtmosResponse);
+}
+
+enum atmos_acl_permission
+AtmosGetAclResponse_get_acl_permission(AtmosGetAclResponse *self,
+        const char *principal, enum atmos_acl_principal_type principal_type) {
+    return AtmosUtil_get_acl_permission(self->acl, self->acl_count,
+            principal, principal_type);
+}
+
 

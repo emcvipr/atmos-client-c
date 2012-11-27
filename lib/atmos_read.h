@@ -188,18 +188,46 @@ AtmosReadObjectResponse_get_acl_permission(AtmosReadObjectResponse *self,
  * to capture the get ACL response from Atmos.
  * @{
  */
+
+/**
+ * Contains the response from a get acl operation.
+ */
 typedef struct {
+    /** Parent object */
     AtmosResponse parent;
+    /** ACL entries for the object */
     AtmosAclEntry acl[ATMOS_ACL_COUNT_MAX];
     /** Number of ACL entries. */
     int acl_count;
 } AtmosGetAclResponse;
 
+/**
+ * Initializes a new AtmosGetAclResponse object.
+ * @param self the AtmosGetAclResponse object to initialize
+ * @return the AtmosGetAclResponse object (same as 'self')
+ */
 AtmosGetAclResponse*
 AtmosGetAclResponse_init(AtmosGetAclResponse *self);
 
+/**
+ * Destroys an AtmosGetAclResponse object.
+ * @param self the AtmosGetAclResponse object to destory.
+ */
 void
 AtmosGetAclResponse_destroy(AtmosGetAclResponse *self);
+
+/**
+ * Convenience method to read the ACL permission granted to a principal.
+ * @param self the AtmosGetAclResponse to search
+ * @param principal the principal name to look for
+ * @param principal_type the type of principal (ATMOS_USER or ATMOS_GROUP)
+ * @return the permissions granted to the principal.  If the principal is not
+ * found in the ACL, the permission NONE is returned.
+ */
+enum atmos_acl_permission
+AtmosGetAclResponse_get_acl_permission(AtmosGetAclResponse *self,
+        const char *principal, enum atmos_acl_principal_type principal_type);
+
 
 /**
  * @}

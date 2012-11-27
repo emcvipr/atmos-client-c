@@ -278,9 +278,9 @@ void AtmosClient_delete_object_ns(AtmosClient *self, const char *path,
         RestResponse *response) {
     RestRequest request;
     RestFilter *chain = NULL;
-    char uri[ATMOS_PATH_MAX];
+    char uri[ATMOS_PATH_MAX+16];
 
-    snprintf(uri, ATMOS_PATH_MAX, "/rest/namespace%s", path);
+    snprintf(uri, ATMOS_PATH_MAX+16, "/rest/namespace%s", path);
 
     RestRequest_init(&request, uri, HTTP_DELETE);
 
@@ -478,5 +478,103 @@ AtmosClient_get_system_meta_simple_ns(AtmosClient *self, const char *path,
 
     AtmosGetSystemMetaRequest_destroy(&request);
 
+}
+
+void
+AtmosClient_get_acl(AtmosClient *self, const char *object_id,
+        AtmosGetAclResponse *response) {
+    RestRequest request;
+    RestFilter *chain = NULL;
+    char uri[ATMOS_OID_LENGTH+64];
+
+    snprintf(uri, ATMOS_OID_LENGTH+64, "/rest/objects/%s?acl", object_id);
+
+    RestRequest_init(&request, uri, HTTP_GET);
+
+    chain = AtmosClient_add_default_filters(self, chain);
+    chain = RestFilter_add(chain, AtmosFilter_parse_get_acl_response);
+
+    RestClient_execute_request((RestClient*) self, chain, &request,
+            (RestResponse*) response);
+
+    RestFilter_free(chain);
+
+    RestRequest_destroy(&request);
+}
+
+void
+AtmosClient_get_acl_ns(AtmosClient *self, const char *path,
+        AtmosGetAclResponse *response) {
+    RestRequest request;
+    RestFilter *chain = NULL;
+    char uri[ATMOS_PATH_MAX+64];
+
+    snprintf(uri, ATMOS_PATH_MAX+64, "/rest/namespace%s?acl", path);
+
+    RestRequest_init(&request, uri, HTTP_GET);
+
+    chain = AtmosClient_add_default_filters(self, chain);
+    chain = RestFilter_add(chain, AtmosFilter_parse_get_acl_response);
+
+    RestClient_execute_request((RestClient*) self, chain, &request,
+            (RestResponse*) response);
+
+    RestFilter_free(chain);
+
+    RestRequest_destroy(&request);
+}
+
+void
+AtmosClient_set_acl(AtmosClient *self, const char *object_id,
+        AtmosAclEntry *acl, int acl_count, AtmosResponse *response) {
+    RestRequest request;
+    RestFilter *chain = NULL;
+    char uri[ATMOS_OID_LENGTH+64];
+
+    snprintf(uri, ATMOS_OID_LENGTH+64, "/rest/objects/%s?acl", object_id);
+
+    RestRequest_init(&request, uri, HTTP_POST);
+    // since there's no content, make sure there is a content
+    // type set otherwise curl will chose its own.
+    RestRequest_add_header((RestRequest*)&request,
+            HTTP_HEADER_CONTENT_TYPE ": application/octet-stream");
+    AtmosUtil_set_acl_header(acl, acl_count, &request);
+
+    chain = AtmosClient_add_default_filters(self, chain);
+    chain = RestFilter_add(chain, AtmosFilter_parse_get_acl_response);
+
+    RestClient_execute_request((RestClient*) self, chain, &request,
+            (RestResponse*) response);
+
+    RestFilter_free(chain);
+
+    RestRequest_destroy(&request);
+}
+
+void
+AtmosClient_set_acl_ns(AtmosClient *self, const char *path,
+        AtmosAclEntry *acl, int acl_count, AtmosResponse *response) {
+    RestRequest request;
+    RestFilter *chain = NULL;
+    char uri[ATMOS_PATH_MAX+64];
+
+    snprintf(uri, ATMOS_PATH_MAX+64, "/rest/namespace%s?acl", path);
+
+    RestRequest_init(&request, uri, HTTP_POST);
+    // since there's no content, make sure there is a content
+    // type set otherwise curl will chose its own.
+    RestRequest_add_header((RestRequest*)&request,
+            HTTP_HEADER_CONTENT_TYPE ": application/octet-stream");
+    AtmosUtil_set_acl_header(acl, acl_count, &request);
+
+    chain = AtmosClient_add_default_filters(self, chain);
+    chain = RestFilter_add(chain, AtmosFilter_parse_get_acl_response);
+
+    RestClient_execute_request((RestClient*) self, chain, &request,
+            (RestResponse*) response);
+
+    RestFilter_free(chain);
+
+    RestRequest_destroy(&request);
 }
 

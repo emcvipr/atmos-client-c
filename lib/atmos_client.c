@@ -177,13 +177,6 @@ void AtmosClient_create_object(AtmosClient *self,
     chain = RestFilter_add(chain, AtmosFilter_parse_create_response);
     chain = RestFilter_add(chain, AtmosFilter_set_create_headers);
 
-    // Special case -- if there's no content, make sure there is a content
-    // type set otherwise curl will chose its own.
-    if (!((RestRequest*)request)->request_body) {
-        RestRequest_add_header((RestRequest*)request,
-                HTTP_HEADER_CONTENT_TYPE ": application/octet-stream");
-    }
-
     RestClient_execute_request((RestClient*) self, chain,
             (RestRequest*) request, (RestResponse*) response);
 
@@ -578,3 +571,89 @@ AtmosClient_set_acl_ns(AtmosClient *self, const char *path,
     RestRequest_destroy(&request);
 }
 
+void
+AtmosClient_update_object(AtmosClient *self, AtmosUpdateObjectRequest *request,
+        RestResponse *response) {
+    RestFilter *chain = NULL;
+
+    chain = AtmosClient_add_default_filters(self, chain);
+    chain = RestFilter_add(chain, AtmosFilter_update_object);
+
+    RestClient_execute_request((RestClient*)self, chain,
+            (RestRequest*)request, (RestResponse*)response);
+
+    RestFilter_free(chain);
+}
+
+void
+AtmosClient_update_object_simple(AtmosClient *self, const char *object_id,
+        const char *data, size_t data_size, const char *content_type,
+        RestResponse *response) {
+    AtmosUpdateObjectRequest request;
+
+    AtmosUpdateObjectRequest_init(&request, object_id);
+
+    if(data && data_size > 0) {
+        RestRequest_set_array_body((RestRequest*)&request, data, data_size,
+                content_type);
+    }
+
+    AtmosClient_update_object(self, &request, response);
+
+    AtmosUpdateObjectRequest_destroy(&request);
+}
+
+void
+AtmosClient_update_object_simple_ns(AtmosClient *self, const char *path,
+        const char *data, size_t data_size, const char *content_type,
+        RestResponse *response) {
+    AtmosUpdateObjectRequest request;
+
+    AtmosUpdateObjectRequest_init_ns(&request, path);
+
+    if(data && data_size > 0) {
+        RestRequest_set_array_body((RestRequest*)&request, data, data_size,
+                content_type);
+    }
+
+    AtmosClient_update_object(self, &request, response);
+
+    AtmosUpdateObjectRequest_destroy(&request);
+
+}
+
+void
+AtmosClient_update_object_file(AtmosClient *self, const char *object_id,
+        FILE *f, off_t content_length, const char *content_type,
+        RestResponse *response) {
+    AtmosUpdateObjectRequest request;
+
+    AtmosUpdateObjectRequest_init(&request, object_id);
+
+    if(f && content_length > 0) {
+        RestRequest_set_file_body((RestRequest*)&request, f, content_length,
+                content_type);
+    }
+
+    AtmosClient_update_object(self, &request, response);
+
+    AtmosUpdateObjectRequest_destroy(&request);
+}
+
+void
+AtmosClient_update_object_file_ns(AtmosClient *self, const char *path,
+        FILE *f, off_t content_length, const char *content_type,
+        RestResponse *response) {
+    AtmosUpdateObjectRequest request;
+
+    AtmosUpdateObjectRequest_init_ns(&request, path);
+
+    if(f && content_length > 0) {
+        RestRequest_set_file_body((RestRequest*)&request, f, content_length,
+                content_type);
+    }
+
+    AtmosClient_update_object(self, &request, response);
+
+    AtmosUpdateObjectRequest_destroy(&request);
+}

@@ -147,6 +147,13 @@ void AtmosFilter_set_create_headers(RestFilter *self, RestClient *rest,
     AtmosCreateObjectRequest *req = (AtmosCreateObjectRequest*)request;
     AtmosClient *atmos = (AtmosClient*)rest;
 
+    // Special case -- if there's no content, make sure there is a content
+    // type set otherwise curl will chose its own.
+    if (!((RestRequest*)request)->request_body) {
+        RestRequest_add_header((RestRequest*)request,
+                HTTP_HEADER_CONTENT_TYPE ": application/octet-stream");
+    }
+
     if(req->meta_count > 0) {
         AtmosUtil_set_metadata_header(req->meta, req->meta_count, 0,
                 atmos->enable_utf8_metadata, request);

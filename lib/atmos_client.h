@@ -248,11 +248,11 @@ AtmosClient_read_object_simple_ns(AtmosClient *self, const char *path,
  * metadata and/or ACL updates with the data.
  * @param self the AtmosClient object pointer
  * @param request the AtmosUpdateObjectRequest
- * @param response the AtmosResponse object to receive the response.
+ * @param response the RestResponse object to receive the response.
  */
 void
 AtmosClient_update_object(AtmosClient *self, AtmosUpdateObjectRequest *request,
-        AtmosResponse *response);
+        RestResponse *response);
 
 /**
  * Updates an object in Atmos.  This version will replace the entire object's
@@ -262,12 +262,12 @@ AtmosClient_update_object(AtmosClient *self, AtmosUpdateObjectRequest *request,
  * @param data the byte array containing the new data for the object.
  * @param data_size the number of bytes to read from the byte array.
  * @param content_type the MIME type of the object (e.g. image/jpeg)
- * @param response the AtmosResponse object to receive the response.
+ * @param response the RestResponse object to receive the response.
  */
 void
 AtmosClient_update_object_simple(AtmosClient *self, const char *object_id,
         const char *data, size_t data_size, const char *content_type,
-        AtmosResponse *response);
+        RestResponse *response);
 
 /**
  * Updates an object in Atmos.  This version will replace the entire object's
@@ -277,12 +277,12 @@ AtmosClient_update_object_simple(AtmosClient *self, const char *object_id,
  * @param data the byte array containing the new data for the object.
  * @param data_size the number of bytes to read from the byte array.
  * @param content_type the MIME type of the object (e.g. image/jpeg)
- * @param response the AtmosResponse object to receive the response.
+ * @param response the RestResponse object to receive the response.
  */
 void
 AtmosClient_update_object_simple_ns(AtmosClient *self, const char *path,
         const char *data, size_t data_size, const char *content_type,
-        AtmosResponse *response);
+        RestResponse *response);
 
 /**
  * Updates an object in Atmos.  This version will replace the entire object's
@@ -292,12 +292,12 @@ AtmosClient_update_object_simple_ns(AtmosClient *self, const char *path,
  * @param f the file pointer containing the new data for the object.
  * @param content_length the number of bytes to read from the file.
  * @param content_type the MIME type of the object (e.g. image/jpeg)
- * @param response the AtmosResponse object to receive the response.
+ * @param response the RestResponse object to receive the response.
  */
 void
 AtmosClient_update_object_file(AtmosClient *self, const char *object_id,
         FILE *f, off_t content_length, const char *content_type,
-        AtmosResponse *response);
+        RestResponse *response);
 
 /**
  * Updates an object in Atmos.  This version will replace the entire object's
@@ -307,12 +307,12 @@ AtmosClient_update_object_file(AtmosClient *self, const char *object_id,
  * @param f the file pointer containing the new data for the object.
  * @param content_length the number of bytes to read from the file.
  * @param content_type the MIME type of the object (e.g. image/jpeg)
- * @param response the AtmosResponse object to receive the response.
+ * @param response the RestResponse object to receive the response.
  */
 void
 AtmosClient_update_object_file_ns(AtmosClient *self, const char *path,
         FILE *f, off_t content_length, const char *content_type,
-        AtmosResponse *response);
+        RestResponse *response);
 
 /**
  * Sets user metadata on an object.  Note that existing metadata elements on

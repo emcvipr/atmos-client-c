@@ -82,6 +82,7 @@
 #define CLASS_ATMOS_GET_SYSTEM_META_REQUEST "AtmosGetSystemMetaRequest"
 #define CLASS_ATMOS_GET_SYSTEM_META_RESPONSE "AtmosGetSystemMetaResponse"
 #define CLASS_ATMOS_GET_ACL_RESPONSE "AtmosGetAclResponse"
+#define CLASS_ATMOS_UPDATE_OBJECT_REQUEST "AtmosUpdateObjectRequest"
 
 #define ATMOS_OID_LOCATION_PREFIX "/rest/objects/"
 #define ATMOS_OID_LOCATION_PREFIX_SIZE 14

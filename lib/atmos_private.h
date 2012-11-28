@@ -198,6 +198,16 @@ void AtmosFilter_get_system_metadata(RestFilter *self, RestClient *rest,
 void AtmosFilter_parse_get_acl_response(RestFilter *self, RestClient *rest,
         RestRequest *request, RestResponse *response);
 
+// Special filter for Update Object
+/**
+ * Processes the headers for update_object
+ * @param self the current filter element in the chain.
+ * @param rest the RestClient executing the request.
+ * @param request the RestRequest to execute.
+ * @param response the RestResponse receiving the response.
+ */
+void AtmosFilter_update_object(RestFilter *self, RestClient *rest,
+        RestRequest *request, RestResponse *response);
 
 
 #endif /* ATMOS_PRIVATE_H_ */

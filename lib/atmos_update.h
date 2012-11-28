@@ -33,40 +33,135 @@
 #define ATMOS_UPDATE_H_
 
 /**
- * @file atmos_read.h
+ * @file atmos_update.h
  * @brief This file contains the classes used to update objects in Atmos.
  */
 #include "atmos.h"
 
+/**
+ * @defgroup AtmosUpdateObjectRequest AtmosUpdateObjectRequest
+ * @brief This module contains the AtmosUpdateObjectRequest class that is used
+ * to update objects in Atmos.
+ * @{
+ */
 
+/**
+ * Contains the parameters used to update an object in Atmos.
+ */
 typedef struct {
+    /** Parent object */
     RestRequest parent;
+    /** Object ID getting updated.  Will be empty if path is not */
     char object_id[ATMOS_UID_MAX];
+    /**
+     * Namespace path to the object getting updated.  Will be empty if
+     * object_id is not.
+     */
     char path[ATMOS_PATH_MAX];
-    /** Metadata entries for the new object */
+    /** Metadata to apply to the object */
     AtmosMetadata meta[ATMOS_META_COUNT_MAX];
     /** Number of metadata entries */
     int meta_count;
-    /** Listable metadata entries for the new object */
+    /** Listable metadata entries to apply to the object */
     AtmosMetadata listable_meta[ATMOS_META_COUNT_MAX];
     /** Number of listable metadata entries */
     int listable_meta_count;
-    /** ACL entries for the new object. */
+    /** ACL entries to apply to the object. */
     AtmosAclEntry acl[ATMOS_ACL_COUNT_MAX];
-    /** Number of ACL entries.  May be zero to use the default ACL */
+    /** Number of ACL entries.  May be zero to keep the existing ACL. */
     int acl_count;
+    /** Start of object range to update. Set to -1 for no start range */
+    int64_t range_start;
+    /** End of object range to update.  Set to -1 for no end range */
+    int64_t range_end;
 } AtmosUpdateObjectRequest;
 
+/**
+ * Initializes a new AtmosUpdateObjectRequest.
+ * @param self the AtmosUpdateObjectRequest to initialize.
+ * @param object_id the Atmos object ID to update.
+ * @return the AtmosUpdateObjectRequest object (same as 'self')
+ */
 AtmosUpdateObjectRequest*
 AtmosUpdateObjectRequest_init(AtmosUpdateObjectRequest *self,
         const char *object_id);
 
+/**
+ * Initializes a new AtmosUpdateObjectRequest.
+ * @param self the AtmosUpdateObjectRequest to initialize.
+ * @param object_id the namespace path to the object in Atmos to update.
+ * @return the AtmosUpdateObjectRequest object (same as 'self')
+ */
 AtmosUpdateObjectRequest*
 AtmosUpdateObjectRequest_init_ns(AtmosUpdateObjectRequest *self,
         const char *path);
 
+/**
+ * Destroys an AtmosUpdateObjectRequest.
+ * @param self the AtmosUpdateObjectRequest object to destroy.
+ */
 void
 AtmosUpdateObjectRequest_destroy(AtmosUpdateObjectRequest *self);
+
+/**
+ * Adds a metadata entry to the update object request.
+ * @param self the AtmosUpdateObjectRequest to modify.
+ * @param name name for the metadata entry.
+ * @param value value for the metadata entry.
+ * @param listable nonzero if this entry's name should be 'listable'.  Use with
+ * caution.  See programmer's documentation.
+ */
+void
+AtmosUpdateObjectRequest_add_metadata(AtmosUpdateObjectRequest *self,
+        const char *name, const char *value,
+        int listable);
+
+/**
+ * Adds and ACL entry to the update object request.
+ * @param self the AtmosUpdateObjectRequest to modify.
+ * @param principal the ACL's user or group name.
+ * @param type type of principal (ATMOS_USER or ATMOS_GROUP).
+ * @param permission rights granted to the principal.
+ */
+void
+AtmosUpdateObjectRequest_add_acl(AtmosUpdateObjectRequest *self,
+        const char *principal,
+        enum atmos_acl_principal_type type,
+        enum atmos_acl_permission permission);
+
+/**
+ * Sets the object content range to update, inclusive. Set to [-1,-1] to update
+ * the entire object.  Set to [x,-1] to update from x to the end of the object.
+ * Set to [-1,x] to update the last x bytes of an object.
+ * @param self the AtmosUpdateObjectRequest to configure.
+ * @param range_start the start of the object range to read.  Set to -1 for no
+ * start range.
+ * @param range_end the end of the object range to read.  Set to -1 for no end
+ * range.
+ */
+void
+AtmosUpdateObjectRequest_set_range(AtmosUpdateObjectRequest *self,
+        int64_t range_start, int64_t range_end);
+
+/**
+ * A convenience function that allows you to specify the extent using offset
+ * and size.
+ * @param self the AtmosUpdateObjectRequest to configure.
+ * @param offset start of the object range to read.
+ * @param size the number of bytes to read starting at the offset.
+ */
+void
+AtmosUpdateObjectRequest_set_range_offset_size(AtmosUpdateObjectRequest *self,
+        int64_t offset, int64_t size);
+
+
+/**
+ * @}
+ * @defgroup AtmosSetUserMetaRequest AtmosSetUserMetaRequest
+ * @brief This module contains the AtmosSetUserMetaRequest class that is used
+ * to set user metadata on an object in Atmos.
+ * @{
+ */
 
 typedef struct {
     RestRequest parent;
@@ -105,5 +200,9 @@ void
 AtmosSetUserMetaRequest_add_metadata(AtmosSetUserMetaRequest *self,
         const char *name, const char *value,
         int listable);
+
+/**
+ * @}
+ */
 
 #endif /* ATMOS_UPDATE_H_ */

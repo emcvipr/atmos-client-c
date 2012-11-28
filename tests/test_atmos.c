@@ -35,7 +35,7 @@ int proxy_port;
 
 static const char
         *filechars =
-                "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~!$&\"()*+;=:";
+                "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~!$&\"()*+;:";
 
 static void random_file(char *name, int count) {
     int i = 0;
@@ -1928,6 +1928,405 @@ void test_set_get_acl_ns() {
     AtmosClient_destroy(&atmos);
 }
 
+void test_update_object() {
+    AtmosClient atmos;
+    AtmosCreateObjectResponse response;
+    RestResponse delete_response;
+    RestResponse update_response;
+    AtmosReadObjectResponse read_response;
+
+    get_atmos_client(&atmos);
+    AtmosCreateObjectResponse_init(&response);
+
+    // Create the object
+    AtmosClient_create_object_simple(&atmos, "test", 4, "text/plain", &response);
+    check_error((AtmosResponse*)&response);
+    assert_int_equal(201, response.parent.parent.http_code);
+    assert_true(strlen(response.object_id) > 0);
+
+    printf("Created object: %s\n", response.object_id);
+
+    // Update it.
+    RestResponse_init(&update_response);
+    AtmosClient_update_object_simple(&atmos, response.object_id, "hello", 5,
+            "text/plain;charset=utf8", &update_response);
+    assert_int_equal(200, update_response.http_code);
+    RestResponse_destroy(&update_response);
+
+    // Read back and check
+    AtmosReadObjectResponse_init(&read_response);
+    AtmosClient_read_object_simple(&atmos, response.object_id, &read_response);
+    check_error((AtmosResponse*)&read_response);
+    assert_int_equal(200, read_response.parent.parent.http_code);
+    assert_int_equal(5, read_response.parent.parent.content_length);
+    assert_string_equal("hello", read_response.parent.parent.body);
+    AtmosReadObjectResponse_destroy(&read_response);
+
+    // Cleanup
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_object(&atmos, response.object_id, &delete_response);
+    assert_int_equal(204, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    AtmosCreateObjectResponse_destroy(&response);
+    AtmosClient_destroy(&atmos);
+
+}
+
+void test_update_object_ns() {
+    AtmosClient atmos;
+    AtmosCreateObjectResponse response;
+    RestResponse delete_response;
+    RestResponse update_response;
+    AtmosReadObjectResponse read_response;
+    char path[ATMOS_PATH_MAX];
+    char randfile[9];
+
+    random_file(randfile, 8);
+    sprintf(path, "/atmos-c-unittest/%s.txt", randfile);
+    printf("Creating object: %s\n", path);
+
+    get_atmos_client(&atmos);
+    AtmosCreateObjectResponse_init(&response);
+
+    // Create the object
+    AtmosClient_create_object_simple_ns(&atmos, path, "test", 4, "text/plain", &response);
+    check_error((AtmosResponse*)&response);
+    assert_int_equal(201, response.parent.parent.http_code);
+    assert_true(strlen(response.object_id) > 0);
+
+    printf("Created object: %s\n", response.object_id);
+
+    // Update it.
+    RestResponse_init(&update_response);
+    AtmosClient_update_object_simple_ns(&atmos, path, "hello", 5,
+            "text/plain;charset=utf8", &update_response);
+    assert_int_equal(200, update_response.http_code);
+    RestResponse_destroy(&update_response);
+
+    // Read back and check
+    AtmosReadObjectResponse_init(&read_response);
+    AtmosClient_read_object_simple_ns(&atmos, path, &read_response);
+    check_error((AtmosResponse*)&read_response);
+    assert_int_equal(200, read_response.parent.parent.http_code);
+    assert_int_equal(5, read_response.parent.parent.content_length);
+    assert_string_equal("hello", read_response.parent.parent.body);
+    AtmosReadObjectResponse_destroy(&read_response);
+
+    // Cleanup
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_object_ns(&atmos, path, &delete_response);
+    assert_int_equal(204, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    AtmosCreateObjectResponse_destroy(&response);
+    AtmosClient_destroy(&atmos);
+
+}
+
+
+void test_update_object_file() {
+    AtmosClient atmos;
+    AtmosCreateObjectResponse response;
+    RestResponse delete_response;
+    RestResponse update_response;
+    AtmosReadObjectResponse read_response;
+    FILE *f;
+
+    get_atmos_client(&atmos);
+    AtmosCreateObjectResponse_init(&response);
+
+    // Create the object
+    AtmosClient_create_object_simple(&atmos, "test", 4, "text/plain", &response);
+    check_error((AtmosResponse*)&response);
+    assert_int_equal(201, response.parent.parent.http_code);
+    assert_true(strlen(response.object_id) > 0);
+
+    printf("Created object: %s\n", response.object_id);
+
+    // Update it with a file
+    f = tmpfile();
+    fwrite("hello", 5, 1, f);
+    fseek(f, 0, SEEK_SET);
+    RestResponse_init(&update_response);
+    AtmosClient_update_object_file(&atmos, response.object_id, f, 5,
+            "text/plain;charset=utf8", &update_response);
+    assert_int_equal(200, update_response.http_code);
+    RestResponse_destroy(&update_response);
+    fclose(f);
+
+    // Read back and check
+    AtmosReadObjectResponse_init(&read_response);
+    AtmosClient_read_object_simple(&atmos, response.object_id, &read_response);
+    check_error((AtmosResponse*)&read_response);
+    assert_int_equal(200, read_response.parent.parent.http_code);
+    assert_int_equal(5, read_response.parent.parent.content_length);
+    assert_string_equal("hello", read_response.parent.parent.body);
+    AtmosReadObjectResponse_destroy(&read_response);
+
+    // Cleanup
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_object(&atmos, response.object_id, &delete_response);
+    assert_int_equal(204, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    AtmosCreateObjectResponse_destroy(&response);
+    AtmosClient_destroy(&atmos);
+}
+
+void test_update_object_file_ns() {
+    AtmosClient atmos;
+    AtmosCreateObjectResponse response;
+    RestResponse delete_response;
+    RestResponse update_response;
+    AtmosReadObjectResponse read_response;
+    FILE *f;
+    char path[ATMOS_PATH_MAX];
+    char randfile[9];
+
+    random_file(randfile, 8);
+    sprintf(path, "/atmos-c-unittest/%s.txt", randfile);
+    printf("Creating object: %s\n", path);
+
+    get_atmos_client(&atmos);
+    AtmosCreateObjectResponse_init(&response);
+
+    // Create the object
+    AtmosClient_create_object_simple_ns(&atmos, path, "test", 4, "text/plain", &response);
+    check_error((AtmosResponse*)&response);
+    assert_int_equal(201, response.parent.parent.http_code);
+    assert_true(strlen(response.object_id) > 0);
+
+    printf("Created object: %s\n", response.object_id);
+
+    // Update it with a file
+    f = tmpfile();
+    fwrite("hello", 5, 1, f);
+    fseek(f, 0, SEEK_SET);
+    RestResponse_init(&update_response);
+    AtmosClient_update_object_file_ns(&atmos, path, f, 5,
+            "text/plain;charset=utf8", &update_response);
+    assert_int_equal(200, update_response.http_code);
+    RestResponse_destroy(&update_response);
+    fclose(f);
+
+    // Read back and check
+    AtmosReadObjectResponse_init(&read_response);
+    AtmosClient_read_object_simple_ns(&atmos, path, &read_response);
+    check_error((AtmosResponse*)&read_response);
+    assert_int_equal(200, read_response.parent.parent.http_code);
+    assert_int_equal(5, read_response.parent.parent.content_length);
+    assert_string_equal("hello", read_response.parent.parent.body);
+    AtmosReadObjectResponse_destroy(&read_response);
+
+    // Cleanup
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_object_ns(&atmos, path, &delete_response);
+    assert_int_equal(204, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    AtmosCreateObjectResponse_destroy(&response);
+    AtmosClient_destroy(&atmos);
+
+}
+
+
+void test_update_object_range() {
+    AtmosClient atmos;
+    AtmosCreateObjectResponse response;
+    RestResponse delete_response;
+    RestResponse update_response;
+    AtmosReadObjectResponse read_response;
+    AtmosUpdateObjectRequest update_request;
+
+    get_atmos_client(&atmos);
+    AtmosCreateObjectResponse_init(&response);
+
+    // Create the object
+    AtmosClient_create_object_simple(&atmos, "roll the dice", 13, "text/plain", &response);
+    check_error((AtmosResponse*)&response);
+    assert_int_equal(201, response.parent.parent.http_code);
+    assert_true(strlen(response.object_id) > 0);
+
+    printf("Created object: %s\n", response.object_id);
+
+    // Update it.
+    AtmosUpdateObjectRequest_init(&update_request, response.object_id);
+    RestRequest_set_array_body((RestRequest*)&update_request, "two", 3, "text/plain");
+    AtmosUpdateObjectRequest_set_range(&update_request, 5, 7);
+    RestResponse_init(&update_response);
+    AtmosClient_update_object(&atmos, &update_request, &update_response);
+    assert_int_equal(200, update_response.http_code);
+    RestResponse_destroy(&update_response);
+    AtmosUpdateObjectRequest_destroy(&update_request);
+
+    // Read back and check
+    AtmosReadObjectResponse_init(&read_response);
+    AtmosClient_read_object_simple(&atmos, response.object_id, &read_response);
+    check_error((AtmosResponse*)&read_response);
+    assert_int_equal(200, read_response.parent.parent.http_code);
+    assert_int_equal(13, read_response.parent.parent.content_length);
+    assert_string_equal("roll two dice", read_response.parent.parent.body);
+    AtmosReadObjectResponse_destroy(&read_response);
+
+    // Append
+    AtmosUpdateObjectRequest_init(&update_request, response.object_id);
+    RestRequest_set_array_body((RestRequest*)&update_request, " twice", 6, "text/plain");
+    AtmosUpdateObjectRequest_set_range_offset_size(&update_request, 13, 6);
+    RestResponse_init(&update_response);
+    AtmosClient_update_object(&atmos, &update_request, &update_response);
+    assert_int_equal(200, update_response.http_code);
+    RestResponse_destroy(&update_response);
+    AtmosUpdateObjectRequest_destroy(&update_request);
+
+    // Read back and check
+    AtmosReadObjectResponse_init(&read_response);
+    AtmosClient_read_object_simple(&atmos, response.object_id, &read_response);
+    check_error((AtmosResponse*)&read_response);
+    assert_int_equal(200, read_response.parent.parent.http_code);
+    assert_int_equal(19, read_response.parent.parent.content_length);
+    assert_string_equal("roll two dice twice", read_response.parent.parent.body);
+    AtmosReadObjectResponse_destroy(&read_response);
+
+    // Cleanup
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_object(&atmos, response.object_id, &delete_response);
+    assert_int_equal(204, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    AtmosCreateObjectResponse_destroy(&response);
+    AtmosClient_destroy(&atmos);
+
+}
+
+void test_update_object_range_file() {
+    AtmosClient atmos;
+    AtmosCreateObjectResponse response;
+    RestResponse delete_response;
+    RestResponse update_response;
+    AtmosReadObjectResponse read_response;
+    AtmosUpdateObjectRequest update_request;
+    FILE *f;
+
+    get_atmos_client(&atmos);
+    AtmosCreateObjectResponse_init(&response);
+
+    // Common use case -- create an object and append to it from the same
+    // file handle to simulate a 'chunked' upload.
+    f = tmpfile();
+    fwrite("roll two dice twice", 19, 1, f);
+    fseek(f, 0, SEEK_SET);
+    AtmosClient_create_object_file(&atmos, f, 13, "text/plain", &response);
+    check_error((AtmosResponse*)&response);
+    assert_int_equal(201, response.parent.parent.http_code);
+    assert_true(strlen(response.object_id) > 0);
+
+    printf("Created object: %s\n", response.object_id);
+
+    // Append to it.
+    AtmosUpdateObjectRequest_init(&update_request, response.object_id);
+    RestRequest_set_file_body((RestRequest*)&update_request, f, 6, "text/plain");
+    AtmosUpdateObjectRequest_set_range_offset_size(&update_request, 13, 6);
+    RestResponse_init(&update_response);
+    AtmosClient_update_object(&atmos, &update_request, &update_response);
+    assert_int_equal(200, update_response.http_code);
+    RestResponse_destroy(&update_response);
+    AtmosUpdateObjectRequest_destroy(&update_request);
+
+    // Read back and check
+    AtmosReadObjectResponse_init(&read_response);
+    AtmosClient_read_object_simple(&atmos, response.object_id, &read_response);
+    check_error((AtmosResponse*)&read_response);
+    assert_int_equal(200, read_response.parent.parent.http_code);
+    assert_int_equal(19, read_response.parent.parent.content_length);
+    assert_string_equal("roll two dice twice", read_response.parent.parent.body);
+    AtmosReadObjectResponse_destroy(&read_response);
+
+    // Cleanup
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_object(&atmos, response.object_id, &delete_response);
+    assert_int_equal(204, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    AtmosCreateObjectResponse_destroy(&response);
+    AtmosClient_destroy(&atmos);
+}
+
+void test_update_object_meta_acl() {
+    AtmosClient atmos;
+    AtmosCreateObjectRequest request;
+    AtmosCreateObjectResponse response;
+    RestResponse delete_response;
+    RestResponse update_response;
+    AtmosReadObjectResponse read_response;
+    AtmosUpdateObjectRequest update_request;
+
+    get_atmos_client(&atmos);
+    AtmosCreateObjectRequest_init(&request);
+    AtmosCreateObjectResponse_init(&response);
+
+    // some test strings
+    AtmosCreateObjectRequest_add_metadata(&request, "meta1",
+            "Value  with   spaces", 0);
+    AtmosCreateObjectRequest_add_metadata(&request, "meta2",
+            "character test 1!2@3#4$5%6^7&8*9(0)`~-_+\\|]}[{;:'\"/?.><", 0);
+
+    AtmosClient_create_object(&atmos, &request, &response);
+    check_error((AtmosResponse*)&response);
+    assert_int_equal(201, response.parent.parent.http_code);
+    assert_true(strlen(response.object_id) > 0);
+    printf("Created object: %s\n", response.object_id);
+
+    // Update it.
+    AtmosUpdateObjectRequest_init(&update_request, response.object_id);
+    RestRequest_set_array_body((RestRequest*)&update_request, "hello", 5,
+            "text/plain;charset=utf8");
+    RestResponse_init(&update_response);
+    AtmosUpdateObjectRequest_add_metadata(&update_request, "meta1", "changed value", 0);
+    AtmosUpdateObjectRequest_add_metadata(&update_request, "new meta", "new value", 1);
+
+    AtmosUpdateObjectRequest_add_acl(&update_request, uid1, ATMOS_USER, ATMOS_PERM_FULL);
+    AtmosUpdateObjectRequest_add_acl(&update_request, uid2, ATMOS_USER, ATMOS_PERM_READ_WRITE);
+    AtmosUpdateObjectRequest_add_acl(&update_request, ATMOS_ACL_GROUP_OTHER, ATMOS_GROUP, ATMOS_PERM_READ);
+
+    AtmosClient_update_object(&atmos, &update_request, &update_response);
+    assert_int_equal(200, update_response.http_code);
+    RestResponse_destroy(&update_response);
+
+    // Read back and check
+    AtmosReadObjectResponse_init(&read_response);
+    AtmosClient_read_object_simple(&atmos, response.object_id, &read_response);
+    check_error((AtmosResponse*)&read_response);
+    assert_int_equal(200, read_response.parent.parent.http_code);
+    assert_int_equal(5, read_response.parent.parent.content_length);
+    assert_string_equal("hello", read_response.parent.parent.body);
+    assert_string_equal("changed value",
+            AtmosReadObjectResponse_get_metadata_value(&read_response, "meta1", 0));
+    assert_string_equal("character test 1!2@3#4$5%6^7&8*9(0)`~-_+\\|]}[{;:'\"/?.><",
+            AtmosReadObjectResponse_get_metadata_value(&read_response, "meta2", 0));
+    assert_string_equal("new value",
+            AtmosReadObjectResponse_get_metadata_value(&read_response, "new meta", 1));
+    assert_int_equal(3, read_response.acl_count);
+    assert_int_equal(ATMOS_PERM_FULL, AtmosReadObjectResponse_get_acl_permission(
+            &read_response, uid1, ATMOS_USER));
+    assert_int_equal(ATMOS_PERM_READ_WRITE, AtmosReadObjectResponse_get_acl_permission(
+            &read_response, uid2, ATMOS_USER));
+    assert_int_equal(ATMOS_PERM_READ, AtmosReadObjectResponse_get_acl_permission(
+            &read_response, ATMOS_ACL_GROUP_OTHER, ATMOS_GROUP));
+    assert_int_equal(ATMOS_PERM_NONE, AtmosReadObjectResponse_get_acl_permission(
+            &read_response, "dummy_user_that_does_not_exist", ATMOS_USER));
+    AtmosReadObjectResponse_destroy(&read_response);
+
+    // Cleanup
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_object(&atmos, response.object_id, &delete_response);
+    assert_int_equal(204, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    AtmosCreateObjectResponse_destroy(&response);
+    AtmosClient_destroy(&atmos);
+}
+
 void test_atmos_suite() {
     char proxy_port_str[32];
 
@@ -2120,6 +2519,27 @@ void test_atmos_suite() {
 
     start_test_msg("test_set_get_acl_ns");
     run_test(test_set_get_acl_ns);
+
+    start_test_msg("test_update_object");
+    run_test(test_update_object);
+
+    start_test_msg("test_update_object_ns");
+    run_test(test_update_object_ns);
+
+    start_test_msg("test_update_object_file");
+    run_test(test_update_object_file);
+
+    start_test_msg("test_update_object_file_ns");
+    run_test(test_update_object_file_ns);
+
+    start_test_msg("test_update_object_range");
+    run_test(test_update_object_range);
+
+    start_test_msg("test_update_object_range_file");
+    run_test(test_update_object_range_file);
+
+    start_test_msg("test_update_object_meta_acl");
+    run_test(test_update_object_meta_acl);
 
     test_fixture_end();
 

@@ -13,6 +13,7 @@
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "seatest.h"
 #include "test.h"
@@ -2541,6 +2542,92 @@ void test_get_object_info_ns() {
     AtmosClient_destroy(&atmos);
 }
 
+void test_rename_object() {
+    AtmosClient atmos;
+    AtmosCreateObjectResponse response;
+    RestResponse delete_response;
+    AtmosResponse rename_response;
+    AtmosReadObjectResponse read_response;
+
+    char path[ATMOS_PATH_MAX];
+    char path2[ATMOS_PATH_MAX];
+    char randfile[9];
+
+    random_file(randfile, 8);
+    sprintf(path, "/atmos-c-unittest/%s.txt", randfile);
+    random_file(randfile, 8);
+    sprintf(path2, "/atmos-c-unittest/%s.txt", randfile);
+    printf("Creating object: %s\n", path);
+
+    get_atmos_client(&atmos);
+    atmos.enable_utf8_metadata = 1;
+
+    AtmosCreateObjectResponse_init(&response);
+
+    AtmosClient_create_object_simple_ns(&atmos, path, "test", 4, "text/plain",
+            &response);
+    check_error((AtmosResponse*)&response);
+    assert_int_equal(201, response.parent.parent.http_code);
+    assert_true(strlen(response.object_id) > 0);
+
+    printf("Created object: %s\n", response.object_id);
+    AtmosCreateObjectResponse_destroy(&response);
+
+    // Rename path1 to path2
+    AtmosResponse_init(&rename_response);
+    AtmosClient_rename_object(&atmos, path, path2, 0, &rename_response);
+    check_error(&rename_response);
+    assert_int_equal(200, rename_response.parent.http_code);
+
+    // Check rename
+    AtmosReadObjectResponse_init(&read_response);
+    AtmosClient_read_object_simple_ns(&atmos, path2, &read_response);
+    check_error((AtmosResponse*)&read_response);
+    assert_int_equal(200, read_response.parent.parent.http_code);
+    assert_string_equal("test", read_response.parent.parent.body);
+    AtmosReadObjectResponse_destroy(&read_response);
+
+    // Recreate path1
+    AtmosCreateObjectResponse_init(&response);
+
+    AtmosClient_create_object_simple_ns(&atmos, path, "test2", 5, "text/plain",
+            &response);
+    check_error((AtmosResponse*)&response);
+    assert_int_equal(201, response.parent.parent.http_code);
+    assert_true(strlen(response.object_id) > 0);
+
+    printf("Created object: %s\n", response.object_id);
+    AtmosCreateObjectResponse_destroy(&response);
+
+    // Rename path1 to path2, overwriting it
+    AtmosResponse_init(&rename_response);
+    AtmosClient_rename_object(&atmos, path, path2, 1, &rename_response);
+    check_error(&rename_response);
+    assert_int_equal(200, rename_response.parent.http_code);
+
+    // Check overwrite
+    AtmosReadObjectResponse_init(&read_response);
+    AtmosClient_read_object_simple_ns(&atmos, path2, &read_response);
+    check_error((AtmosResponse*)&read_response);
+    assert_int_equal(200, read_response.parent.parent.http_code);
+    assert_string_equal("test2", read_response.parent.parent.body);
+    AtmosReadObjectResponse_destroy(&read_response);
+
+    // Cleanup
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_object_ns(&atmos, path, &delete_response);
+    // Should not exist!
+    assert_int_equal(404, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_object_ns(&atmos, path2, &delete_response);
+    assert_int_equal(204, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    AtmosClient_destroy(&atmos);
+}
+
 void test_atmos_suite() {
     char proxy_port_str[32];
 
@@ -2763,6 +2850,9 @@ void test_atmos_suite() {
 
     start_test_msg("test_get_object_info_ns");
     run_test(test_get_object_info_ns);
+
+    start_test_msg("test_rename_object");
+    run_test(test_rename_object);
 
     test_fixture_end();
 

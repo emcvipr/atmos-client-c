@@ -702,3 +702,39 @@ AtmosClient_get_object_info_ns(AtmosClient *self, const char *path,
     RestRequest_destroy(&request);
 }
 
+void
+AtmosClient_rename_object(AtmosClient *self, const char *source,
+        const char *destination, int force, AtmosResponse *response) {
+    RestRequest request;
+    RestFilter *chain = NULL;
+    char uri[ATMOS_PATH_MAX+32];
+    char rename_header[ATMOS_PATH_MAX+32];
+
+    snprintf(uri, ATMOS_PATH_MAX+32, "/rest/namespace%s?rename", source);
+
+    RestRequest_init(&request, uri, HTTP_POST);
+
+    // Add the destination
+    snprintf(rename_header, ATMOS_PATH_MAX+32, "%s: %s", ATMOS_HEADER_PATH,
+            destination);
+    RestRequest_add_header(&request, rename_header);
+
+    if(force) {
+        RestRequest_add_header(&request, ATMOS_HEADER_FORCE ": true");
+    }
+
+    // Since there's no body, force a content type
+    RestRequest_add_header(&request, HTTP_HEADER_CONTENT_TYPE
+            ": application/octet-stream");
+
+    chain = AtmosClient_add_default_filters(self, chain);
+
+    RestClient_execute_request((RestClient*) self, chain, &request,
+            (RestResponse*) response);
+
+    RestFilter_free(chain);
+
+    RestRequest_destroy(&request);
+}
+
+

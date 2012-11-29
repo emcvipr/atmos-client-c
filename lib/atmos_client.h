@@ -521,6 +521,8 @@ AtmosClient_list_directory(AtmosClient *self,
  * first you may get an object not found error until the cache expires.
  * Therefore, it is recommended to perform a short wait after overwrites before
  * executing further operations on the same object.
+ * Due to limitations on character handling in HTTP headers, it's very highly
+ * recommended to enable UTF-8 support when calling this method.
  * @param self the AtmosClient object pointer
  * @param source the namespace path to the object to rename.
  * @param destination the new namespace path for the object.

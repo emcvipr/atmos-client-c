@@ -41,6 +41,8 @@
 #define ATMOS_HEADER_USER_ACL "x-emc-useracl"
 #define ATMOS_HEADER_GROUP_ACL "x-emc-groupacl"
 #define ATMOS_HEADER_TAGS "x-emc-tags"
+#define ATMOS_HEADER_PATH "x-emc-path"
+#define ATMOS_HEADER_FORCE "x-emc-force"
 
 #define ATMOS_UID_MAX 255
 #define ATMOS_SECRET_MAX 64

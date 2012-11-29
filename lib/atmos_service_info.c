@@ -55,7 +55,7 @@ void AtmosFilter_parse_service_info_response(RestFilter *self, RestClient *rest,
     doc = xmlReadMemory(response->body, response->content_length,
             "noname.xml", NULL, 0);
     if (doc == NULL) {
-        fprintf(stderr, "Failed to parse error response\n");
+        ATMOS_ERROR("Failed to parse error response: %s\n", response->body);
         return;
     }
 

@@ -144,25 +144,24 @@ char *AtmosUtil_HMACSHA1(const char *hash_string, const char *key,
 
 }
 
-xmlChar *AtmosUtil_select_single_node_value(xmlDocPtr doc, xmlChar *selector,
-        int use_cos_ns) {
+xmlXPathObjectPtr AtmosUtil_select_nodes(xmlDocPtr doc, xmlChar *selector, int use_cos_ns) {
     xmlXPathContextPtr xpathCtx;
     xmlXPathObjectPtr xpathObj;
     xmlNodeSetPtr xpathNodeSet;
-    xmlNodePtr xmlNode;
-    xmlChar *value;
 
     /* Create xpath evaluation context */
     xpathCtx = xmlXPathNewContext(doc);
     if (xpathCtx == NULL) {
-        fprintf(stderr, "Error: unable to create new XPath context\n");
+        ATMOS_ERROR("Error: unable to create new XPath context: %s\n",
+                xmlGetLastError()?xmlGetLastError()->message:"(null)");
         return NULL;
     }
 
     if (use_cos_ns) {
         if (xmlXPathRegisterNs(xpathCtx, BAD_CAST "cos",
                 BAD_CAST "http://www.emc.com/cos/")) {
-            fprintf(stderr, "Error: unable to register cos namespace\n");
+            ATMOS_ERROR("Error: unable to register cos namespace: %s\n",
+                    xmlGetLastError()?xmlGetLastError()->message:"(null)");
             xmlXPathFreeContext(xpathCtx);
             return NULL;
 
@@ -172,30 +171,48 @@ xmlChar *AtmosUtil_select_single_node_value(xmlDocPtr doc, xmlChar *selector,
     /* Evaluate xpath expression */
     xpathObj = xmlXPathEvalExpression(selector, xpathCtx);
     if (xpathObj == NULL) {
-        fprintf(stderr, "Error: unable to evaluate xpath expression \"%s\"\n",
-                selector);
+        ATMOS_ERROR("Error: unable to evaluate xpath expression \"%s\": %s\n",
+                selector,
+                xmlGetLastError()?xmlGetLastError()->message:"(null)");
         xmlXPathFreeContext(xpathCtx);
         return NULL;
     }
     xpathNodeSet = xpathObj->nodesetval;
     if (!xpathNodeSet || xpathNodeSet->nodeNr == 0) {
-        fprintf(stderr, "Error: No nodes returned from \"%s\"\n", selector);
+        ATMOS_ERROR("Error: No nodes returned from \"%s\"\n", selector);
         xmlXPathFreeContext(xpathCtx);
         return NULL;
     }
+
+    /* Cleanup */
+    xmlXPathFreeContext(xpathCtx);
+
+    return xpathObj;
+}
+
+xmlChar *AtmosUtil_select_single_node_value(xmlDocPtr doc, xmlChar *selector,
+        int use_cos_ns) {
+    xmlNodePtr xmlNode;
+    xmlChar *value;
+    xmlXPathObjectPtr xpathObj;
+    xmlNodeSetPtr xpathNodeSet;
+
+    xpathObj = AtmosUtil_select_nodes(doc, selector, use_cos_ns);
+    if(!xpathObj) {
+        return NULL;
+    }
+    xpathNodeSet = xpathObj->nodesetval;
+
     if (xpathNodeSet->nodeNr > 1) {
         fprintf(stderr, "Error: Multiple (%d) nodes returned from \"%s\"\n",
                 xpathNodeSet->nodeNr, selector);
-        xmlXPathFreeContext(xpathCtx);
+        xmlXPathFreeNodeSetList(xpathObj);
         return NULL;
     }
     xmlNode = xpathNodeSet->nodeTab[0];
     value = xmlNodeGetContent(xmlNode);
 
-    /* Cleanup */
-    xmlXPathFreeObject(xpathObj);
-    xmlXPathFreeContext(xpathCtx);
-
+    xmlXPathFreeNodeSetList(xpathObj);
     return value;
 }
 

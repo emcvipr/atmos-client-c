@@ -40,7 +40,7 @@ AtmosReadObjectRequest_init_ns(AtmosReadObjectRequest *self, const char *path) {
     char uri[ATMOS_PATH_MAX + 15];
 
     if (path[0] != '/') {
-        fprintf(stderr, "Path must start with a '/'\n");
+        ATMOS_ERROR("Path must start with a '/': %s\n", path);
         return NULL;
     }
 
@@ -423,4 +423,187 @@ AtmosGetAclResponse_get_acl_permission(AtmosGetAclResponse *self,
             principal, principal_type);
 }
 
+AtmosGetObjectInfoResponse*
+AtmosGetObjectInfoResponse_init(AtmosGetObjectInfoResponse *self) {
+    AtmosResponse_init((AtmosResponse*)self);
+
+    OBJECT_ZERO(self, AtmosGetObjectInfoResponse, AtmosResponse);
+
+    ((Object*)self)->class_name = CLASS_ATMOS_GET_OBJECT_INFO_RESPONSE;
+
+    return self;
+}
+
+void
+AtmosGetObjectInfoResponse_destroy(AtmosGetObjectInfoResponse *self) {
+    if(self->replicas) {
+        free(self->replicas);
+    }
+    OBJECT_ZERO(self, AtmosGetObjectInfoResponse, AtmosResponse);
+
+    AtmosResponse_destroy((AtmosResponse*)self);
+}
+
+void
+AtmosGetObjectInfoResponse_parse(AtmosGetObjectInfoResponse *self,
+        const char *xml, size_t xml_size) {
+    xmlDocPtr doc;
+    xmlChar *value;
+    xmlXPathObjectPtr xpathObj;
+    xmlNodeSetPtr xpathNodeSet;
+    char xpathBuffer[ATMOS_SIMPLE_HEADER_MAX];
+    int i;
+
+    /*
+     * The document being in memory, it have no base per RFC 2396,
+     * and the "noname.xml" argument will serve as its base.
+     */
+    doc = xmlReadMemory(xml, xml_size,
+            "noname.xml", NULL, 0);
+    if (doc == NULL) {
+        ATMOS_ERROR("Failed to parse info response: %s\n", xml);
+        return;
+    }
+
+    // objectId
+    value = AtmosUtil_select_single_node_value(doc, BAD_CAST "//cos:objectId", 1);
+    if(value) {
+        strncpy(self->object_id, (char*)value, ATMOS_OID_LENGTH);
+        xmlFree(value);
+    }
+
+    // selection
+    value = AtmosUtil_select_single_node_value(doc, BAD_CAST "//cos:selection", 1);
+    if(value) {
+        strncpy(self->selection, (char*)value, ATMOS_SIMPLE_HEADER_MAX);
+        xmlFree(value);
+    }
+
+    // numReplicas
+    // There is a bug in 2.0 that causes this value to become a printf
+    // specifier (%zu).  Therefore, we ignore it and simply use the number of
+    // replica elements in the response.
+//    value = AtmosUtil_select_single_node_value(doc, BAD_CAST "//cos:numReplicas", 1);
+//    if(value) {
+//        self->replica_count = strtol((char*)value, NULL, 10);
+//        xmlFree(value);
+//    }
+
+    // Replicas
+    xpathObj = AtmosUtil_select_nodes(doc, BAD_CAST "//cos:replicas/cos:replica", 1);
+    if(xpathObj) {
+        xpathNodeSet = xpathObj->nodesetval;
+        self->replica_count = xpathNodeSet->nodeNr;
+        self->replicas = calloc(self->replica_count, sizeof(AtmosReplicaInfo));
+
+        for(i=0; i<self->replica_count; i++) {
+            // XPath indexes are 1-based
+            int xpathIndex = i+1;
+            // id
+            snprintf(xpathBuffer, ATMOS_SIMPLE_HEADER_MAX,
+                    "//cos:replicas/cos:replica[%d]/cos:id", xpathIndex);
+            value = AtmosUtil_select_single_node_value(doc, BAD_CAST xpathBuffer, 1);
+            if(value) {
+                self->replicas[i].id = strtol((char*)value, NULL, 10);
+                xmlFree(value);
+            }
+
+            // type
+            snprintf(xpathBuffer, ATMOS_SIMPLE_HEADER_MAX,
+                    "//cos:replicas/cos:replica[%d]/cos:type", xpathIndex);
+            value = AtmosUtil_select_single_node_value(doc, BAD_CAST xpathBuffer, 1);
+            if(value) {
+                strncpy(self->replicas[i].type, (char*)value, 16);
+                xmlFree(value);
+            }
+
+            // current
+            snprintf(xpathBuffer, ATMOS_SIMPLE_HEADER_MAX,
+                    "//cos:replicas/cos:replica[%d]/cos:current", xpathIndex);
+            value = AtmosUtil_select_single_node_value(doc, BAD_CAST xpathBuffer, 1);
+            if(value) {
+                self->replicas[i].current = strcmp("true", (char*)value) == 0;
+                xmlFree(value);
+            }
+
+            // location
+            snprintf(xpathBuffer, ATMOS_SIMPLE_HEADER_MAX,
+                    "//cos:replicas/cos:replica[%d]/cos:location", xpathIndex);
+            value = AtmosUtil_select_single_node_value(doc, BAD_CAST xpathBuffer, 1);
+            if(value) {
+                strncpy(self->replicas[i].location, (char*)value, ATMOS_SIMPLE_HEADER_MAX);
+                xmlFree(value);
+            }
+
+            // storageType
+            snprintf(xpathBuffer, ATMOS_SIMPLE_HEADER_MAX,
+                    "//cos:replicas/cos:replica[%d]/cos:storageType", xpathIndex);
+            value = AtmosUtil_select_single_node_value(doc, BAD_CAST xpathBuffer, 1);
+            if(value) {
+                strncpy(self->replicas[i].storage_type, (char*)value, ATMOS_SIMPLE_HEADER_MAX);
+                xmlFree(value);
+            }
+        }
+
+        xmlXPathFreeNodeSetList(xpathObj);
+    }
+
+    // Retention Enabled
+    value = AtmosUtil_select_single_node_value(doc, BAD_CAST "//cos:retention/cos:enabled", 1);
+    if(value) {
+        self->retention_enabled = strcmp("true", (char*)value) == 0;
+        xmlFree(value);
+    }
+
+    // Retention End
+    value = AtmosUtil_select_single_node_value(doc, BAD_CAST "//cos:retention/cos:endAt", 1);
+    if(value) {
+        if(strlen((char*)value)>0) {
+            self->retention_end = AtmosUtil_parse_xml_datetime((char*)value);
+        }
+        xmlFree(value);
+    }
+
+    // Expiration Enabled
+    value = AtmosUtil_select_single_node_value(doc, BAD_CAST "//cos:expiration/cos:enabled", 1);
+    if(value) {
+        self->expiration_enabled = strcmp("true", (char*)value) == 0;
+        xmlFree(value);
+    }
+
+    // Expiration End
+    value = AtmosUtil_select_single_node_value(doc, BAD_CAST "//cos:expiration/cos:endAt", 1);
+    if(value) {
+        if(strlen((char*)value)>0) {
+            self->expiration_end = AtmosUtil_parse_xml_datetime((char*)value);
+        }
+        xmlFree(value);
+    }
+
+}
+
+/**
+ * Processes the response headers for get object info.
+ * @param self the current filter element in the chain.
+ * @param rest the RestClient executing the request.
+ * @param request the RestRequest to execute.
+ * @param response the RestResponse receiving the response.
+ */
+void AtmosFilter_parse_get_info_response(RestFilter *self, RestClient *rest,
+        RestRequest *request, RestResponse *response) {
+    // Pass to the next filter
+    if(self->next) {
+        ((rest_http_filter)self->next->func)(self->next, rest, request, response);
+    }
+
+    // Now we're on the response.
+
+    // Check to make sure we had success before parsing.
+    if(response->http_code > 299) {
+        return;
+    }
+
+    AtmosGetObjectInfoResponse_parse((AtmosGetObjectInfoResponse*)response,
+            response->body, (size_t)response->content_length);
+}
 

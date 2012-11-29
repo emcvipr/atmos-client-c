@@ -34,7 +34,7 @@ AtmosCreateObjectRequest_init_ns(AtmosCreateObjectRequest *self,
     char uri[ATMOS_PATH_MAX + 15];
 
     if(path[0] != '/') {
-        fprintf(stderr, "Path must start with a '/'\n");
+        ATMOS_ERROR("Path must start with a '/': %s\n", path);
         return NULL;
     }
 
@@ -121,7 +121,7 @@ void AtmosFilter_parse_create_response(RestFilter *self, RestClient *rest,
     location = RestResponse_get_header_value(response, HTTP_HEADER_LOCATION);
 
     if(!location) {
-        fprintf(stderr, "Error: Could not find header %s in response",
+        ATMOS_ERROR("Could not find header %s in response",
                 HTTP_HEADER_LOCATION);
         return;
     }
@@ -130,7 +130,7 @@ void AtmosFilter_parse_create_response(RestFilter *self, RestClient *rest,
     // Take last 44 digits.
     location_len = strlen(location);
     if(location_len != ATMOS_OID_LENGTH-1+ATMOS_OID_LOCATION_PREFIX_SIZE) {
-        fprintf(stderr, "Error: location was %zd bytes; expected %zd",
+        ATMOS_ERROR("Error: location was %zd bytes; expected %zd",
                 location_len,
                 (size_t)ATMOS_OID_LENGTH-1+ATMOS_OID_LOCATION_PREFIX_SIZE);
         return;

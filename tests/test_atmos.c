@@ -562,6 +562,65 @@ void test_parse_acl() {
     RestResponse_destroy(&response);
 }
 
+void test_parse_object_info() {
+    AtmosGetObjectInfoResponse info;
+    const char *xml =
+            "<?xml version='1.0' encoding='UTF-8'?>\n"
+            "<GetObjectInfoResponse xmlns='http://www.emc.com/cos/'>\n"
+            "    <objectId>4b00fffea12059c104b00ffca1f8e804b040c4d911c9</objectId>\n"
+            "    <selection>geographic</selection>\n"
+            "    <numReplicas>2</numReplicas>\n"
+            "    <replicas>\n"
+            "        <replica>\n"
+            "            <id>3</id>\n"
+            "            <type>sync</type>\n"
+            "            <current>true</current>\n"
+            "            <location>Boston</location>\n"
+            "            <storageType>Normal</storageType>\n"
+            "        </replica>\n"
+            "        <replica>\n"
+            "            <id>5</id>\n"
+            "            <type>async</type>\n"
+            "            <current>false</current>\n"
+            "            <location>New York</location>\n"
+            "            <storageType>Normal</storageType>\n"
+            "        </replica>\n"
+            "    </replicas>\n"
+            "    <retention>\n"
+            "        <enabled>false</enabled>\n"
+            "        <endAt></endAt>\n"
+            "    </retention>\n"
+            "    <expiration>\n"
+            "        <enabled>true</enabled>\n"
+            "        <endAt>1970-01-01T00:00:05Z</endAt>\n"
+            "    </expiration>\n"
+            "</GetObjectInfoResponse>\n";
+
+    AtmosGetObjectInfoResponse_init(&info);
+
+    AtmosGetObjectInfoResponse_parse(&info, xml, strlen(xml));
+
+    assert_string_equal("4b00fffea12059c104b00ffca1f8e804b040c4d911c9", info.object_id);
+    assert_string_equal("geographic", info.selection);
+    assert_int_equal(2, info.replica_count);
+    assert_int_equal(3, info.replicas[0].id);
+    assert_string_equal("sync", info.replicas[0].type);
+    assert_int_equal(1, info.replicas[0].current);
+    assert_string_equal("Boston", info.replicas[0].location);
+    assert_string_equal("Normal", info.replicas[0].storage_type);
+    assert_int_equal(5, info.replicas[1].id);
+    assert_string_equal("async", info.replicas[1].type);
+    assert_int_equal(0, info.replicas[1].current);
+    assert_string_equal("New York", info.replicas[1].location);
+    assert_string_equal("Normal", info.replicas[1].storage_type);
+    assert_int_equal(0, info.retention_enabled);
+    assert_int_equal(0, info.retention_end);
+    assert_int_equal(1, info.expiration_enabled);
+    assert_int_equal(5, info.expiration_end);
+
+    AtmosGetObjectInfoResponse_destroy(&info);
+}
+
 void test_create_object() {
     AtmosClient atmos;
     AtmosCreateObjectResponse response;
@@ -2327,6 +2386,161 @@ void test_update_object_meta_acl() {
     AtmosClient_destroy(&atmos);
 }
 
+void test_get_object_info() {
+    AtmosClient atmos;
+    AtmosCreateObjectResponse response;
+    RestResponse delete_response;
+    AtmosGetObjectInfoResponse info_response;
+    AtmosSetUserMetaRequest set_request;
+    AtmosResponse set_response;
+    int i;
+
+    get_atmos_client(&atmos);
+    AtmosCreateObjectResponse_init(&response);
+
+    AtmosClient_create_object_simple(&atmos, "test", 4, "text/plain", &response);
+    check_error((AtmosResponse*)&response);
+    assert_int_equal(201, response.parent.parent.http_code);
+    assert_true(strlen(response.object_id) > 0);
+
+    printf("Created object: %s\n", response.object_id);
+
+    // Get the replica info.
+    AtmosGetObjectInfoResponse_init(&info_response);
+    AtmosClient_get_object_info(&atmos, response.object_id, &info_response);
+    check_error((AtmosResponse*)&info_response);
+    assert_int_equal(200, info_response.parent.parent.http_code);
+
+    // These fields will vary depending on server configuration, so we can
+    // really only do some small verification on them.
+    assert_string_equal(response.object_id, info_response.object_id);
+    assert_true(info_response.replica_count > 0);
+    for(i=0; i<info_response.replica_count; i++) {
+        assert_true(info_response.replicas[i].id > 0);
+        assert_true(info_response.replicas[i].current < 2);
+        assert_true(strcmp("sync", info_response.replicas[i].type) == 0
+                || strcmp("async", info_response.replicas[i].type) == 0);
+        assert_true(strlen(info_response.replicas[i].location) > 0);
+        assert_true(strlen(info_response.replicas[i].storage_type) > 0);
+    }
+    assert_true(strlen(info_response.selection) > 0);
+    AtmosGetObjectInfoResponse_destroy(&info_response);
+
+    // Manually enable expiraton on the object to check those
+    // features.
+    AtmosSetUserMetaRequest_init(&set_request, response.object_id);
+    AtmosSetUserMetaRequest_add_metadata(&set_request,
+            "user.maui.expirationEnable", "true", 0);
+    AtmosSetUserMetaRequest_add_metadata(&set_request,
+            "user.maui.expirationEnd", "2040-01-01T00:00:01Z", 0);
+    AtmosResponse_init(&set_response);
+    AtmosClient_set_user_meta(&atmos, &set_request, &set_response);
+    check_error(&set_response);
+    assert_int_equal(200, set_response.parent.http_code);
+    AtmosResponse_destroy(&set_response);
+    AtmosSetUserMetaRequest_destroy(&set_request);
+
+    // Get info again and check expiration/retention
+    AtmosGetObjectInfoResponse_init(&info_response);
+    AtmosClient_get_object_info(&atmos, response.object_id, &info_response);
+    check_error((AtmosResponse*)&info_response);
+    assert_int_equal(200, info_response.parent.parent.http_code);
+    assert_int_equal(1, info_response.expiration_enabled);
+    assert_int64t_equal(2208988801, info_response.expiration_end);
+    AtmosGetObjectInfoResponse_destroy(&info_response);
+
+
+    // Cleanup
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_object(&atmos, response.object_id, &delete_response);
+    assert_int_equal(204, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    AtmosCreateObjectResponse_destroy(&response);
+    AtmosClient_destroy(&atmos);
+
+}
+
+void test_get_object_info_ns() {
+    AtmosClient atmos;
+    AtmosCreateObjectResponse response;
+    RestResponse delete_response;
+    AtmosGetObjectInfoResponse info_response;
+    AtmosSetUserMetaRequest set_request;
+    AtmosResponse set_response;
+    int i;
+    char path[ATMOS_PATH_MAX];
+    char randfile[9];
+
+    random_file(randfile, 8);
+    sprintf(path, "/atmos-c-unittest/%s.txt", randfile);
+    printf("Creating object: %s\n", path);
+
+    get_atmos_client(&atmos);
+    AtmosCreateObjectResponse_init(&response);
+
+    AtmosClient_create_object_simple_ns(&atmos, path, "test", 4, "text/plain", &response);
+    check_error((AtmosResponse*)&response);
+    assert_int_equal(201, response.parent.parent.http_code);
+    assert_true(strlen(response.object_id) > 0);
+
+    printf("Created object: %s\n", response.object_id);
+
+    // Get the replica info.
+    AtmosGetObjectInfoResponse_init(&info_response);
+    AtmosClient_get_object_info_ns(&atmos, path, &info_response);
+    check_error((AtmosResponse*)&info_response);
+    assert_int_equal(200, info_response.parent.parent.http_code);
+
+    // These fields will vary depending on server configuration, so we can
+    // really only do some small verification on them.
+    assert_string_equal(response.object_id, info_response.object_id);
+    assert_true(info_response.replica_count > 0);
+    for(i=0; i<info_response.replica_count; i++) {
+        assert_true(info_response.replicas[i].id > 0);
+        assert_true(info_response.replicas[i].current < 2);
+        assert_true(strcmp("sync", info_response.replicas[i].type) == 0
+                || strcmp("async", info_response.replicas[i].type) == 0);
+        assert_true(strlen(info_response.replicas[i].location) > 0);
+        assert_true(strlen(info_response.replicas[i].storage_type) > 0);
+    }
+    assert_true(strlen(info_response.selection) > 0);
+    AtmosGetObjectInfoResponse_destroy(&info_response);
+
+    // Manually enable expiraton on the object to check those
+    // features.
+    AtmosSetUserMetaRequest_init_ns(&set_request, path);
+    AtmosSetUserMetaRequest_add_metadata(&set_request,
+            "user.maui.expirationEnable", "true", 0);
+    AtmosSetUserMetaRequest_add_metadata(&set_request,
+            "user.maui.expirationEnd", "2040-01-01T00:00:01Z", 0);
+    AtmosResponse_init(&set_response);
+    AtmosClient_set_user_meta(&atmos, &set_request, &set_response);
+    check_error(&set_response);
+    assert_int_equal(200, set_response.parent.http_code);
+    AtmosResponse_destroy(&set_response);
+    AtmosSetUserMetaRequest_destroy(&set_request);
+
+    // Get info again and check expiration/retention
+    AtmosGetObjectInfoResponse_init(&info_response);
+    AtmosClient_get_object_info_ns(&atmos, path, &info_response);
+    check_error((AtmosResponse*)&info_response);
+    assert_int_equal(200, info_response.parent.parent.http_code);
+    assert_int_equal(1, info_response.expiration_enabled);
+    assert_int64t_equal(2208988801, info_response.expiration_end);
+    AtmosGetObjectInfoResponse_destroy(&info_response);
+
+
+    // Cleanup
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_object_ns(&atmos, path, &delete_response);
+    assert_int_equal(204, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    AtmosCreateObjectResponse_destroy(&response);
+    AtmosClient_destroy(&atmos);
+}
+
 void test_atmos_suite() {
     char proxy_port_str[32];
 
@@ -2454,6 +2668,9 @@ void test_atmos_suite() {
     start_test_msg("test_parse_acl");
     run_test(test_parse_acl);
 
+    start_test_msg("test_parse_object_info");
+    run_test(test_parse_object_info);
+
     start_test_msg("test_get_service_info");
     run_test(test_get_service_info);
 
@@ -2540,6 +2757,12 @@ void test_atmos_suite() {
 
     start_test_msg("test_update_object_meta_acl");
     run_test(test_update_object_meta_acl);
+
+    start_test_msg("test_get_object_info");
+    run_test(test_get_object_info);
+
+    start_test_msg("test_get_object_info_ns");
+    run_test(test_get_object_info_ns);
 
     test_fixture_end();
 

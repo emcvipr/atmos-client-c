@@ -1,5 +1,6 @@
 #include "seatest.h"
 #include <string.h>
+#include <inttypes.h>
 #ifdef WIN32
 #include <conio.h>
 #include "windows.h"
@@ -100,6 +101,14 @@ void seatest_assert_int_equal(int expected, int actual, const char* function, un
 	sprintf(s, "Expected %d but was %d", expected, actual);
 	seatest_simple_test_result(expected==actual, s, function, line);	
 }
+
+void seatest_assert_int64t_equal(int64_t expected, int64_t actual, const char *function, unsigned int line)
+{
+    char s[SEATEST_PRINT_BUFFER_SIZE];
+    sprintf(s, "Expected %" PRId64 " but was %" PRId64, expected, actual);
+    seatest_simple_test_result(expected==actual, s, function, line);
+}
+
 
 void seatest_assert_ulong_equal(unsigned long expected, unsigned long actual, const char* function, unsigned int line)
 {

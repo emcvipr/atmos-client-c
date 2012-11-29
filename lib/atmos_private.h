@@ -209,5 +209,27 @@ void AtmosFilter_parse_get_acl_response(RestFilter *self, RestClient *rest,
 void AtmosFilter_update_object(RestFilter *self, RestClient *rest,
         RestRequest *request, RestResponse *response);
 
+// Special methods for Get Object Info
+
+/**
+ * Parses an XML response and populates the AtmosGetObjectInfoResponse.
+ * @param self the AtmosGetObjectInfoResponse object to populate.
+ * @param xml the XML document to parse.
+ * @param xml_size number of bytes in the XML document.
+ */
+void
+AtmosGetObjectInfoResponse_parse(AtmosGetObjectInfoResponse *self,
+        const char *xml, size_t xml_size);
+
+/**
+ * Processes the response headers for get object info.
+ * @param self the current filter element in the chain.
+ * @param rest the RestClient executing the request.
+ * @param request the RestRequest to execute.
+ * @param response the RestResponse receiving the response.
+ */
+void AtmosFilter_parse_get_info_response(RestFilter *self, RestClient *rest,
+        RestRequest *request, RestResponse *response);
+
 
 #endif /* ATMOS_PRIVATE_H_ */

@@ -129,7 +129,8 @@ void AtmosFilter_parse_atmos_error(RestFilter *self, RestClient *rest,
             doc = xmlReadIO(AtmosFilter_file_read_xml, NULL, &data,
                     "noname.xml", NULL, 0);
             if (doc == NULL) {
-                fprintf(stderr, "Failed to parse error response\n");
+                ATMOS_ERROR("Failed to parse error response: %s\n",
+                        "(file)");
                 return;
             }
         } else {
@@ -141,7 +142,8 @@ void AtmosFilter_parse_atmos_error(RestFilter *self, RestClient *rest,
             doc = xmlReadMemory(response->body, response->content_length,
                     "noname.xml", NULL, 0);
             if (doc == NULL) {
-                fprintf(stderr, "Failed to parse error response\n");
+                ATMOS_ERROR("Failed to parse error response: %s\n",
+                        response->body);
                 return;
             }
 
@@ -152,8 +154,7 @@ void AtmosFilter_parse_atmos_error(RestFilter *self, RestClient *rest,
 
         // Check to ensure the root node is what we expect.
         if(xmlStrcmp(BAD_CAST ATMOS_ERROR_ROOT_NODE, root->name)) {
-            fprintf(stderr,
-                    "Failed to parse error response; root node was %s\n",
+            ATMOS_ERROR("Failed to parse error response; root node was %s\n",
                     root->name);
         } else {
             // Looks good.

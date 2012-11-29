@@ -444,14 +444,68 @@ AtmosGetSystemMetaResponse_destroy(AtmosGetSystemMetaResponse *self);
  * @{
  */
 
+/**
+ * Contains information about a replica
+ */
 typedef struct {
+    /** Internal identifier of the replica */
+    int id;
+    /** Replica type.  Current values are "sync" or "async" */
+    char type[16];
+    /** Nonzero if the replica is current (synchronized) */
+    int current;
+    /** Atmos "Location" of the RMG hosting the replica, e.g. Cambridge */
+    char location[ATMOS_SIMPLE_HEADER_MAX];
+    /**
+     * The replica's storage type.  Current values are normal, stripe,
+     * cloud, compression, ErasureCode, and dedup
+     */
+    char storage_type[ATMOS_SIMPLE_HEADER_MAX];
+} AtmosReplicaInfo;
+
+/**
+ * Encapsulates the response from the get object info operation.
+ */
+typedef struct {
+    /** Parent object */
     AtmosResponse parent;
-    // TODO: finish
+    /** The object's ID */
+    char object_id[ATMOS_OID_LENGTH];
+    /**
+     * The replica selection for read access.  Current values are geographic
+     * or random.
+     */
+    char selection[ATMOS_SIMPLE_HEADER_MAX];
+    /** Array of replicas. */
+    AtmosReplicaInfo *replicas;
+    /** Number of replicas in array */
+    int replica_count;
+    /** Nonzero if retention is enabled on this object. */
+    int retention_enabled;
+    /** Time that retention ends (seconds since epoch, GMT) */
+    time_t retention_end;
+    /** Nonzero if expiration is enabled on this object. */
+    int expiration_enabled;
+    /**
+     * Time that this object expires (seconds since epoch, GMT).  Note that
+     * the expiration process runs daily, so the object will persist from
+     * expiration time until the next expiration process runs.
+     */
+    time_t expiration_end;
 } AtmosGetObjectInfoResponse;
 
+/**
+ * Initializes a new AtmosGetObjectInfoResponse object.
+ * @param self pointer to the AtmosGetObjectInfoResponse object to initialize.
+ * @return the AtmosGetObjectInfoResponse object (same as 'self')
+ */
 AtmosGetObjectInfoResponse*
 AtmosGetObjectInfoResponse_init(AtmosGetObjectInfoResponse *self);
 
+/**
+ * Destroys a AtmosGetObjectInfoResponse object.
+ * @param self pointer to the AtmosGetObjectInfoResponse object to destroy.
+ */
 void
 AtmosGetObjectInfoResponse_destroy(AtmosGetObjectInfoResponse *self);
 

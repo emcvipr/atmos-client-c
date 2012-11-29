@@ -28,6 +28,9 @@ void AtmosUtil_set_metadata_header(AtmosMetadata *meta, int meta_count,
 void AtmosUtil_set_acl_header(AtmosAclEntry *acl, int acl_count,
         RestRequest *request);
 int AtmosUtil_meta_char_check(const char *str);
+
+xmlXPathObjectPtr AtmosUtil_select_nodes(xmlDocPtr doc, xmlChar *selector, int use_cos_ns);
+
 xmlChar *AtmosUtil_select_single_node_value(xmlDocPtr doc, xmlChar *selector,
         int use_cos_ns);
 

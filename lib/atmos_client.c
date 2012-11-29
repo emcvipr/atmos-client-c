@@ -31,15 +31,15 @@ RestFilter *AtmosClient_add_default_filters(AtmosClient *self,
 //Needs to be free*d
 char *AtmosClient_sign(AtmosClient *self, const char *hash_string) {
     if (self->signature_debug) {
-        fprintf(stderr, "String to Sign: %s\n", hash_string);
-        fprintf(stderr, "With key: %s\n", self->secret);
+        ATMOS_DEBUG("String to Sign: %s\n", hash_string);
+        ATMOS_DEBUG("With key: %s\n", self->secret);
     }
 
     char *sig = AtmosUtil_HMACSHA1(hash_string, self->secret,
             strlen(self->secret));
 
     if (self->signature_debug) {
-        fprintf(stderr, "Signature: %s\n", sig);
+        ATMOS_DEBUG("Signature: %s\n", sig);
     }
 
     return sig;
@@ -657,3 +657,48 @@ AtmosClient_update_object_file_ns(AtmosClient *self, const char *path,
 
     AtmosUpdateObjectRequest_destroy(&request);
 }
+
+void
+AtmosClient_get_object_info(AtmosClient *self, const char *object_id,
+        AtmosGetObjectInfoResponse *response) {
+    RestRequest request;
+    RestFilter *chain = NULL;
+    char uri[ATMOS_OID_LENGTH+64];
+
+    snprintf(uri, ATMOS_OID_LENGTH+64, "/rest/objects/%s?info", object_id);
+
+    RestRequest_init(&request, uri, HTTP_GET);
+
+    chain = AtmosClient_add_default_filters(self, chain);
+    chain = RestFilter_add(chain, AtmosFilter_parse_get_info_response);
+
+    RestClient_execute_request((RestClient*) self, chain, &request,
+            (RestResponse*) response);
+
+    RestFilter_free(chain);
+
+    RestRequest_destroy(&request);
+}
+
+void
+AtmosClient_get_object_info_ns(AtmosClient *self, const char *path,
+        AtmosGetObjectInfoResponse *response) {
+    RestRequest request;
+    RestFilter *chain = NULL;
+    char uri[ATMOS_PATH_MAX+64];
+
+    snprintf(uri, ATMOS_PATH_MAX+64, "/rest/namespace%s?info", path);
+
+    RestRequest_init(&request, uri, HTTP_GET);
+
+    chain = AtmosClient_add_default_filters(self, chain);
+    chain = RestFilter_add(chain, AtmosFilter_parse_get_info_response);
+
+    RestClient_execute_request((RestClient*) self, chain, &request,
+            (RestResponse*) response);
+
+    RestFilter_free(chain);
+
+    RestRequest_destroy(&request);
+}
+

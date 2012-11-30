@@ -738,3 +738,20 @@ AtmosClient_rename_object(AtmosClient *self, const char *source,
 }
 
 
+void
+AtmosClient_list_directory(AtmosClient *self,
+        AtmosListDirectoryRequest *request,
+        AtmosListDirectoryResponse *response) {
+    RestFilter *chain = NULL;
+
+    chain = AtmosClient_add_default_filters(self, chain);
+    // Reuse the read_object_respnose to parse the directory-level metadata,
+    // ACL, etc.
+    chain = RestFilter_add(chain, AtmosFilter_parse_read_object_response);
+    chain = RestFilter_add(chain, AtmosFilter_list_directory);
+
+    RestClient_execute_request((RestClient*)self, chain,
+            (RestRequest*)request, (RestResponse*)response);
+
+    RestFilter_free(chain);
+}

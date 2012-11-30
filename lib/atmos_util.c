@@ -190,6 +190,56 @@ xmlXPathObjectPtr AtmosUtil_select_nodes(xmlDocPtr doc, xmlChar *selector, int u
     return xpathObj;
 }
 
+int AtmosUtil_count_nodes(xmlDocPtr doc, xmlChar *selector, int use_cos_ns) {
+    xmlXPathContextPtr xpathCtx;
+    xmlXPathObjectPtr xpathObj;
+    xmlNodeSetPtr xpathNodeSet;
+    int count;
+
+    /* Create xpath evaluation context */
+    xpathCtx = xmlXPathNewContext(doc);
+    if (xpathCtx == NULL) {
+        ATMOS_ERROR("Error: unable to create new XPath context: %s\n",
+                xmlGetLastError()?xmlGetLastError()->message:"(null)");
+        return 0;
+    }
+
+    if (use_cos_ns) {
+        if (xmlXPathRegisterNs(xpathCtx, BAD_CAST "cos",
+                BAD_CAST "http://www.emc.com/cos/")) {
+            ATMOS_ERROR("Error: unable to register cos namespace: %s\n",
+                    xmlGetLastError()?xmlGetLastError()->message:"(null)");
+            xmlXPathFreeContext(xpathCtx);
+            return 0;
+
+        }
+    }
+
+    /* Evaluate xpath expression */
+    xpathObj = xmlXPathEvalExpression(selector, xpathCtx);
+    if (xpathObj == NULL) {
+        ATMOS_ERROR("Error: unable to evaluate xpath expression \"%s\": %s\n",
+                selector,
+                xmlGetLastError()?xmlGetLastError()->message:"(null)");
+        xmlXPathFreeContext(xpathCtx);
+        return 0;
+    }
+    xpathNodeSet = xpathObj->nodesetval;
+    if (!xpathNodeSet || xpathNodeSet->nodeNr == 0) {
+        xmlXPathFreeContext(xpathCtx);
+        xmlXPathFreeNodeSet(xpathNodeSet);
+        return 0;
+    }
+    count = xpathNodeSet->nodeNr;
+
+    /* Cleanup */
+    xmlXPathFreeNodeSetList(xpathObj);
+    xmlXPathFreeContext(xpathCtx);
+
+    return count;
+}
+
+
 xmlChar *AtmosUtil_select_single_node_value(xmlDocPtr doc, xmlChar *selector,
         int use_cos_ns) {
     xmlNodePtr xmlNode;
@@ -580,6 +630,43 @@ AtmosUtil_parse_xml_datetime(const char *value) {
     return mktime(&t);
 }
 
+void AtmosUtil_set_system_meta_entry(AtmosSystemMetadata *system_meta,
+        const char *entry_name, const char *entry_value, int utf8, CURL *curl) {
+    if (!strcmp(ATMOS_SYSTEM_META_ATIME, entry_name)) {
+        system_meta->atime = AtmosUtil_parse_xml_datetime(entry_value);
+    } else if (!strcmp(ATMOS_SYSTEM_META_CTIME, entry_name)) {
+        system_meta->ctime = AtmosUtil_parse_xml_datetime(entry_value);
+    } else if (!strcmp(ATMOS_SYSTEM_META_GID, entry_name)) {
+        strlcpy(system_meta->gid, entry_value, ATMOS_UID_MAX);
+    } else if (!strcmp(ATMOS_SYSTEM_META_ITIME, entry_name)) {
+        system_meta->itime = AtmosUtil_parse_xml_datetime(entry_value);
+    } else if (!strcmp(ATMOS_SYSTEM_META_MTIME, entry_name)) {
+        system_meta->mtime = AtmosUtil_parse_xml_datetime(entry_value);
+    } else if (!strcmp(ATMOS_SYSTEM_META_NLINK, entry_name)) {
+        system_meta->nlink = strtol(entry_value, NULL, 10);
+    } else if (!strcmp(ATMOS_SYSTEM_META_OBJECTID, entry_name)) {
+        strlcpy(system_meta->object_id, entry_value, ATMOS_OID_LENGTH);
+    } else if (!strcmp(ATMOS_SYSTEM_META_OBJNAME, entry_name)) {
+        AtmosUtil_strlcpy_utf8(system_meta->objname, entry_value,
+                ATMOS_PATH_MAX, utf8, curl);
+    } else if (!strcmp(ATMOS_SYSTEM_META_POLICYNAME, entry_name)) {
+        strlcpy(system_meta->policyname, entry_value, ATMOS_UID_MAX);
+    } else if (!strcmp(ATMOS_SYSTEM_META_SIZE, entry_name)) {
+        system_meta->size = strtoll(entry_value, NULL, 10);
+    } else if (!strcmp(ATMOS_SYSTEM_META_TYPE, entry_name)) {
+        if(!strcmp(ATMOS_TYPE_DIRECTORY, entry_value)) {
+            system_meta->type = ATMOS_TYPE_DIRECTORY;
+        } else if(!strcmp(ATMOS_TYPE_REGULAR, entry_value)) {
+            system_meta->type = ATMOS_TYPE_REGULAR;
+        }
+    } else if (!strcmp(ATMOS_SYSTEM_META_UID, entry_name)) {
+        strlcpy(system_meta->uid, entry_value, ATMOS_UID_MAX);
+    } else if (!strcmp(ATMOS_SYSTEM_META_WSCHECKSUM, entry_name)) {
+        strlcpy(system_meta->wschecksum, entry_value, ATMOS_CHECKSUM_MAX);
+    }
+
+}
+
 void AtmosUtil_parse_system_meta_header(RestResponse *response,
         AtmosSystemMetadata *system_meta) {
     const char *value;
@@ -628,39 +715,8 @@ void AtmosUtil_parse_system_meta_header(RestResponse *response,
         } else {
             value = NULL;
         }
-
-        if (!strcmp(ATMOS_SYSTEM_META_ATIME, entry_name)) {
-            system_meta->atime = AtmosUtil_parse_xml_datetime(entry_value);
-        } else if (!strcmp(ATMOS_SYSTEM_META_CTIME, entry_name)) {
-            system_meta->ctime = AtmosUtil_parse_xml_datetime(entry_value);
-        } else if (!strcmp(ATMOS_SYSTEM_META_GID, entry_name)) {
-            strlcpy(system_meta->gid, entry_value, ATMOS_UID_MAX);
-        } else if (!strcmp(ATMOS_SYSTEM_META_ITIME, entry_name)) {
-            system_meta->itime = AtmosUtil_parse_xml_datetime(entry_value);
-        } else if (!strcmp(ATMOS_SYSTEM_META_MTIME, entry_name)) {
-            system_meta->mtime = AtmosUtil_parse_xml_datetime(entry_value);
-        } else if (!strcmp(ATMOS_SYSTEM_META_NLINK, entry_name)) {
-            system_meta->nlink = strtol(entry_value, NULL, 10);
-        } else if (!strcmp(ATMOS_SYSTEM_META_OBJECTID, entry_name)) {
-            strlcpy(system_meta->object_id, entry_value, ATMOS_OID_LENGTH);
-        } else if (!strcmp(ATMOS_SYSTEM_META_OBJNAME, entry_name)) {
-            AtmosUtil_strlcpy_utf8(system_meta->objname, entry_value,
-                    ATMOS_PATH_MAX, utf8, curl);
-        } else if (!strcmp(ATMOS_SYSTEM_META_POLICYNAME, entry_name)) {
-            strlcpy(system_meta->policyname, entry_value, ATMOS_UID_MAX);
-        } else if (!strcmp(ATMOS_SYSTEM_META_SIZE, entry_name)) {
-            system_meta->size = strtoll(entry_value, NULL, 10);
-        } else if (!strcmp(ATMOS_SYSTEM_META_TYPE, entry_name)) {
-            if(!strcmp(ATMOS_TYPE_DIRECTORY, entry_value)) {
-                system_meta->type = ATMOS_TYPE_DIRECTORY;
-            } else if(!strcmp(ATMOS_TYPE_REGULAR, entry_value)) {
-                system_meta->type = ATMOS_TYPE_REGULAR;
-            }
-        } else if (!strcmp(ATMOS_SYSTEM_META_UID, entry_name)) {
-            strlcpy(system_meta->uid, entry_value, ATMOS_UID_MAX);
-        } else if (!strcmp(ATMOS_SYSTEM_META_WSCHECKSUM, entry_name)) {
-            strlcpy(system_meta->wschecksum, entry_value, ATMOS_CHECKSUM_MAX);
-        }
+        AtmosUtil_set_system_meta_entry(system_meta, entry_name, entry_value,
+                utf8, curl);
     }
 
     if(curl) {

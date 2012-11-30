@@ -535,6 +535,14 @@ AtmosListDirectoryRequest_init(AtmosListDirectoryRequest *self,
 void
 AtmosListDirectoryRequest_destroy(AtmosListDirectoryRequest *self);
 
+void
+AtmosListDirectoryRequest_add_user_tag(AtmosListDirectoryRequest *self,
+        const char *tag);
+
+void
+AtmosListDirectoryRequest_add_system_tag(AtmosListDirectoryRequest *self,
+        const char *tag);
+
 /**
  * @}
  * @defgroup AtmosListDirectoryResponse AtmosListDirectoryResponse
@@ -542,11 +550,35 @@ AtmosListDirectoryRequest_destroy(AtmosListDirectoryRequest *self);
  * to capture a directory listing response from Atmos.
  * @{
  */
-typedef struct {
-    AtmosResponse parent;
-    const char *token;
 
-    // TODO: finish
+typedef struct {
+    Object parent;
+    char object_id[ATMOS_OID_LENGTH];
+    const char *type;
+    char filename[ATMOS_PATH_MAX];
+    AtmosMetadata *meta;
+    int meta_count;
+    AtmosMetadata *listable_meta;
+    int listable_meta_count;
+    AtmosSystemMetadata system_metadata;
+} AtmosDirectoryEntry;
+
+AtmosDirectoryEntry*
+AtmosDirectoryEntry_init(AtmosDirectoryEntry *self);
+
+void
+AtmosDirectoryEntry_destroy(AtmosDirectoryEntry *self);
+
+const char *
+AtmosDirectoryEntry_get_metadata_value(AtmosDirectoryEntry *self,
+        const char *name, int listable);
+
+
+typedef struct {
+    AtmosReadObjectResponse parent;
+    const char *token;
+    AtmosDirectoryEntry *entries;
+    int entry_count;
 } AtmosListDirectoryResponse;
 
 AtmosListDirectoryResponse*

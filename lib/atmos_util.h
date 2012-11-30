@@ -31,6 +31,8 @@ int AtmosUtil_meta_char_check(const char *str);
 
 xmlXPathObjectPtr AtmosUtil_select_nodes(xmlDocPtr doc, xmlChar *selector, int use_cos_ns);
 
+int AtmosUtil_count_nodes(xmlDocPtr doc, xmlChar *selector, int use_cos_ns);
+
 xmlChar *AtmosUtil_select_single_node_value(xmlDocPtr doc, xmlChar *selector,
         int use_cos_ns);
 
@@ -38,6 +40,10 @@ void
 AtmosUtil_parse_user_meta_headers(RestResponse *response,
         AtmosMetadata *meta, int *meta_count,
         AtmosMetadata *listable_meta, int *listable_meta_count);
+
+void
+AtmosUtil_set_system_meta_entry(AtmosSystemMetadata *system_meta,
+        const char *entry_name, const char *entry_value, int utf8, CURL *curl);
 
 void
 AtmosUtil_parse_system_meta_header(RestResponse *response,

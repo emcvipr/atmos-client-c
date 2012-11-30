@@ -622,6 +622,59 @@ void test_parse_object_info() {
     AtmosGetObjectInfoResponse_destroy(&info);
 }
 
+void test_parse_dirlist() {
+    char *xml;
+    FILE *f;
+    size_t size;
+    AtmosListDirectoryResponse dir;
+
+    f = fopen("dirlist.xml", "r");
+    fseek(f, 0, SEEK_END);
+    size = ftell(f);
+    fseek(f, 0, SEEK_SET);
+
+    xml = malloc(size);
+
+    fread(xml, size, 1, f);
+
+
+    AtmosListDirectoryResponse_init(&dir);
+    AtmosListDirectoryResponse_parse(&dir, xml, size);
+
+    // Check
+    assert_int_equal(62, dir.entry_count);
+
+    assert_string_equal("4ee696e4a11f549604f0b753939ef204f7b5ea28199f",
+            dir.entries[1].object_id);
+    assert_string_equal("regular", dir.entries[1].type);
+    assert_string_equal("AtmosSync.jar", dir.entries[1].filename);
+    assert_int64t_equal(1333485224, dir.entries[1].system_metadata.atime);
+    assert_int64t_equal(1333485223, dir.entries[1].system_metadata.ctime);
+    assert_string_equal("apache", dir.entries[1].system_metadata.gid);
+    assert_int64t_equal(1333485218, dir.entries[1].system_metadata.itime);
+    assert_int64t_equal(1333485223, dir.entries[1].system_metadata.mtime);
+    assert_int_equal(1, dir.entries[1].system_metadata.nlink);
+    assert_string_equal("4ee696e4a11f549604f0b753939ef204f7b5ea28199f", dir.entries[1].system_metadata.object_id);
+    assert_string_equal("AtmosSync.jar", dir.entries[1].system_metadata.objname);
+    assert_string_equal("default", dir.entries[1].system_metadata.policyname);
+    assert_int_equal(2236828, dir.entries[1].system_metadata.size);
+    assert_string_equal("regular", dir.entries[1].system_metadata.type);
+    assert_string_equal("A130672722730429efbb", dir.entries[1].system_metadata.uid);
+    assert_string_equal("", dir.entries[1].system_metadata.wschecksum);
+
+    // User metadata on entries 22 and 23
+    assert_string_equal("ec", dir.entries[22].meta[0].name);
+    assert_string_equal("true", dir.entries[22].meta[0].value);
+    assert_string_equal("ec", dir.entries[23].meta[0].name);
+    assert_string_equal("true", dir.entries[23].meta[0].value);
+    assert_string_equal("project_x", dir.entries[23].listable_meta[0].name);
+    assert_string_equal("", dir.entries[23].listable_meta[0].value);
+
+    AtmosListDirectoryResponse_destroy(&dir);
+    free(xml);
+    fclose(f);
+}
+
 void test_create_object() {
     AtmosClient atmos;
     AtmosCreateObjectResponse response;
@@ -2628,6 +2681,279 @@ void test_rename_object() {
     AtmosClient_destroy(&atmos);
 }
 
+static AtmosDirectoryEntry*
+find_file_in_directory(AtmosListDirectoryResponse *dir, const char *name) {
+    int i;
+    for(i=0; i<dir->entry_count; i++) {
+        if(!strcmp(name, dir->entries[i].filename)) {
+            return &(dir->entries[i]);
+        }
+    }
+
+    return NULL;
+}
+
+#define TEST_DIR "atmos-c-unittest"
+
+void test_list_directory() {
+    AtmosClient atmos;
+    AtmosCreateObjectRequest request;
+    AtmosCreateObjectResponse response;
+    RestResponse delete_response;
+    char path[ATMOS_PATH_MAX];
+    char path2[ATMOS_PATH_MAX];
+    char randfile1[13];
+    char randfile2[13];
+    int found_path1 = 0;
+    int found_path2 = 0;
+    int iterations = 0;
+    char token[ATMOS_OID_LENGTH];
+    AtmosListDirectoryRequest list_request;
+    AtmosListDirectoryResponse list_response;
+    AtmosDirectoryEntry *entry;
+
+    random_file(randfile1, 8);
+    strcat(randfile1, ".txt");
+    sprintf(path, "/" TEST_DIR "/%s", randfile1);
+    random_file(randfile2, 8);
+    strcat(randfile2, ".txt");
+    sprintf(path2, "/" TEST_DIR "/%s", randfile2);
+    printf("Creating object: %s\n", path);
+
+    get_atmos_client(&atmos);
+    AtmosCreateObjectRequest_init_ns(&request, path);
+    AtmosCreateObjectResponse_init(&response);
+
+    RestRequest_set_array_body((RestRequest*)&request, "test", 4,
+            "text/plain; charset=utf-8");
+    AtmosCreateObjectRequest_add_metadata(&request, "meta1",
+            "Value  with   spaces", 0);
+    AtmosCreateObjectRequest_add_metadata(&request, "meta2",
+            "character test 1!2@3#4$5%6^7&8*9(0)`~-_+\\|]}[{;:'\"/?.><", 0);
+    AtmosCreateObjectRequest_add_metadata(&request, "name  with   spaces",
+            "value", 0);
+    AtmosCreateObjectRequest_add_metadata(&request, "empty value", "", 0);
+    AtmosCreateObjectRequest_add_metadata(&request, "listable1", "value1", 1);
+    AtmosCreateObjectRequest_add_metadata(&request, "listable2", "", 1);
+
+    AtmosClient_create_object(&atmos, &request ,&response);
+    check_error((AtmosResponse*)&response);
+    assert_int_equal(201, response.parent.parent.http_code);
+    assert_true(strlen(response.object_id) > 0);
+
+    printf("Created object: %s\n", response.object_id);
+    AtmosCreateObjectRequest_destroy(&request);
+
+    // List and make sure it comes back.
+    AtmosListDirectoryRequest_init(&list_request, "/" TEST_DIR "/");
+    AtmosListDirectoryResponse_init(&list_response);
+    AtmosClient_list_directory(&atmos, &list_request, &list_response);
+    check_error((AtmosResponse*)&list_response);
+    assert_int_equal(200, list_response.parent.parent.parent.http_code);
+    assert_string_equal(TEST_DIR,
+            list_response.parent.system_metadata.objname);
+    assert_string_equal(ATMOS_TYPE_DIRECTORY,
+            list_response.parent.system_metadata.type);
+    entry = find_file_in_directory(&list_response, randfile1);
+    assert_true(entry != NULL);
+    if(!entry) {
+        return;
+    }
+    assert_string_equal(randfile1, entry->filename);
+    assert_string_equal(response.object_id, entry->object_id);
+    assert_string_equal(ATMOS_TYPE_REGULAR, entry->type);
+    assert_int_equal(0, entry->listable_meta_count);
+    assert_int_equal(0, entry->meta_count);
+    assert_int_equal(0, entry->system_metadata.itime); // should not be returned
+    AtmosListDirectoryRequest_destroy(&list_request);
+    AtmosListDirectoryResponse_destroy(&list_response);
+
+    // Check metadata
+    AtmosListDirectoryRequest_init(&list_request, "/" TEST_DIR "/");
+    AtmosListDirectoryResponse_init(&list_response);
+    list_request.include_meta = 1;
+    AtmosClient_list_directory(&atmos, &list_request, &list_response);
+    check_error((AtmosResponse*)&list_response);
+    assert_int_equal(200, list_response.parent.parent.parent.http_code);
+    assert_string_equal(TEST_DIR,
+            list_response.parent.system_metadata.objname);
+    assert_string_equal(ATMOS_TYPE_DIRECTORY,
+            list_response.parent.system_metadata.type);
+    entry = find_file_in_directory(&list_response, randfile1);
+    assert_true(entry != NULL);
+    if(!entry) {
+        return;
+    }
+    assert_string_equal(randfile1, entry->filename);
+    assert_string_equal(response.object_id, entry->object_id);
+    assert_string_equal(ATMOS_TYPE_REGULAR, entry->type);
+    assert_int_equal(2, entry->listable_meta_count);
+    assert_int_equal(4, entry->meta_count);
+
+    assert_true(0 < entry->system_metadata.atime);
+    assert_true(0 < entry->system_metadata.ctime);
+    assert_string_equal("apache", entry->system_metadata.gid);
+    assert_true(0 < entry->system_metadata.itime);
+    assert_true(0 < entry->system_metadata.mtime);
+    assert_true(1 == entry->system_metadata.nlink);
+    assert_string_equal(response.object_id, entry->system_metadata.object_id);
+    assert_string_equal(randfile1, entry->system_metadata.objname);
+    // policy might not be default
+    assert_true(strlen(entry->system_metadata.policyname) > 0);
+    assert_int_equal(4, entry->system_metadata.size);
+    assert_string_equal("regular", entry->system_metadata.type);
+    assert_string_equal(uid1, entry->system_metadata.uid);
+
+    assert_string_equal("Value  with   spaces",
+            AtmosDirectoryEntry_get_metadata_value(entry,
+                    "meta1", 0));
+    assert_string_equal("character test 1!2@3#4$5%6^7&8*9(0)`~-_+\\|]}[{;:'\"/?.><",
+            AtmosDirectoryEntry_get_metadata_value(entry,
+                    "meta2", 0));
+    assert_string_equal("value",
+            AtmosDirectoryEntry_get_metadata_value(entry,
+                    "name  with   spaces", 0));
+    assert_string_equal("",
+            AtmosDirectoryEntry_get_metadata_value(entry,
+                    "empty value", 0));
+    assert_string_equal("value1",
+            AtmosDirectoryEntry_get_metadata_value(entry,
+                    "listable1", 1));
+    assert_string_equal("",
+            AtmosDirectoryEntry_get_metadata_value(entry,
+                    "listable2", 1));
+    AtmosListDirectoryRequest_destroy(&list_request);
+    AtmosListDirectoryResponse_destroy(&list_response);
+
+    // Check *some* metadata
+    AtmosListDirectoryRequest_init(&list_request, "/" TEST_DIR "/");
+    AtmosListDirectoryResponse_init(&list_response);
+    list_request.include_meta = 1;
+    AtmosListDirectoryRequest_add_user_tag(&list_request, "meta1");
+    AtmosListDirectoryRequest_add_user_tag(&list_request, "name  with   spaces");
+    AtmosListDirectoryRequest_add_user_tag(&list_request, "listable2");
+    AtmosListDirectoryRequest_add_system_tag(&list_request, ATMOS_SYSTEM_META_SIZE);
+    AtmosListDirectoryRequest_add_system_tag(&list_request, ATMOS_SYSTEM_META_OBJECTID);
+    AtmosClient_list_directory(&atmos, &list_request, &list_response);
+    check_error((AtmosResponse*)&list_response);
+    assert_int_equal(200, list_response.parent.parent.parent.http_code);
+    assert_string_equal(TEST_DIR,
+            list_response.parent.system_metadata.objname);
+    assert_string_equal(ATMOS_TYPE_DIRECTORY,
+            list_response.parent.system_metadata.type);
+    entry = find_file_in_directory(&list_response, randfile1);
+    assert_true(entry != NULL);
+    if(!entry) {
+        return;
+    }
+
+    assert_string_equal(randfile1, entry->filename);
+    assert_string_equal(response.object_id, entry->object_id);
+    assert_string_equal(ATMOS_TYPE_REGULAR, entry->type);
+    assert_int_equal(1, entry->listable_meta_count);
+    assert_int_equal(2, entry->meta_count);
+
+    assert_true(0 == entry->system_metadata.atime);
+    assert_true(0 == entry->system_metadata.ctime);
+    assert_string_equal("", entry->system_metadata.gid);
+    assert_true(0 == entry->system_metadata.itime);
+    assert_true(0 == entry->system_metadata.mtime);
+    assert_true(0 == entry->system_metadata.nlink);
+    assert_string_equal(response.object_id, entry->system_metadata.object_id);
+    assert_string_equal("", entry->system_metadata.objname);
+    // policy might not be default
+    assert_true(strlen(entry->system_metadata.policyname) == 0);
+    assert_int_equal(4, entry->system_metadata.size);
+    assert_string_equal(NULL, entry->system_metadata.type);
+    assert_string_equal("", entry->system_metadata.uid);
+
+    assert_string_equal("Value  with   spaces",
+            AtmosDirectoryEntry_get_metadata_value(entry,
+                    "meta1", 0));
+    assert_string_equal(NULL,
+            AtmosDirectoryEntry_get_metadata_value(entry,
+                    "meta2", 0));
+    assert_string_equal("value",
+            AtmosDirectoryEntry_get_metadata_value(entry,
+                    "name  with   spaces", 0));
+    assert_string_equal(NULL,
+            AtmosDirectoryEntry_get_metadata_value(entry,
+                    "empty value", 0));
+    assert_string_equal(NULL,
+            AtmosDirectoryEntry_get_metadata_value(entry,
+                    "listable1", 1));
+    assert_string_equal("",
+            AtmosDirectoryEntry_get_metadata_value(entry,
+                    "listable2", 1));
+    AtmosListDirectoryRequest_destroy(&list_request);
+    AtmosListDirectoryResponse_destroy(&list_response);
+
+
+    // Create a 2nd object
+    AtmosCreateObjectResponse_destroy(&response);
+    AtmosCreateObjectResponse_init(&response);
+    AtmosClient_create_object_simple_ns(&atmos, path2, "test2", 5,
+            "text/plain; charset=utf-8", &response);
+    check_error((AtmosResponse*)&response);
+    assert_int_equal(201, response.parent.parent.http_code);
+    assert_true(strlen(response.object_id) > 0);
+
+    // Check pagination
+    found_path1 = 0;
+    found_path2 = 0;
+    token[0] = 0;
+    iterations = 0;
+
+    do {
+        AtmosListDirectoryRequest_init(&list_request, "/" TEST_DIR "/");
+        list_request.limit = 1;
+        strcpy(list_request.token, token);
+        AtmosListDirectoryResponse_init(&list_response);
+        AtmosClient_list_directory(&atmos, &list_request, &list_response);
+        check_error((AtmosResponse*)&list_response);
+        assert_int_equal(200, list_response.parent.parent.parent.http_code);
+        assert_string_equal(TEST_DIR,
+                list_response.parent.system_metadata.objname);
+        assert_string_equal(ATMOS_TYPE_DIRECTORY,
+                list_response.parent.system_metadata.type);
+        if(find_file_in_directory(&list_response, randfile1)) {
+            found_path1 = 1;
+        }
+        if(find_file_in_directory(&list_response, randfile2)) {
+            found_path2 = 1;
+        }
+
+        // Check for continuation token.
+        if(list_response.token) {
+            strcpy(token, list_response.token);
+        } else {
+            token[0] = 0;
+        }
+        AtmosListDirectoryResponse_destroy(&list_response);
+        AtmosListDirectoryRequest_destroy(&list_request);
+        iterations++;
+    } while(strlen(token)>0);
+
+    assert_int_equal(1, found_path1);
+    assert_int_equal(1, found_path2);
+    assert_true(iterations >= 2);
+
+    // Cleanup
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_object_ns(&atmos, path, &delete_response);
+    assert_int_equal(204, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_object_ns(&atmos, path2, &delete_response);
+    assert_int_equal(204, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    AtmosCreateObjectResponse_destroy(&response);
+    AtmosClient_destroy(&atmos);
+
+}
+
 void test_atmos_suite() {
     char proxy_port_str[32];
 
@@ -2758,6 +3084,9 @@ void test_atmos_suite() {
     start_test_msg("test_parse_object_info");
     run_test(test_parse_object_info);
 
+    start_test_msg("test_parse_dirlist");
+    run_test(test_parse_dirlist);
+
     start_test_msg("test_get_service_info");
     run_test(test_get_service_info);
 
@@ -2853,6 +3182,9 @@ void test_atmos_suite() {
 
     start_test_msg("test_rename_object");
     run_test(test_rename_object);
+
+    start_test_msg("test_list_directory");
+    run_test(test_list_directory);
 
     test_fixture_end();
 

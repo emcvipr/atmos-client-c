@@ -43,6 +43,11 @@
 #define ATMOS_HEADER_TAGS "x-emc-tags"
 #define ATMOS_HEADER_PATH "x-emc-path"
 #define ATMOS_HEADER_FORCE "x-emc-force"
+#define ATMOS_HEADER_TOKEN "x-emc-token"
+#define ATMOS_HEADER_INCLUDE_META "x-emc-include-meta"
+#define ATMOS_HEADER_USER_TAGS "x-emc-user-tags"
+#define ATMOS_HEADER_SYSTEM_TAGS "x-emc-system-tags"
+#define ATMOS_HEADER_LIMIT "x-emc-limit"
 
 #define ATMOS_UID_MAX 255
 #define ATMOS_SECRET_MAX 64
@@ -86,6 +91,9 @@
 #define CLASS_ATMOS_GET_ACL_RESPONSE "AtmosGetAclResponse"
 #define CLASS_ATMOS_UPDATE_OBJECT_REQUEST "AtmosUpdateObjectRequest"
 #define CLASS_ATMOS_GET_OBJECT_INFO_RESPONSE "AtmosGetObjectInfoResponse"
+#define CLASS_ATMOS_LIST_DIRECTORY_RESPONSE "AtmosListDirectoryResponse"
+#define CLASS_ATMOS_DIRECTORY_ENTRY "AtmosDirectoryEntry"
+#define CLASS_ATMOS_LIST_DIRECTORY_REQUEST "AtmosListDirectoryRequest"
 
 #define ATMOS_OID_LOCATION_PREFIX "/rest/objects/"
 #define ATMOS_OID_LOCATION_PREFIX_SIZE 14
@@ -108,5 +116,18 @@
 // Values for ATMOS_SYSTEM_META_TYPE
 #define ATMOS_TYPE_REGULAR "regular"
 #define ATMOS_TYPE_DIRECTORY "directory"
+
+// Used for parsing directory listings
+#define DIR_NODE_OBJECT_ID "ObjectID"
+#define DIR_NODE_FILE_TYPE "FileType"
+#define DIR_NODE_FILE_NAME "Filename"
+#define DIR_NODE_SYSTEM_METADATA_LIST "SystemMetadataList"
+#define DIR_NODE_METADATA "Metadata"
+#define DIR_NODE_USER_METADATA_LIST "UserMetadataList"
+#define DIR_NODE_NAME "Name"
+#define DIR_NODE_VALUE "Value"
+#define DIR_NODE_LISTABLE "Listable"
+
+
 
 #endif /* ATMOS_CONSTANTS_H_ */

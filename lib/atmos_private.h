@@ -231,5 +231,28 @@ AtmosGetObjectInfoResponse_parse(AtmosGetObjectInfoResponse *self,
 void AtmosFilter_parse_get_info_response(RestFilter *self, RestClient *rest,
         RestRequest *request, RestResponse *response);
 
+// Filter for list directory
+/**
+ * Processes request and response for list directory
+ * @param self the current filter element in the chain.
+ * @param rest the RestClient executing the request.
+ * @param request the RestRequest to execute.
+ * @param response the RestResponse receiving the response.
+ */
+void AtmosFilter_list_directory(RestFilter *self, RestClient *rest,
+        RestRequest *request, RestResponse *response);
+
+/**
+ * Parses an XML response and populates the AtmosListDirectoryResponse.
+ * @param self the AtmosListDirectoryResponse to populate
+ * @param xml the XML document to parse
+ * @param xml_size number of bytes in the XML document.
+ */
+void
+AtmosListDirectoryResponse_parse(AtmosListDirectoryResponse *self,
+        const char *xml, size_t xml_size);
+
+
+
 
 #endif /* ATMOS_PRIVATE_H_ */

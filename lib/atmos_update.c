@@ -227,7 +227,8 @@ AtmosUpdateObjectRequest_init_ns(AtmosUpdateObjectRequest *self,
 
 void
 AtmosUpdateObjectRequest_destroy(AtmosUpdateObjectRequest *self) {
-
+    OBJECT_ZERO(self, AtmosUpdateObjectRequest, RestRequest);
+    RestRequest_destroy((RestRequest*)self);
 }
 
 void

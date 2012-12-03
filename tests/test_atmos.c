@@ -40,7 +40,7 @@ static const char
 
 static void random_file(char *name, int count) {
     int i = 0;
-    int num_filechars = strlen(filechars);
+    size_t num_filechars = strlen(filechars);
     for (; i < count; i++) {
         name[i] = filechars[random() % num_filechars];
     }
@@ -224,6 +224,7 @@ void test_get_service_info() {
         // Atmos >= 2.x should support this
         assert_int_equal(1, res.utf8_metadata_supported);
     }
+    AtmosServiceInfoResponse_destroy(&res);
 
     AtmosClient_destroy(&atmos);
 }
@@ -246,6 +247,7 @@ void test_parse_error() {
     assert_string_equal("There was a mismatch between the signature "
             "in the request and the signature computed by the server.",
             res.parent.atmos_error_message);
+    AtmosServiceInfoResponse_destroy(&res);
 
     AtmosClient_destroy(&atmos);
 
@@ -469,16 +471,16 @@ void test_parse_system_meta() {
     assert_int_equal(0, listable_meta_count);
 
     AtmosUtil_parse_system_meta_header(&response, &system_meta);
-    assert_int_equal(1234974444, system_meta.atime);
-    assert_int_equal(1234974444, system_meta.ctime);
+    assert_int64t_equal(1234974444, system_meta.atime);
+    assert_int64t_equal(1234974444, system_meta.ctime);
     assert_string_equal("apache", system_meta.gid);
-    assert_int_equal(1234973032, system_meta.itime);
-    assert_int_equal(1234973032, system_meta.mtime);
+    assert_int64t_equal(1234973032, system_meta.itime);
+    assert_int64t_equal(1234973032, system_meta.mtime);
     assert_int_equal(0, system_meta.nlink);
     assert_string_equal("499ad542a1a8bc200499ad5a6b05580499c3168560a4", system_meta.object_id);
     assert_string_equal("", system_meta.objname);
     assert_string_equal("default", system_meta.policyname);
-    assert_int_equal(211, system_meta.size);
+    assert_int64t_equal(211, system_meta.size);
     assert_string_equal("regular", system_meta.type);
     assert_string_equal("user1", system_meta.uid);
     assert_string_equal("sha0/1037/87hn7kkdd9d982f031qwe9ab224abjd6h1276nj9", system_meta.wschecksum);
@@ -511,16 +513,16 @@ void test_parse_system_meta_utf8() {
     assert_int_equal(0, listable_meta_count);
 
     AtmosUtil_parse_system_meta_header(&response, &system_meta);
-    assert_int_equal(1325866560, system_meta.atime);
-    assert_int_equal(1325866560, system_meta.ctime);
+    assert_int64t_equal(1325866560, system_meta.atime);
+    assert_int64t_equal(1325866560, system_meta.ctime);
     assert_string_equal("apache", system_meta.gid);
-    assert_int_equal(1325865567, system_meta.itime);
-    assert_int_equal(1325865568, system_meta.mtime);
-    assert_int_equal(1, system_meta.nlink);
+    assert_int64t_equal(1325865567, system_meta.itime);
+    assert_int64t_equal(1325865568, system_meta.mtime);
+    assert_int64t_equal(1, system_meta.nlink);
     assert_string_equal("4ef49feaa106904c04ef4a066e778104f071a5ff0c85", system_meta.object_id);
     assert_string_equal("υπολογιστή.jpg", system_meta.objname);
     assert_string_equal("default", system_meta.policyname);
-    assert_int_equal(459, system_meta.size);
+    assert_int64t_equal(459, system_meta.size);
     assert_string_equal("regular", system_meta.type);
     assert_string_equal("user1", system_meta.uid);
     assert_string_equal("", system_meta.wschecksum);
@@ -615,9 +617,9 @@ void test_parse_object_info() {
     assert_string_equal("New York", info.replicas[1].location);
     assert_string_equal("Normal", info.replicas[1].storage_type);
     assert_int_equal(0, info.retention_enabled);
-    assert_int_equal(0, info.retention_end);
+    assert_int64t_equal(0, info.retention_end);
     assert_int_equal(1, info.expiration_enabled);
-    assert_int_equal(5, info.expiration_end);
+    assert_int64t_equal(5, info.expiration_end);
 
     AtmosGetObjectInfoResponse_destroy(&info);
 }
@@ -657,7 +659,7 @@ void test_parse_dirlist() {
     assert_string_equal("4ee696e4a11f549604f0b753939ef204f7b5ea28199f", dir.entries[1].system_metadata.object_id);
     assert_string_equal("AtmosSync.jar", dir.entries[1].system_metadata.objname);
     assert_string_equal("default", dir.entries[1].system_metadata.policyname);
-    assert_int_equal(2236828, dir.entries[1].system_metadata.size);
+    assert_int64t_equal(2236828, dir.entries[1].system_metadata.size);
     assert_string_equal("regular", dir.entries[1].system_metadata.type);
     assert_string_equal("A130672722730429efbb", dir.entries[1].system_metadata.uid);
     assert_string_equal("", dir.entries[1].system_metadata.wschecksum);
@@ -881,7 +883,7 @@ void test_read_object() {
 
     check_error((AtmosResponse*)&read_response);
     assert_int_equal(200, read_response.parent.parent.http_code);
-    assert_int_equal(4, read_response.parent.parent.content_length);
+    assert_int64t_equal(4, read_response.parent.parent.content_length);
     assert_string_equal("text/plain; charset=US-ASCII", read_response.parent.parent.content_type);
     assert_string_equal("test", read_response.parent.parent.body);
     AtmosReadObjectResponse_destroy(&read_response);
@@ -923,7 +925,7 @@ void test_read_object_ns() {
     AtmosClient_read_object_simple_ns(&atmos, path, &read_response);
     check_error((AtmosResponse*)&read_response);
     assert_int_equal(200, read_response.parent.parent.http_code);
-    assert_int_equal(4, read_response.parent.parent.content_length);
+    assert_int64t_equal(4, read_response.parent.parent.content_length);
     assert_string_equal("text/plain; charset=US-ASCII", read_response.parent.parent.content_type);
     assert_string_equal("test", read_response.parent.parent.body);
     // Look for the ObjectID
@@ -1047,7 +1049,7 @@ void test_read_object_with_meta_and_acl() {
                 AtmosReadObjectResponse_get_metadata_value(&read_response,
                         "Special Characters", 0));
     }
-    assert_int_equal(4, read_response.parent.parent.content_length);
+    assert_int64t_equal(4, read_response.parent.parent.content_length);
     assert_string_equal("text/plain; charset=iso-8859-1", read_response.parent.parent.content_type);
     assert_string_equal("test", read_response.parent.parent.body);
 
@@ -1061,7 +1063,7 @@ void test_read_object_with_meta_and_acl() {
     assert_string_equal(response.object_id, read_response.system_metadata.object_id);
     assert_string_equal("", read_response.system_metadata.objname);
     assert_string_equal("default", read_response.system_metadata.policyname);
-    assert_int_equal(4, read_response.system_metadata.size);
+    assert_int64t_equal(4, read_response.system_metadata.size);
     assert_string_equal("regular", read_response.system_metadata.type);
     assert_string_equal(uid1, read_response.system_metadata.uid);
 
@@ -1230,8 +1232,8 @@ void test_read_object_file() {
     AtmosClient_read_object_simple(&atmos, response.object_id, &read_response);
     check_error((AtmosResponse*)&read_response);
     assert_int_equal(200, read_response.parent.parent.http_code);
-    assert_int_equal(1024*1024*2, read_response.parent.parent.content_length);
-    assert_int_equal(1024*1024*2, ftell(f2));
+    assert_int64t_equal(1024*1024*2, read_response.parent.parent.content_length);
+    assert_int64t_equal(1024*1024*2, ftell(f2));
 
     // Check data in f2.
     fseek(f1, 0, SEEK_SET);
@@ -1340,6 +1342,7 @@ void test_get_user_meta() {
             AtmosGetUserMetaResponse_get_metadata_value(&meta_response, "listable2", 1));
 
     AtmosGetUserMetaResponse_destroy(&meta_response);
+    AtmosGetUserMetaRequest_destroy(&meta_request);
 
     // Cleanup
     RestResponse_init(&delete_response);
@@ -1434,6 +1437,7 @@ void test_get_user_meta_ns() {
             AtmosGetUserMetaResponse_get_metadata_value(&meta_response, "listable2", 1));
 
     AtmosGetUserMetaResponse_destroy(&meta_response);
+    AtmosGetUserMetaRequest_destroy(&meta_request);
 
     // Cleanup
     RestResponse_init(&delete_response);
@@ -1762,7 +1766,7 @@ void test_get_system_meta() {
     assert_string_equal(response.object_id, meta_response.system_metadata.object_id);
     assert_string_equal("", meta_response.system_metadata.objname);
     assert_string_equal("default", meta_response.system_metadata.policyname);
-    assert_int_equal(4, meta_response.system_metadata.size);
+    assert_int64t_equal(4, meta_response.system_metadata.size);
     assert_string_equal("regular", meta_response.system_metadata.type);
     assert_string_equal(uid1, meta_response.system_metadata.uid);
 
@@ -1788,7 +1792,7 @@ void test_get_system_meta() {
     assert_string_equal(response.object_id, meta_response.system_metadata.object_id);
     assert_string_equal("", meta_response.system_metadata.objname);
     assert_string_equal("", meta_response.system_metadata.policyname);
-    assert_int_equal(0, meta_response.system_metadata.size);
+    assert_int64t_equal(0, meta_response.system_metadata.size);
     assert_string_equal("regular", meta_response.system_metadata.type);
     assert_string_equal("", meta_response.system_metadata.uid);
 
@@ -1818,7 +1822,6 @@ void test_get_system_meta_ns() {
     strcat(randfile, ".txt");
     sprintf(path, "/atmos-c-unittest/%s", randfile);
     printf("Creating object: %s\n", path);
-    get_atmos_client(&atmos);
 
     get_atmos_client(&atmos);
     AtmosCreateObjectResponse_init(&response);
@@ -1845,7 +1848,7 @@ void test_get_system_meta_ns() {
     assert_string_equal(response.object_id, meta_response.system_metadata.object_id);
     assert_string_equal(randfile, meta_response.system_metadata.objname);
     assert_string_equal("default", meta_response.system_metadata.policyname);
-    assert_int_equal(4, meta_response.system_metadata.size);
+    assert_int64t_equal(4, meta_response.system_metadata.size);
     assert_string_equal("regular", meta_response.system_metadata.type);
     assert_string_equal(uid1, meta_response.system_metadata.uid);
 
@@ -1871,7 +1874,7 @@ void test_get_system_meta_ns() {
     assert_string_equal(response.object_id, meta_response.system_metadata.object_id);
     assert_string_equal(randfile, meta_response.system_metadata.objname);
     assert_string_equal("", meta_response.system_metadata.policyname);
-    assert_int_equal(0, meta_response.system_metadata.size);
+    assert_int64t_equal(0, meta_response.system_metadata.size);
     assert_string_equal("regular", meta_response.system_metadata.type);
     assert_string_equal("", meta_response.system_metadata.uid);
 
@@ -2071,7 +2074,7 @@ void test_update_object() {
     AtmosClient_read_object_simple(&atmos, response.object_id, &read_response);
     check_error((AtmosResponse*)&read_response);
     assert_int_equal(200, read_response.parent.parent.http_code);
-    assert_int_equal(5, read_response.parent.parent.content_length);
+    assert_int64t_equal(5, read_response.parent.parent.content_length);
     assert_string_equal("hello", read_response.parent.parent.body);
     AtmosReadObjectResponse_destroy(&read_response);
 
@@ -2122,7 +2125,7 @@ void test_update_object_ns() {
     AtmosClient_read_object_simple_ns(&atmos, path, &read_response);
     check_error((AtmosResponse*)&read_response);
     assert_int_equal(200, read_response.parent.parent.http_code);
-    assert_int_equal(5, read_response.parent.parent.content_length);
+    assert_int64t_equal(5, read_response.parent.parent.content_length);
     assert_string_equal("hello", read_response.parent.parent.body);
     AtmosReadObjectResponse_destroy(&read_response);
 
@@ -2173,7 +2176,7 @@ void test_update_object_file() {
     AtmosClient_read_object_simple(&atmos, response.object_id, &read_response);
     check_error((AtmosResponse*)&read_response);
     assert_int_equal(200, read_response.parent.parent.http_code);
-    assert_int_equal(5, read_response.parent.parent.content_length);
+    assert_int64t_equal(5, read_response.parent.parent.content_length);
     assert_string_equal("hello", read_response.parent.parent.body);
     AtmosReadObjectResponse_destroy(&read_response);
 
@@ -2228,7 +2231,7 @@ void test_update_object_file_ns() {
     AtmosClient_read_object_simple_ns(&atmos, path, &read_response);
     check_error((AtmosResponse*)&read_response);
     assert_int_equal(200, read_response.parent.parent.http_code);
-    assert_int_equal(5, read_response.parent.parent.content_length);
+    assert_int64t_equal(5, read_response.parent.parent.content_length);
     assert_string_equal("hello", read_response.parent.parent.body);
     AtmosReadObjectResponse_destroy(&read_response);
 
@@ -2278,7 +2281,7 @@ void test_update_object_range() {
     AtmosClient_read_object_simple(&atmos, response.object_id, &read_response);
     check_error((AtmosResponse*)&read_response);
     assert_int_equal(200, read_response.parent.parent.http_code);
-    assert_int_equal(13, read_response.parent.parent.content_length);
+    assert_int64t_equal(13, read_response.parent.parent.content_length);
     assert_string_equal("roll two dice", read_response.parent.parent.body);
     AtmosReadObjectResponse_destroy(&read_response);
 
@@ -2297,7 +2300,7 @@ void test_update_object_range() {
     AtmosClient_read_object_simple(&atmos, response.object_id, &read_response);
     check_error((AtmosResponse*)&read_response);
     assert_int_equal(200, read_response.parent.parent.http_code);
-    assert_int_equal(19, read_response.parent.parent.content_length);
+    assert_int64t_equal(19, read_response.parent.parent.content_length);
     assert_string_equal("roll two dice twice", read_response.parent.parent.body);
     AtmosReadObjectResponse_destroy(&read_response);
 
@@ -2351,7 +2354,7 @@ void test_update_object_range_file() {
     AtmosClient_read_object_simple(&atmos, response.object_id, &read_response);
     check_error((AtmosResponse*)&read_response);
     assert_int_equal(200, read_response.parent.parent.http_code);
-    assert_int_equal(19, read_response.parent.parent.content_length);
+    assert_int64t_equal(19, read_response.parent.parent.content_length);
     assert_string_equal("roll two dice twice", read_response.parent.parent.body);
     AtmosReadObjectResponse_destroy(&read_response);
 
@@ -2389,6 +2392,7 @@ void test_update_object_meta_acl() {
     assert_int_equal(201, response.parent.parent.http_code);
     assert_true(strlen(response.object_id) > 0);
     printf("Created object: %s\n", response.object_id);
+    AtmosCreateObjectRequest_destroy(&request);
 
     // Update it.
     AtmosUpdateObjectRequest_init(&update_request, response.object_id);
@@ -2405,13 +2409,14 @@ void test_update_object_meta_acl() {
     AtmosClient_update_object(&atmos, &update_request, &update_response);
     assert_int_equal(200, update_response.http_code);
     RestResponse_destroy(&update_response);
+    AtmosUpdateObjectRequest_destroy(&update_request);
 
     // Read back and check
     AtmosReadObjectResponse_init(&read_response);
     AtmosClient_read_object_simple(&atmos, response.object_id, &read_response);
     check_error((AtmosResponse*)&read_response);
     assert_int_equal(200, read_response.parent.parent.http_code);
-    assert_int_equal(5, read_response.parent.parent.content_length);
+    assert_int64t_equal(5, read_response.parent.parent.content_length);
     assert_string_equal("hello", read_response.parent.parent.body);
     assert_string_equal("changed value",
             AtmosReadObjectResponse_get_metadata_value(&read_response, "meta1", 0));
@@ -2764,7 +2769,7 @@ void test_list_directory() {
     assert_string_equal(ATMOS_TYPE_REGULAR, entry->type);
     assert_int_equal(0, entry->listable_meta_count);
     assert_int_equal(0, entry->meta_count);
-    assert_int_equal(0, entry->system_metadata.itime); // should not be returned
+    assert_int64t_equal(0, entry->system_metadata.itime); // should not be returned
     AtmosListDirectoryRequest_destroy(&list_request);
     AtmosListDirectoryResponse_destroy(&list_response);
 
@@ -2800,7 +2805,7 @@ void test_list_directory() {
     assert_string_equal(randfile1, entry->system_metadata.objname);
     // policy might not be default
     assert_true(strlen(entry->system_metadata.policyname) > 0);
-    assert_int_equal(4, entry->system_metadata.size);
+    assert_int64t_equal(4, entry->system_metadata.size);
     assert_string_equal("regular", entry->system_metadata.type);
     assert_string_equal(uid1, entry->system_metadata.uid);
 
@@ -2863,7 +2868,7 @@ void test_list_directory() {
     assert_string_equal("", entry->system_metadata.objname);
     // policy might not be default
     assert_true(strlen(entry->system_metadata.policyname) == 0);
-    assert_int_equal(4, entry->system_metadata.size);
+    assert_int64t_equal(4, entry->system_metadata.size);
     assert_string_equal(NULL, entry->system_metadata.type);
     assert_string_equal("", entry->system_metadata.uid);
 

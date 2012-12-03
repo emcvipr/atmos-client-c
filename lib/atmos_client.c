@@ -47,7 +47,9 @@ char *AtmosClient_sign(AtmosClient *self, const char *hash_string) {
 
 char *AtmosClient_sign_request(AtmosClient *self, RestRequest *request) {
     char *string_to_sign = AtmosClient_canonicalize_request(self, request);
-    return AtmosClient_sign(self, string_to_sign);
+    char *sig = AtmosClient_sign(self, string_to_sign);
+    free(string_to_sign);
+    return sig;
 }
 
 char *AtmosClient_canonicalize_request(AtmosClient *self, RestRequest *request) {
@@ -122,6 +124,7 @@ char *AtmosClient_canonicalize_request(AtmosClient *self, RestRequest *request) 
     for (i = 0; i < request->header_count; i++) {
         free(emc_sorted_headers[i]);
     }
+    free(emc_sorted_headers);
 
     return hash_string;
 }

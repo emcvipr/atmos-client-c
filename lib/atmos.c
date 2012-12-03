@@ -89,9 +89,9 @@ int AtmosFilter_file_read_xml(void * context, char * buffer, int len) {
 
     read = fread(buffer, 1, bytes_to_read, data->f);
 
-    bytes_to_read += read;
+    data->bytes_read += read;
 
-    return read;
+    return (int)read;
 }
 
 
@@ -139,7 +139,7 @@ void AtmosFilter_parse_atmos_error(RestFilter *self, RestClient *rest,
              * The document being in memory, it have no base per RFC 2396,
              * and the "noname.xml" argument will serve as its base.
              */
-            doc = xmlReadMemory(response->body, response->content_length,
+            doc = xmlReadMemory(response->body, (int)response->content_length,
                     "noname.xml", NULL, 0);
             if (doc == NULL) {
                 ATMOS_ERROR("Failed to parse error response: %s\n",
@@ -163,7 +163,7 @@ void AtmosFilter_parse_atmos_error(RestFilter *self, RestClient *rest,
             value = AtmosUtil_select_single_node_value(doc,
                     BAD_CAST ATMOS_ERROR_CODE_XPATH, 0);
             if(value) {
-                atmos_response->atmos_error = strtol((char*)value, NULL, 10);
+                atmos_response->atmos_error = (int)strtol((char*)value, NULL, 10);
                 xmlFree(value);
             }
             value = AtmosUtil_select_single_node_value(doc,

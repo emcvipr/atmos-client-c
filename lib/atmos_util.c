@@ -20,13 +20,21 @@ int AtmosUtil_cstring_cmp(const void *a, const void *b) {
 char *AtmosUtil_cstring_append(char *buf, size_t *bufsz, const char *str) {
     size_t strsz = strlen(str);
     size_t bufpos = 0;
+    char *buf2;
+    
     if (buf != NULL) {
         bufpos = strlen(buf);
     }
 
-    if (bufpos + strsz + 1 > *bufsz) {
+    if (buf == NULL || bufpos + strsz + 1 > *bufsz) {
         size_t newsize = *bufsz + strsz + 256;
-        buf = realloc(buf, newsize);
+        buf2 = realloc(buf, newsize);
+        if(!buf2) {
+            ATMOS_ERROR("Could not reallocate %ld bytes", newsize);
+            return buf;
+        } else {
+            buf = buf2;
+        }
         *bufsz = newsize;
     }
 
@@ -135,9 +143,9 @@ char *AtmosUtil_HMACSHA1(const char *hash_string, const char *key,
     unsigned int md_len;
     unsigned char md[EVP_MAX_MD_SIZE];
     char *newkey = AtmosUtil_base64decode(key, key_len);
-    int new_key_len = strlen(newkey);
+    size_t new_key_len = strlen(newkey);
 
-    HMAC(evp_md, newkey, new_key_len, (const unsigned char*) hash_string,
+    HMAC(evp_md, newkey, (int)new_key_len, (const unsigned char*) hash_string,
             strlen(hash_string), md, &md_len);
     free(newkey);
     return AtmosUtil_base64encode((char*) md, md_len);
@@ -181,6 +189,7 @@ xmlXPathObjectPtr AtmosUtil_select_nodes(xmlDocPtr doc, xmlChar *selector, int u
     if (!xpathNodeSet || xpathNodeSet->nodeNr == 0) {
         ATMOS_ERROR("Error: No nodes returned from \"%s\"\n", selector);
         xmlXPathFreeContext(xpathCtx);
+        xmlXPathFreeObject(xpathObj);
         return NULL;
     }
 
@@ -227,13 +236,13 @@ int AtmosUtil_count_nodes(xmlDocPtr doc, xmlChar *selector, int use_cos_ns) {
     xpathNodeSet = xpathObj->nodesetval;
     if (!xpathNodeSet || xpathNodeSet->nodeNr == 0) {
         xmlXPathFreeContext(xpathCtx);
-        xmlXPathFreeNodeSet(xpathNodeSet);
+        xmlXPathFreeObject(xpathObj);
         return 0;
     }
     count = xpathNodeSet->nodeNr;
 
     /* Cleanup */
-    xmlXPathFreeNodeSetList(xpathObj);
+    xmlXPathFreeObject(xpathObj);
     xmlXPathFreeContext(xpathCtx);
 
     return count;
@@ -256,13 +265,13 @@ xmlChar *AtmosUtil_select_single_node_value(xmlDocPtr doc, xmlChar *selector,
     if (xpathNodeSet->nodeNr > 1) {
         fprintf(stderr, "Error: Multiple (%d) nodes returned from \"%s\"\n",
                 xpathNodeSet->nodeNr, selector);
-        xmlXPathFreeNodeSetList(xpathObj);
+        xmlXPathFreeObject(xpathObj);
         return NULL;
     }
     xmlNode = xpathNodeSet->nodeTab[0];
     value = xmlNodeGetContent(xmlNode);
 
-    xmlXPathFreeNodeSetList(xpathObj);
+    xmlXPathFreeObject(xpathObj);
     return value;
 }
 
@@ -450,7 +459,7 @@ void AtmosUtil_log(const char *level, const char *file, const int line,
 }
 
 int AtmosUtil_meta_char_check(const char *str) {
-    int len = strlen(str);
+    size_t len = strlen(str);
     int i;
 
     for (i = 0; i < len; i++) {
@@ -643,7 +652,7 @@ void AtmosUtil_set_system_meta_entry(AtmosSystemMetadata *system_meta,
     } else if (!strcmp(ATMOS_SYSTEM_META_MTIME, entry_name)) {
         system_meta->mtime = AtmosUtil_parse_xml_datetime(entry_value);
     } else if (!strcmp(ATMOS_SYSTEM_META_NLINK, entry_name)) {
-        system_meta->nlink = strtol(entry_value, NULL, 10);
+        system_meta->nlink = (int)strtol(entry_value, NULL, 10);
     } else if (!strcmp(ATMOS_SYSTEM_META_OBJECTID, entry_name)) {
         strlcpy(system_meta->object_id, entry_value, ATMOS_OID_LENGTH);
     } else if (!strcmp(ATMOS_SYSTEM_META_OBJNAME, entry_name)) {

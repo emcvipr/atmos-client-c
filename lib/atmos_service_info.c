@@ -52,7 +52,7 @@ void AtmosFilter_parse_service_info_response(RestFilter *self, RestClient *rest,
      * The document being in memory, it have no base per RFC 2396,
      * and the "noname.xml" argument will serve as its base.
      */
-    doc = xmlReadMemory(response->body, response->content_length,
+    doc = xmlReadMemory(response->body, (int)response->content_length,
             "noname.xml", NULL, 0);
     if (doc == NULL) {
         ATMOS_ERROR("Failed to parse error response: %s\n", response->body);

@@ -200,8 +200,7 @@ AtmosGetUserMetaRequest_init_ns(AtmosGetUserMetaRequest *self,
 
 void
 AtmosGetUserMetaRequest_destroy(AtmosGetUserMetaRequest *self) {
-    memset(((void*)self)+sizeof(RestRequest), 0,
-            sizeof(AtmosGetUserMetaRequest)-sizeof(RestRequest));
+    OBJECT_ZERO(self, AtmosGetUserMetaRequest, RestRequest);
     RestRequest_destroy((RestRequest*)self);
 }
 
@@ -458,7 +457,7 @@ AtmosGetObjectInfoResponse_parse(AtmosGetObjectInfoResponse *self,
      * The document being in memory, it have no base per RFC 2396,
      * and the "noname.xml" argument will serve as its base.
      */
-    doc = xmlReadMemory(xml, xml_size,
+    doc = xmlReadMemory(xml, (int)xml_size,
             "noname.xml", NULL, 0);
     if (doc == NULL) {
         ATMOS_ERROR("Failed to parse info response: %s\n", xml);
@@ -504,7 +503,7 @@ AtmosGetObjectInfoResponse_parse(AtmosGetObjectInfoResponse *self,
                     "//cos:replicas/cos:replica[%d]/cos:id", xpathIndex);
             value = AtmosUtil_select_single_node_value(doc, BAD_CAST xpathBuffer, 1);
             if(value) {
-                self->replicas[i].id = strtol((char*)value, NULL, 10);
+                self->replicas[i].id = (int)strtol((char*)value, NULL, 10);
                 xmlFree(value);
             }
 
@@ -545,7 +544,7 @@ AtmosGetObjectInfoResponse_parse(AtmosGetObjectInfoResponse *self,
             }
         }
 
-        xmlXPathFreeNodeSetList(xpathObj);
+        xmlXPathFreeObject(xpathObj);
     }
 
     // Retention Enabled
@@ -740,6 +739,7 @@ AtmosListDirectoryResponse_parse_meta(AtmosListDirectoryResponse *self,
                 ATMOS_WARN("No value found for %s\n", child->name);
             } else {
                 strncpy(name, (char*)xvalue, ATMOS_META_NAME_MAX);
+                xmlFree(xvalue);
             }
         } else if(!strcmp((char*)child->name, DIR_NODE_VALUE)) {
             xvalue = xmlNodeGetContent(child);
@@ -747,6 +747,7 @@ AtmosListDirectoryResponse_parse_meta(AtmosListDirectoryResponse *self,
                 ATMOS_WARN("No value found for %s\n", child->name);
             } else {
                 strncpy(value, (char*)xvalue, ATMOS_META_VALUE_MAX);
+                xmlFree(xvalue);
             }
         } else if(!strcmp((char*)child->name, DIR_NODE_LISTABLE)) {
             xvalue = xmlNodeGetContent(child);
@@ -758,6 +759,7 @@ AtmosListDirectoryResponse_parse_meta(AtmosListDirectoryResponse *self,
                 } else {
                     *listable = 0;
                 }
+                xmlFree(xvalue);
             }
         } else {
             ATMOS_WARN("Unknown node %s found inside %s\n", metadata->name,
@@ -884,6 +886,7 @@ AtmosListDirectoryResponse_parse_entry(AtmosListDirectoryResponse *self,
             } else {
                 strncpy(entry->object_id, (char*)value,
                         ATMOS_OID_LENGTH);
+                xmlFree(value);
             }
         } else if(!strcmp((char*)child->name, DIR_NODE_FILE_TYPE)) {
             value = xmlNodeGetContent(child);
@@ -897,6 +900,7 @@ AtmosListDirectoryResponse_parse_entry(AtmosListDirectoryResponse *self,
                 } else {
                     ATMOS_WARN("Unknown object type %s\n", (char*)value);
                 }
+                xmlFree(value);
             }
         } else if(!strcmp((char*)child->name, DIR_NODE_FILE_NAME)) {
             value = xmlNodeGetContent(child);
@@ -905,6 +909,7 @@ AtmosListDirectoryResponse_parse_entry(AtmosListDirectoryResponse *self,
             } else {
                 strncpy(entry->filename, (char*)value,
                         ATMOS_PATH_MAX);
+                xmlFree(value);
             }
         } else if(!strcmp((char*)child->name, DIR_NODE_SYSTEM_METADATA_LIST)) {
             AtmosListDirectoryResponse_parse_sysmeta(self, child, entry);
@@ -928,7 +933,7 @@ AtmosListDirectoryResponse_parse(AtmosListDirectoryResponse *self,
      * The document being in memory, it have no base per RFC 2396,
      * and the "noname.xml" argument will serve as its base.
      */
-    doc = xmlReadMemory(xml, xml_size,
+    doc = xmlReadMemory(xml, (int)xml_size,
             "noname.xml", NULL, 0);
     if (doc == NULL) {
         ATMOS_ERROR("Failed to parse info response: %s\n", xml);
@@ -955,7 +960,7 @@ AtmosListDirectoryResponse_parse(AtmosListDirectoryResponse *self,
     entrycount = xpathNodeSetDirectoryEntry->nodeNr;
     if(entrycount == 0) {
         // Empty directory
-        xmlXPathFreeNodeSetList(xpathObjDirectoryEntry);
+        xmlXPathFreeObject(xpathObjDirectoryEntry);
         xmlFreeDoc(doc);
         return;
     }
@@ -976,7 +981,7 @@ AtmosListDirectoryResponse_parse(AtmosListDirectoryResponse *self,
     }
 
     // Cleanup
-    xmlXPathFreeNodeSetList(xpathObjDirectoryEntry);
+    xmlXPathFreeObject(xpathObjDirectoryEntry);
     xmlFreeDoc(doc);
 }
 

@@ -225,7 +225,7 @@ xmlXPathObjectPtr AtmosUtil_select_nodes(xmlDocPtr doc, xmlChar *selector, int u
     }
     xpathNodeSet = xpathObj->nodesetval;
     if (!xpathNodeSet || xpathNodeSet->nodeNr == 0) {
-        ATMOS_ERROR("Error: No nodes returned from \"%s\"\n", selector);
+        //ATMOS_ERROR("Error: No nodes returned from \"%s\"\n", selector);
         xmlXPathFreeContext(xpathCtx);
         xmlXPathFreeObject(xpathObj);
         return NULL;

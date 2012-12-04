@@ -49,6 +49,7 @@
 #define ATMOS_HEADER_SYSTEM_TAGS "x-emc-system-tags"
 #define ATMOS_HEADER_LIMIT "x-emc-limit"
 #define ATMOS_HEADER_LISTABLE_TAGS "x-emc-listable-tags"
+#define ATMOS_HEADER_VERSION_OID "x-emc-version-oid"
 
 #define ATMOS_UID_MAX 255
 #define ATMOS_SECRET_MAX 64
@@ -102,6 +103,10 @@
 #define CLASS_ATMOS_OBJECT_METADATA "AtmosObjectMetadata"
 #define CLASS_ATMOS_OBJECT_LISTING "AtmosObjectListing"
 #define CLASS_ATMOS_LIST_OBJECTS_RESPONSE "AtmosListObjectsResponse"
+#define CLASS_ATMOS_CREATE_VERSION_REQUEST "AtmosCreateVersionRequest"
+#define CLASS_ATMOS_CREATE_VERSION_RESPONSE "AtmosCreateVersionResponse"
+#define CLASS_ATMOS_LIST_VERSIONS_REQUEST "AtmosListVersionsRequest"
+#define CLASS_ATMOS_LIST_VERSIONS_RESPONSE "AtmosListVersionsResponse"
 
 #define ATMOS_OID_LOCATION_PREFIX "/rest/objects/"
 #define ATMOS_OID_LOCATION_PREFIX_SIZE 14
@@ -136,6 +141,10 @@
 #define DIR_NODE_VALUE "Value"
 #define DIR_NODE_LISTABLE "Listable"
 
+// Used for parsing version listings
+#define VER_NODE_OID "OID"
+#define VER_NODE_VER_NUM "VerNum"
+#define VER_NODE_ITIME "itime"
 
 
 #endif /* ATMOS_CONSTANTS_H_ */

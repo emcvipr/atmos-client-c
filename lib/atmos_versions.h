@@ -85,10 +85,8 @@ AtmosCreateVersionResponse_destroy(AtmosCreateVersionResponse *self);
  */
 
 typedef struct {
-    RestRequest parent;
+    AtmosPaginatedRequest parent;
     char object_id[ATMOS_OID_LENGTH];
-    char token[ATMOS_OID_LENGTH];
-    int limit;
 } AtmosListVersionsRequest;
 
 AtmosListVersionsRequest*
@@ -106,9 +104,16 @@ AtmosListVersionsRequest_destroy(AtmosListVersionsRequest *self);
  * @{
  */
 typedef struct {
+    char object_id[ATMOS_OID_LENGTH];
+    int version_number;
+    time_t itime;
+} AtmosVersion;
+
+typedef struct {
     AtmosResponse parent;
     const char *token;
-    // TODO: TBD
+    AtmosVersion *versions;
+    int version_count;
 } AtmosListVersionsResponse;
 
 AtmosListVersionsResponse*

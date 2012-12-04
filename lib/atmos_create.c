@@ -136,9 +136,8 @@ void AtmosFilter_parse_create_response(RestFilter *self, RestClient *rest,
         return;
 
     }
-    strcpy(((AtmosCreateObjectResponse*)response)->object_id,
-            location+ATMOS_OID_LOCATION_PREFIX_SIZE);
-
+    strncpy(((AtmosCreateObjectResponse*)response)->object_id,
+            location+ATMOS_OID_LOCATION_PREFIX_SIZE, ATMOS_OID_LENGTH);
 }
 
 void AtmosFilter_set_create_headers(RestFilter *self, RestClient *rest,

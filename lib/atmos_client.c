@@ -808,3 +808,84 @@ AtmosClient_list_objects(AtmosClient *self, AtmosListObjectsRequest *request,
 }
 
 
+void
+AtmosClient_create_version(AtmosClient *self, const char *object_id,
+        AtmosCreateVersionResponse *response) {
+    AtmosCreateVersionRequest request;
+    RestFilter *chain = NULL;
+
+    AtmosCreateVersionRequest_init(&request, object_id);
+
+    chain = AtmosClient_add_default_filters(self, chain);
+    chain = RestFilter_add(chain, AtmosFilter_parse_create_version_response);
+
+    RestClient_execute_request((RestClient*)self, chain,
+            (RestRequest*)&request, (RestResponse*)response);
+
+    AtmosCreateVersionRequest_destroy(&request);
+
+    RestFilter_free(chain);
+}
+
+void
+AtmosClient_list_versions(AtmosClient *self, AtmosListVersionsRequest *request,
+        AtmosListVersionsResponse *response) {
+    RestFilter *chain = NULL;
+
+    chain = AtmosClient_add_default_filters(self, chain);
+    chain = RestFilter_add(chain, AtmosFilter_list_versions);
+    chain = RestFilter_add(chain, AtmosFilter_set_pagination_headers);
+
+    RestClient_execute_request((RestClient*)self, chain,
+            (RestRequest*)request, (RestResponse*)response);
+
+    RestFilter_free(chain);
+}
+
+void
+AtmosClient_delete_version(AtmosClient *self, const char *version_id,
+        RestResponse *response) {
+    char uri[ATMOS_PATH_MAX];
+    RestRequest request;
+    RestFilter *chain = NULL;
+
+    snprintf(uri, ATMOS_PATH_MAX, "/rest/objects/%s?versions", version_id);
+    RestRequest_init(&request, uri, HTTP_DELETE);
+
+    chain = AtmosClient_add_default_filters(self, chain);
+
+    RestClient_execute_request((RestClient*)self, chain,
+            &request, response);
+
+    RestFilter_free(chain);
+    RestRequest_destroy(&request);
+}
+
+void
+AtmosClient_restore_version(AtmosClient *self, const char *object_id,
+        const char *version_id, RestResponse *response) {
+    char uri[ATMOS_PATH_MAX];
+    char vid_header[ATMOS_SIMPLE_HEADER_MAX];
+
+    RestRequest request;
+    RestFilter *chain = NULL;
+
+    snprintf(uri, ATMOS_PATH_MAX, "/rest/objects/%s?versions", object_id);
+    RestRequest_init(&request, uri, HTTP_PUT);
+
+    snprintf(vid_header, ATMOS_SIMPLE_HEADER_MAX,
+            ATMOS_HEADER_VERSION_OID ": %s", version_id);
+    RestRequest_add_header(&request, vid_header);
+
+    // Since this is a PUT with no body, curl gets a bit confused if we don't
+    // give it something to read.
+    RestRequest_set_array_body(&request, "", 0, "application/octet-stream");
+
+    chain = AtmosClient_add_default_filters(self, chain);
+
+    RestClient_execute_request((RestClient*)self, chain,
+            &request, response);
+
+    RestFilter_free(chain);
+    RestRequest_destroy(&request);
+}

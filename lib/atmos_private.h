@@ -297,4 +297,35 @@ void AtmosFilter_list_objects(RestFilter *self, RestClient *rest,
         RestRequest *request, RestResponse *response);
 
 
+// List versions
+/**
+ * Parses an XML response and populates the AtmosListVersionsResponse.
+ * @param self the AtmosListVersionsResponse to populate
+ * @param xml the XML document to parse
+ * @param xml_size number of bytes in the XML document.
+ */
+void
+AtmosListVersionsResponse_parse(AtmosListVersionsResponse *self,
+        const char *xml, size_t xml_size);
+/**
+ * Processes request and response for list versions
+ * @param self the current filter element in the chain.
+ * @param rest the RestClient executing the request.
+ * @param request the RestRequest to execute.
+ * @param response the RestResponse receiving the response.
+ */
+void AtmosFilter_list_versions(RestFilter *self, RestClient *rest,
+        RestRequest *request, RestResponse *response);
+
+/**
+ * Processes response for create version
+ * @param self the current filter element in the chain.
+ * @param rest the RestClient executing the request.
+ * @param request the RestRequest to execute.
+ * @param response the RestResponse receiving the response.
+ */
+void AtmosFilter_parse_create_version_response(RestFilter *self,
+        RestClient *rest, RestRequest *request, RestResponse *response);
+
+
 #endif /* ATMOS_PRIVATE_H_ */

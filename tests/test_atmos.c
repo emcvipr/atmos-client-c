@@ -2450,8 +2450,8 @@ void test_get_object_info() {
     AtmosCreateObjectResponse response;
     RestResponse delete_response;
     AtmosGetObjectInfoResponse info_response;
-    AtmosSetUserMetaRequest set_request;
-    AtmosResponse set_response;
+//    AtmosSetUserMetaRequest set_request;
+//    AtmosResponse set_response;
     int i;
 
     get_atmos_client(&atmos);
@@ -2485,28 +2485,30 @@ void test_get_object_info() {
     assert_true(strlen(info_response.selection) > 0);
     AtmosGetObjectInfoResponse_destroy(&info_response);
 
-    // Manually enable expiraton on the object to check those
-    // features.
-    AtmosSetUserMetaRequest_init(&set_request, response.object_id);
-    AtmosSetUserMetaRequest_add_metadata(&set_request,
-            "user.maui.expirationEnable", "true", 0);
-    AtmosSetUserMetaRequest_add_metadata(&set_request,
-            "user.maui.expirationEnd", "2040-01-01T00:00:01Z", 0);
-    AtmosResponse_init(&set_response);
-    AtmosClient_set_user_meta(&atmos, &set_request, &set_response);
-    check_error(&set_response);
-    assert_int_equal(200, set_response.parent.http_code);
-    AtmosResponse_destroy(&set_response);
-    AtmosSetUserMetaRequest_destroy(&set_request);
+    // Expiration must be enabled by policy first before you can modify it.
 
-    // Get info again and check expiration/retention
-    AtmosGetObjectInfoResponse_init(&info_response);
-    AtmosClient_get_object_info(&atmos, response.object_id, &info_response);
-    check_error((AtmosResponse*)&info_response);
-    assert_int_equal(200, info_response.parent.parent.http_code);
-    assert_int_equal(1, info_response.expiration_enabled);
-    assert_int64t_equal(2208988801, info_response.expiration_end);
-    AtmosGetObjectInfoResponse_destroy(&info_response);
+//    // Manually enable expiraton on the object to check those
+//    // features.
+//    AtmosSetUserMetaRequest_init(&set_request, response.object_id);
+//    AtmosSetUserMetaRequest_add_metadata(&set_request,
+//            "user.maui.expirationEnable", "true", 0);
+//    AtmosSetUserMetaRequest_add_metadata(&set_request,
+//            "user.maui.expirationEnd", "2040-01-01T00:00:01Z", 0);
+//    AtmosResponse_init(&set_response);
+//    AtmosClient_set_user_meta(&atmos, &set_request, &set_response);
+//    check_error(&set_response);
+//    assert_int_equal(200, set_response.parent.http_code);
+//    AtmosResponse_destroy(&set_response);
+//    AtmosSetUserMetaRequest_destroy(&set_request);
+//
+//    // Get info again and check expiration/retention
+//    AtmosGetObjectInfoResponse_init(&info_response);
+//    AtmosClient_get_object_info(&atmos, response.object_id, &info_response);
+//    check_error((AtmosResponse*)&info_response);
+//    assert_int_equal(200, info_response.parent.parent.http_code);
+//    assert_int_equal(1, info_response.expiration_enabled);
+//    assert_int64t_equal(2208988801, info_response.expiration_end);
+//    AtmosGetObjectInfoResponse_destroy(&info_response);
 
 
     // Cleanup
@@ -2525,8 +2527,8 @@ void test_get_object_info_ns() {
     AtmosCreateObjectResponse response;
     RestResponse delete_response;
     AtmosGetObjectInfoResponse info_response;
-    AtmosSetUserMetaRequest set_request;
-    AtmosResponse set_response;
+//    AtmosSetUserMetaRequest set_request;
+//    AtmosResponse set_response;
     int i;
     char path[ATMOS_PATH_MAX];
     char randfile[9];
@@ -2566,28 +2568,30 @@ void test_get_object_info_ns() {
     assert_true(strlen(info_response.selection) > 0);
     AtmosGetObjectInfoResponse_destroy(&info_response);
 
-    // Manually enable expiraton on the object to check those
-    // features.
-    AtmosSetUserMetaRequest_init_ns(&set_request, path);
-    AtmosSetUserMetaRequest_add_metadata(&set_request,
-            "user.maui.expirationEnable", "true", 0);
-    AtmosSetUserMetaRequest_add_metadata(&set_request,
-            "user.maui.expirationEnd", "2040-01-01T00:00:01Z", 0);
-    AtmosResponse_init(&set_response);
-    AtmosClient_set_user_meta(&atmos, &set_request, &set_response);
-    check_error(&set_response);
-    assert_int_equal(200, set_response.parent.http_code);
-    AtmosResponse_destroy(&set_response);
-    AtmosSetUserMetaRequest_destroy(&set_request);
+    // Expiration must be enabled by policy first before you can modify it.
 
-    // Get info again and check expiration/retention
-    AtmosGetObjectInfoResponse_init(&info_response);
-    AtmosClient_get_object_info_ns(&atmos, path, &info_response);
-    check_error((AtmosResponse*)&info_response);
-    assert_int_equal(200, info_response.parent.parent.http_code);
-    assert_int_equal(1, info_response.expiration_enabled);
-    assert_int64t_equal(2208988801, info_response.expiration_end);
-    AtmosGetObjectInfoResponse_destroy(&info_response);
+//    // Manually enable expiraton on the object to check those
+//    // features.
+//    AtmosSetUserMetaRequest_init_ns(&set_request, path);
+//    AtmosSetUserMetaRequest_add_metadata(&set_request,
+//            "user.maui.expirationEnable", "true", 0);
+//    AtmosSetUserMetaRequest_add_metadata(&set_request,
+//            "user.maui.expirationEnd", "2040-01-01T00:00:01Z", 0);
+//    AtmosResponse_init(&set_response);
+//    AtmosClient_set_user_meta(&atmos, &set_request, &set_response);
+//    check_error(&set_response);
+//    assert_int_equal(200, set_response.parent.http_code);
+//    AtmosResponse_destroy(&set_response);
+//    AtmosSetUserMetaRequest_destroy(&set_request);
+//
+//    // Get info again and check expiration/retention
+//    AtmosGetObjectInfoResponse_init(&info_response);
+//    AtmosClient_get_object_info_ns(&atmos, path, &info_response);
+//    check_error((AtmosResponse*)&info_response);
+//    assert_int_equal(200, info_response.parent.parent.http_code);
+//    assert_int_equal(1, info_response.expiration_enabled);
+//    assert_int64t_equal(2208988801, info_response.expiration_end);
+//    AtmosGetObjectInfoResponse_destroy(&info_response);
 
 
     // Cleanup
@@ -3351,6 +3355,326 @@ void test_list_objects() {
 
 }
 
+void test_create_version() {
+    AtmosClient atmos;
+    AtmosCreateObjectResponse response;
+    AtmosCreateVersionResponse create_version_response;
+    AtmosReadObjectResponse read_response;
+    RestResponse delete_response;
+    RestResponse delete_version_response;
+    char vid[ATMOS_OID_LENGTH];
+
+    get_atmos_client(&atmos);
+    AtmosCreateObjectResponse_init(&response);
+
+    AtmosClient_create_object_simple(&atmos, "test", 4, "text/plain", &response);
+    check_error((AtmosResponse*)&response);
+    assert_int_equal(201, response.parent.parent.http_code);
+    assert_true(strlen(response.object_id) > 0);
+
+    printf("Created object: %s\n", response.object_id);
+
+    // Create a version
+    AtmosCreateVersionResponse_init(&create_version_response);
+    AtmosClient_create_version(&atmos, response.object_id,
+            &create_version_response);
+    check_error((AtmosResponse*)&create_version_response);
+    assert_int_equal(201, create_version_response.parent.parent.http_code);
+    strncpy(vid, create_version_response.version_id, ATMOS_OID_LENGTH);
+    AtmosCreateVersionResponse_destroy(&create_version_response);
+
+    // Read back the version
+    AtmosReadObjectResponse_init(&read_response);
+    AtmosClient_read_object_simple(&atmos, vid, &read_response);
+    check_error((AtmosResponse*)&read_response);
+    assert_int_equal(200, read_response.parent.parent.http_code);
+    assert_string_equal("test", read_response.parent.parent.body);
+    AtmosReadObjectResponse_destroy(&read_response);
+
+    // Cleanup
+    RestResponse_init(&delete_version_response);
+    AtmosClient_delete_version(&atmos, vid, &delete_version_response);
+    assert_int_equal(204, delete_version_response.http_code);
+    RestResponse_destroy(&delete_version_response);
+
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_object(&atmos, response.object_id, &delete_response);
+    assert_int_equal(204, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    AtmosCreateObjectResponse_destroy(&response);
+    AtmosClient_destroy(&atmos);
+}
+
+
+void test_delete_version() {
+    AtmosClient atmos;
+    AtmosCreateObjectResponse response;
+    AtmosCreateVersionResponse create_version_response;
+    RestResponse delete_response;
+    RestResponse delete_version_response;
+    char vid[ATMOS_OID_LENGTH];
+
+    get_atmos_client(&atmos);
+    AtmosCreateObjectResponse_init(&response);
+
+    AtmosClient_create_object_simple(&atmos, "test", 4, "text/plain", &response);
+    check_error((AtmosResponse*)&response);
+    assert_int_equal(201, response.parent.parent.http_code);
+    assert_true(strlen(response.object_id) > 0);
+
+    printf("Created object: %s\n", response.object_id);
+
+    // Create a version
+    AtmosCreateVersionResponse_init(&create_version_response);
+    AtmosClient_create_version(&atmos, response.object_id,
+            &create_version_response);
+    check_error((AtmosResponse*)&create_version_response);
+    assert_int_equal(201, create_version_response.parent.parent.http_code);
+    strncpy(vid, create_version_response.version_id, ATMOS_OID_LENGTH);
+    AtmosCreateVersionResponse_destroy(&create_version_response);
+
+    // Delete twice -- the 2nd delete should return 404.
+    RestResponse_init(&delete_version_response);
+    AtmosClient_delete_version(&atmos, vid, &delete_version_response);
+    assert_int_equal(204, delete_version_response.http_code);
+    RestResponse_destroy(&delete_version_response);
+
+    RestResponse_init(&delete_version_response);
+    AtmosClient_delete_version(&atmos, vid, &delete_version_response);
+    assert_int_equal(404, delete_version_response.http_code);
+    RestResponse_destroy(&delete_version_response);
+
+    // Cleanup original object
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_object(&atmos, response.object_id, &delete_response);
+    assert_int_equal(204, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    AtmosCreateObjectResponse_destroy(&response);
+    AtmosClient_destroy(&atmos);
+}
+
+void test_restore_version() {
+    AtmosClient atmos;
+    AtmosCreateObjectResponse response;
+    AtmosCreateVersionResponse create_version_response;
+    AtmosReadObjectResponse read_response;
+    RestResponse delete_response;
+    RestResponse delete_version_response;
+    RestResponse update_response;
+    RestResponse restore_response;
+    char vid[ATMOS_OID_LENGTH];
+
+    get_atmos_client(&atmos);
+    AtmosCreateObjectResponse_init(&response);
+
+    AtmosClient_create_object_simple(&atmos, "test", 4,
+            "text/plain; charset=utf-8", &response);
+    check_error((AtmosResponse*)&response);
+    assert_int_equal(201, response.parent.parent.http_code);
+    assert_true(strlen(response.object_id) > 0);
+
+    printf("Created object: %s\n", response.object_id);
+
+    // Create a version
+    AtmosCreateVersionResponse_init(&create_version_response);
+    AtmosClient_create_version(&atmos, response.object_id,
+            &create_version_response);
+    check_error((AtmosResponse*)&create_version_response);
+    assert_int_equal(201, create_version_response.parent.parent.http_code);
+    strncpy(vid, create_version_response.version_id, ATMOS_OID_LENGTH);
+    AtmosCreateVersionResponse_destroy(&create_version_response);
+
+    // Update the original object
+    RestResponse_init(&update_response);
+    AtmosClient_update_object_simple(&atmos, response.object_id,
+            "Updated Content", 15, "text/plain; charset=iso-8859-1",
+            &update_response);
+    assert_int_equal(200, update_response.http_code);
+    RestResponse_destroy(&update_response);
+
+    // Read back the original
+    AtmosReadObjectResponse_init(&read_response);
+    AtmosClient_read_object_simple(&atmos, response.object_id, &read_response);
+    check_error((AtmosResponse*)&read_response);
+    assert_int_equal(200, read_response.parent.parent.http_code);
+    assert_string_equal("Updated Content", read_response.parent.parent.body);
+    assert_string_equal("text/plain; charset=iso-8859-1",
+            read_response.parent.parent.content_type);
+    AtmosReadObjectResponse_destroy(&read_response);
+
+    // Restore the version
+    RestResponse_init(&restore_response);
+    AtmosClient_restore_version(&atmos, response.object_id, vid,
+            &restore_response);
+    assert_int_equal(200, restore_response.http_code);
+    RestResponse_destroy(&restore_response);
+
+    // Read back the original after the restore.
+    AtmosReadObjectResponse_init(&read_response);
+    AtmosClient_read_object_simple(&atmos, response.object_id, &read_response);
+    check_error((AtmosResponse*)&read_response);
+    assert_int_equal(200, read_response.parent.parent.http_code);
+    assert_string_equal("test", read_response.parent.parent.body);
+    assert_string_equal("text/plain; charset=utf-8",
+            read_response.parent.parent.content_type);
+    AtmosReadObjectResponse_destroy(&read_response);
+
+    // Cleanup
+    RestResponse_init(&delete_version_response);
+    AtmosClient_delete_version(&atmos, vid, &delete_version_response);
+    assert_int_equal(204, delete_version_response.http_code);
+    RestResponse_destroy(&delete_version_response);
+
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_object(&atmos, response.object_id, &delete_response);
+    assert_int_equal(204, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    AtmosCreateObjectResponse_destroy(&response);
+    AtmosClient_destroy(&atmos);
+}
+
+AtmosVersion*
+find_version_in_list(const char *vid, AtmosVersion *list, int list_size) {
+    int i;
+
+    for(i=0; i<list_size; i++) {
+        if(!strcmp(vid, list[i].object_id)) {
+            return &list[i];
+        }
+    }
+
+    return NULL;
+}
+
+void test_list_versions() {
+    AtmosClient atmos;
+    AtmosCreateObjectResponse response;
+    AtmosCreateVersionResponse create_version_response;
+    RestResponse delete_response;
+    RestResponse delete_version_response;
+    AtmosListVersionsRequest list_request;
+    AtmosListVersionsResponse list_response;
+    char vid1[ATMOS_OID_LENGTH];
+    char vid2[ATMOS_OID_LENGTH];
+    char token[ATMOS_TOKEN_MAX];
+    int vid1_found;
+    int vid2_found;
+    int pagecount;
+    AtmosVersion *v;
+
+    get_atmos_client(&atmos);
+    AtmosCreateObjectResponse_init(&response);
+
+    AtmosClient_create_object_simple(&atmos, "test", 4, "text/plain", &response);
+    check_error((AtmosResponse*)&response);
+    assert_int_equal(201, response.parent.parent.http_code);
+    assert_true(strlen(response.object_id) > 0);
+
+    printf("Created object: %s\n", response.object_id);
+
+    // Create two versions
+    AtmosCreateVersionResponse_init(&create_version_response);
+    AtmosClient_create_version(&atmos, response.object_id,
+            &create_version_response);
+    check_error((AtmosResponse*)&create_version_response);
+    assert_int_equal(201, create_version_response.parent.parent.http_code);
+    strncpy(vid1, create_version_response.version_id, ATMOS_OID_LENGTH);
+    AtmosCreateVersionResponse_destroy(&create_version_response);
+
+    AtmosCreateVersionResponse_init(&create_version_response);
+    AtmosClient_create_version(&atmos, response.object_id,
+            &create_version_response);
+    check_error((AtmosResponse*)&create_version_response);
+    assert_int_equal(201, create_version_response.parent.parent.http_code);
+    strncpy(vid2, create_version_response.version_id, ATMOS_OID_LENGTH);
+    AtmosCreateVersionResponse_destroy(&create_version_response);
+
+    // List objects
+    AtmosListVersionsRequest_init(&list_request, response.object_id);
+    AtmosListVersionsResponse_init(&list_response);
+    AtmosClient_list_versions(&atmos, &list_request, &list_response);
+    check_error((AtmosResponse*)&list_response);
+    assert_int_equal(200, list_response.parent.parent.http_code);
+    assert_int_equal(2, list_response.version_count);
+    v = find_version_in_list(vid1, list_response.versions,
+            list_response.version_count);
+    assert_true(v != NULL);
+    if(v) {
+        assert_int_equal(0, v->version_number);
+        assert_true(0 < v->itime);
+    }
+    v = find_version_in_list(vid2, list_response.versions,
+            list_response.version_count);
+    assert_true(v != NULL);
+    if(v) {
+        assert_int_equal(1, v->version_number);
+        assert_true(0 < v->itime);
+    }
+    AtmosListVersionsRequest_destroy(&list_request);
+    AtmosListVersionsResponse_destroy(&list_response);
+
+    // Test pagination
+    vid1_found = 0;
+    vid2_found = 0;
+    *token = 0;
+    pagecount = 0;
+    do {
+        AtmosListVersionsRequest_init(&list_request, response.object_id);
+        AtmosListVersionsResponse_init(&list_response);
+        list_request.parent.limit = 1;
+        if(*token) {
+            strncpy(list_request.parent.token, token, ATMOS_TOKEN_MAX);
+        }
+        AtmosClient_list_versions(&atmos, &list_request, &list_response);
+        check_error((AtmosResponse*)&list_response);
+        assert_int_equal(200, list_response.parent.parent.http_code);
+
+        if(list_response.token) {
+            strncpy(token, list_response.token, ATMOS_TOKEN_MAX);
+        } else {
+            *token = 0;
+        }
+
+        pagecount++;
+        if(find_version_in_list(vid1, list_response.versions,
+            list_response.version_count)) {
+            vid1_found++;
+        }
+        if(find_version_in_list(vid2, list_response.versions,
+            list_response.version_count)) {
+            vid2_found++;
+        }
+
+        AtmosListVersionsRequest_destroy(&list_request);
+        AtmosListVersionsResponse_destroy(&list_response);
+    } while(*token);
+
+    assert_int_equal(3, pagecount);
+    assert_int_equal(1, vid1_found);
+    assert_int_equal(1, vid2_found);
+
+    // Cleanup
+    RestResponse_init(&delete_version_response);
+    AtmosClient_delete_version(&atmos, vid1, &delete_version_response);
+    assert_int_equal(204, delete_version_response.http_code);
+    RestResponse_destroy(&delete_version_response);
+
+    RestResponse_init(&delete_version_response);
+    AtmosClient_delete_version(&atmos, vid2, &delete_version_response);
+    assert_int_equal(204, delete_version_response.http_code);
+    RestResponse_destroy(&delete_version_response);
+
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_object(&atmos, response.object_id, &delete_response);
+    assert_int_equal(204, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    AtmosCreateObjectResponse_destroy(&response);
+    AtmosClient_destroy(&atmos);
+}
 
 void test_atmos_suite() {
     char proxy_port_str[32];
@@ -3590,6 +3914,17 @@ void test_atmos_suite() {
     start_test_msg("test_list_objects");
     run_test(test_list_objects);
 
+    start_test_msg("test_create_version");
+    run_test(test_create_version);
+
+    start_test_msg("test_delete_version");
+    run_test(test_delete_version);
+
+    start_test_msg("test_restore_version");
+    run_test(test_restore_version);
+
+    start_test_msg("test_list_versions");
+    run_test(test_list_versions);
 
     test_fixture_end();
 

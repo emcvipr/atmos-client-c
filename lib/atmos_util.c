@@ -44,6 +44,44 @@ char *AtmosUtil_cstring_append(char *buf, size_t *bufsz, const char *str) {
     return buf;
 }
 
+char *AtmosUtil_cstring_append_utf8(char *buf, size_t *bufsz,
+        const char *str, CURL *curl) {
+    size_t strsz = strlen(str);
+    size_t bufpos = 0;
+    char *buf2;
+    char *encoded;
+
+    encoded = curl_easy_escape(curl, str, strsz);
+    if(!encoded) {
+        ATMOS_ERROR("Failed to encode value: %s\n", str);
+        return buf;
+    }
+    strsz = strlen(encoded);
+
+    if (buf != NULL) {
+        bufpos = strlen(buf);
+    }
+
+    if (buf == NULL || bufpos + strsz + 1 > *bufsz) {
+        size_t newsize = *bufsz + strsz + 256;
+        buf2 = realloc(buf, newsize);
+        if(!buf2) {
+            ATMOS_ERROR("Could not reallocate %ld bytes", newsize);
+            curl_free(encoded);
+            return buf;
+        } else {
+            buf = buf2;
+        }
+        *bufsz = newsize;
+    }
+
+    strcpy(buf + bufpos, encoded);
+    buf[bufpos + strsz] = 0;
+    curl_free(encoded);
+
+    return buf;
+}
+
 void AtmosUtil_get_date(char *formated_time) {
     //strftime adds a leading 0 to the day...
     time_t t = time(NULL);
@@ -822,10 +860,12 @@ AtmosUtil_get_acl_permission(AtmosAclEntry *acl, int acl_count,
 
 void
 AtmosUtil_set_tags_header(RestRequest *request,
-        char tags[][ATMOS_META_NAME_MAX], int tag_count) {
+        char tags[][ATMOS_META_NAME_MAX], int tag_count, int utf8) {
     char *header = NULL;
     size_t header_size = 0;
     int i;
+    CURL *curl = NULL;
+    char *encoded_tag;
 
     if(tags == NULL || tag_count < 1) {
         return;
@@ -838,20 +878,40 @@ AtmosUtil_set_tags_header(RestRequest *request,
         if(i>0) {
             header = AtmosUtil_cstring_append(header, &header_size, ", ");
         }
-        header = AtmosUtil_cstring_append(header, &header_size, tags[i]);
+        if(utf8) {
+            if(!curl) {
+                curl = curl_easy_init();
+            }
+            // Need to encode the tag name in case it's UTF-8.
+            encoded_tag = curl_easy_escape(curl, tags[i], strlen(tags[i]));
+            if(!encoded_tag) {
+                ATMOS_ERROR("Unable to encode tag %s\n", tags[i]);
+                continue;
+            }
+            header = AtmosUtil_cstring_append(header, &header_size, encoded_tag);
+            curl_free(encoded_tag);
+        } else {
+            header = AtmosUtil_cstring_append(header, &header_size, tags[i]);
+        }
     }
 
     RestRequest_add_header(request, header);
+
+    if(curl) {
+        curl_easy_cleanup(curl);
+    }
 
     free(header);
 }
 
 void
 AtmosUtil_set_tags_header2(RestRequest *request,
-        const char const **tags, int tag_count) {
+        const char const **tags, int tag_count, int utf8) {
     char *header = NULL;
     size_t header_size = 0;
     int i;
+    CURL *curl = NULL;
+    char *encoded_tag;
 
     if(tags==NULL || tag_count < 1) {
         return;
@@ -864,11 +924,73 @@ AtmosUtil_set_tags_header2(RestRequest *request,
         if(i>0) {
             header = AtmosUtil_cstring_append(header, &header_size, ", ");
         }
-        header = AtmosUtil_cstring_append(header, &header_size, tags[i]);
+        if(utf8) {
+            if(!curl) {
+                curl = curl_easy_init();
+            }
+            // Need to encode the tag name in case it's UTF-8.
+            encoded_tag = curl_easy_escape(curl, tags[i], strlen(tags[i]));
+            if(!encoded_tag) {
+                ATMOS_ERROR("Unable to encode tag %s\n", tags[i]);
+                continue;
+            }
+            header = AtmosUtil_cstring_append(header, &header_size, encoded_tag);
+            curl_free(encoded_tag);
+        } else {
+            header = AtmosUtil_cstring_append(header, &header_size, tags[i]);
+        }
     }
 
     RestRequest_add_header(request, header);
 
+    if(curl) {
+        curl_easy_cleanup(curl);
+    }
+
     free(header);
+}
+
+void
+AtmosUtil_parse_meta(xmlNode *metadata, char *name, char *value, int *listable) {
+    xmlNode *child;
+    xmlChar *xvalue;
+
+    for(child = metadata->children; child; child=child->next) {
+        if(child->type != XML_ELEMENT_NODE) {
+            continue;
+        }
+        if(!strcmp((char*)child->name, DIR_NODE_NAME)) {
+            xvalue = xmlNodeGetContent(child);
+            if(!xvalue) {
+                ATMOS_WARN("No value found for %s\n", child->name);
+            } else {
+                strncpy(name, (char*)xvalue, ATMOS_META_NAME_MAX);
+                xmlFree(xvalue);
+            }
+        } else if(!strcmp((char*)child->name, DIR_NODE_VALUE)) {
+            xvalue = xmlNodeGetContent(child);
+            if(!xvalue) {
+                ATMOS_WARN("No value found for %s\n", child->name);
+            } else {
+                strncpy(value, (char*)xvalue, ATMOS_META_VALUE_MAX);
+                xmlFree(xvalue);
+            }
+        } else if(!strcmp((char*)child->name, DIR_NODE_LISTABLE)) {
+            xvalue = xmlNodeGetContent(child);
+            if(!xvalue) {
+                ATMOS_WARN("No value found for %s\n", child->name);
+            } else {
+                if(!strcmp("true", (char*)xvalue)) {
+                    *listable = 1;
+                } else {
+                    *listable = 0;
+                }
+                xmlFree(xvalue);
+            }
+        } else {
+            ATMOS_WARN("Unknown node %s found inside %s\n", metadata->name,
+                    child->name);
+        }
+    }
 }
 

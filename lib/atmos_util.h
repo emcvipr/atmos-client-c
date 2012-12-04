@@ -22,12 +22,20 @@ char *AtmosUtil_HMACSHA1(const char *hash_string, const char *key,
         size_t key_len);
 int AtmosUtil_cstring_cmp(const void *a, const void *b);
 char *AtmosUtil_cstring_append(char *buf, size_t *bufsz, const char *str);
+char *
+AtmosUtil_cstring_append_utf8(char *buf, size_t *bufsz,
+        const char *str, CURL *curl);
+
 void AtmosUtil_normalize_whitespace(char *header);
 void AtmosUtil_set_metadata_header(AtmosMetadata *meta, int meta_count,
         int listable, int utf8, RestRequest *request);
 void AtmosUtil_set_acl_header(AtmosAclEntry *acl, int acl_count,
         RestRequest *request);
 int AtmosUtil_meta_char_check(const char *str);
+
+void AtmosUtil_parse_meta(xmlNode *metadata, char *name, char *value,
+        int *listable);
+
 
 xmlXPathObjectPtr AtmosUtil_select_nodes(xmlDocPtr doc, xmlChar *selector, int use_cos_ns);
 
@@ -69,11 +77,11 @@ AtmosUtil_get_acl_permission(AtmosAclEntry *acl, int acl_count,
 
 void
 AtmosUtil_set_tags_header(RestRequest *request,
-        char tags[][ATMOS_META_NAME_MAX], int tag_count);
+        char tags[][ATMOS_META_NAME_MAX], int tag_count, int utf8);
 
 void
 AtmosUtil_set_tags_header2(RestRequest *request,
-        const char const **tags, int tag_count);
+        const char const **tags, int tag_count, int utf8);
 
 // Debugging
 void

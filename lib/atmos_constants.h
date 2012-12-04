@@ -48,6 +48,7 @@
 #define ATMOS_HEADER_USER_TAGS "x-emc-user-tags"
 #define ATMOS_HEADER_SYSTEM_TAGS "x-emc-system-tags"
 #define ATMOS_HEADER_LIMIT "x-emc-limit"
+#define ATMOS_HEADER_LISTABLE_TAGS "x-emc-listable-tags"
 
 #define ATMOS_UID_MAX 255
 #define ATMOS_SECRET_MAX 64
@@ -59,6 +60,7 @@
 #define ATMOS_SYSTEM_META_COUNT_MAX 20
 #define ATMOS_ACL_COUNT_MAX 64
 #define ATMOS_CHECKSUM_MAX 128
+#define ATMOS_TOKEN_MAX 1024
 
 // e.g. 4d773b6ca10574f404d773bd3bedfc04d776693243b8
 #define ATMOS_OID_LENGTH 45 // 44+1
@@ -94,6 +96,12 @@
 #define CLASS_ATMOS_LIST_DIRECTORY_RESPONSE "AtmosListDirectoryResponse"
 #define CLASS_ATMOS_DIRECTORY_ENTRY "AtmosDirectoryEntry"
 #define CLASS_ATMOS_LIST_DIRECTORY_REQUEST "AtmosListDirectoryRequest"
+#define CLASS_ATMOS_GET_LISTABLE_TAGS_REQUEST "AtmosGetListableTagsRequest"
+#define CLASS_ATMOS_GET_LISTABLE_TAGS_RESPONSE "AtmosGetListableTagsResponse"
+#define CLASS_ATMOS_PAGINATED_REQUEST "AtmosPaginatedRequest"
+#define CLASS_ATMOS_OBJECT_METADATA "AtmosObjectMetadata"
+#define CLASS_ATMOS_OBJECT_LISTING "AtmosObjectListing"
+#define CLASS_ATMOS_LIST_OBJECTS_RESPONSE "AtmosListObjectsResponse"
 
 #define ATMOS_OID_LOCATION_PREFIX "/rest/objects/"
 #define ATMOS_OID_LOCATION_PREFIX_SIZE 14

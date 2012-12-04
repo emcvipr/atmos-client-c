@@ -93,6 +93,18 @@ void AtmosFilter_sign_request(RestFilter *self, RestClient *rest,
 void AtmosFilter_parse_atmos_error(RestFilter *self, RestClient *rest,
         RestRequest *request, RestResponse *response);
 
+/**
+ * Request filter for paginated requests.  Sets the limit and token headers
+ * if required.  Request should be a sublass of AtmosPaginatedRequest
+ * @param self the current filter element in the chain.
+ * @param rest the RestClient executing the request.
+ * @param request the RestRequest to execute.
+ * @param response the RestResponse receiving the response.
+ */
+void AtmosFilter_set_pagination_headers(RestFilter *self, RestClient *rest,
+        RestRequest *request, RestResponse *response);
+
+
 // Special filters for Create Object (in atmos_create.c)
 /**
  * Parses the AtmosCreateObjectResponse from the RestResponse.
@@ -252,7 +264,37 @@ void
 AtmosListDirectoryResponse_parse(AtmosListDirectoryResponse *self,
         const char *xml, size_t xml_size);
 
+/**
+ * Parses an XML response and populates the AtmosListObjectsResponse.
+ * @param self the AtmosListObjectsResponse to populate
+ * @param xml the XML document to parse
+ * @param xml_size number of bytes in the XML document.
+ */
+void
+AtmosListObjectsResponse_parse(AtmosListObjectsResponse *self,
+        const char *xml, size_t xml_size);
 
+// Get listable tags filter
+/**
+ * Processes request and response for list directory
+ * @param self the current filter element in the chain.
+ * @param rest the RestClient executing the request.
+ * @param request the RestRequest to execute.
+ * @param response the RestResponse receiving the response.
+ */
+void AtmosFilter_get_listable_tags(RestFilter *self, RestClient *rest,
+        RestRequest *request, RestResponse *response);
+
+// List objects filter
+/**
+ * Processes request and response for list objects
+ * @param self the current filter element in the chain.
+ * @param rest the RestClient executing the request.
+ * @param request the RestRequest to execute.
+ * @param response the RestResponse receiving the response.
+ */
+void AtmosFilter_list_objects(RestFilter *self, RestClient *rest,
+        RestRequest *request, RestResponse *response);
 
 
 #endif /* ATMOS_PRIVATE_H_ */

@@ -511,34 +511,113 @@ AtmosGetObjectInfoResponse_destroy(AtmosGetObjectInfoResponse *self);
 
 /**
  * @}
+ * @defgroup AtmosPaginatedRequest AtmosPaginatedRequest
+ * @brief This module contains the AtmosPaginatedRequest class that is used
+ * as a parent class for requests that contain paginated results.
+ * @{
+ */
+
+/**
+ * An AtmosPaginatedRequest is the base class for operations that have
+ * paginated results (list directory, list objects, get listable tags).
+ */
+typedef struct {
+    /** Parent object */
+    RestRequest parent;
+    /** Number of items per page to request */
+    int limit;
+    /** Page continuation token.  Empty on the first request */
+    char token[ATMOS_TOKEN_MAX];
+} AtmosPaginatedRequest;
+
+/**
+ * Initializes a new AtmosPaginatedRequest object.
+ * @param self the AtmosPaginatedRequest object to initialize.
+ * @param uri the URI request string.
+ * @param method the HTTP method to use for the request.
+ * @return the AtmosPaginatedRequest object (same as 'self')
+ */
+AtmosPaginatedRequest*
+AtmosPaginatedRequest_init(AtmosPaginatedRequest *self, const char *uri,
+        enum http_method method);
+
+/**
+ * Destroys an AtmosPaginatedRequest object
+ * @param self the AtmosPaginatedRequest object to destroy.
+ */
+void
+AtmosPaginatedRequest_destroy(AtmosPaginatedRequest *self);
+
+/**
+ * @}
  * @defgroup AtmosListDirectoryRequest AtmosListDirectoryRequest
  * @brief This module contains the AtmosListDirectoryRequest class that is used
  * to request a directory listing from Atmos.
  * @{
  */
+
+/**
+ * Request object that enacapsulates the parameters for listing a directory.
+ */
 typedef struct {
-    RestRequest parent;
+    /** parent object */
+    AtmosPaginatedRequest parent;
+    /** Path to the directory being listed */
     char path[ATMOS_PATH_MAX];
-    char token[ATMOS_OID_LENGTH];
-    int limit;
+    /**
+     * If nonzero, include metadata for each object in the directory.  By
+     * default, this is all the metadata for the object.  Use the user_tags
+     * and system_tags to limit the fields returned.
+     */
     int include_meta;
+    /** List of user metadata tags to return for each object */
     char user_tags[ATMOS_META_COUNT_MAX][ATMOS_META_NAME_MAX];
+    /** Number of items in user_tags */
     int user_tag_count;
+    /** List of system metadata tags to return for each object */
     char system_tags[ATMOS_SYSTEM_META_COUNT_MAX][ATMOS_META_NAME_MAX];
+    /** Number of items in system_tags */
     int system_tag_count;
 } AtmosListDirectoryRequest;
 
+/**
+ * Initializes a new AtmosListDirectory request object.
+ * @param self the AtmosListDirectoryRequest to initialize.
+ * @param path namespace path to the directory to list.
+ * @return the AtmosListDirectoryRequest object (same as 'self')
+ */
 AtmosListDirectoryRequest*
 AtmosListDirectoryRequest_init(AtmosListDirectoryRequest *self,
         const char *path);
 
+/**
+ * Destroys an AtmosListDirectoryRequest object.
+ * @param self the AtmosListDirectoryRequest object to destroy.
+ */
 void
 AtmosListDirectoryRequest_destroy(AtmosListDirectoryRequest *self);
 
+/**
+ * Adds a tag to the list of user metadata elements to include with the
+ * directory listing.  Be sure to set include_metadata to true.  If you don't
+ * call either add_user_tag or add_system_tag, all metadata elements for
+ * all the objects will be returned.
+ * @param self the AtmosListDirectoryRequest to modify.
+ * @param tag the user metadata tag name to include in the results.
+ */
 void
 AtmosListDirectoryRequest_add_user_tag(AtmosListDirectoryRequest *self,
         const char *tag);
 
+/**
+ * Adds a tag to the list of system metadata elements to include with the
+ * directory listing.  Be sure to set include_metadata to true.  If you don't
+ * call either add_user_tag or add_system_tag, all metadata elements for all
+ * of the objects will be returned.
+ * @param self the AtmosListDirectoryRequest to modify.
+ * @param tag the system metadata tag name to include in the results.  See the
+ * ATMOS_SYSTEM_META_* macros for valid values.
+ */
 void
 AtmosListDirectoryRequest_add_system_tag(AtmosListDirectoryRequest *self,
         const char *tag);
@@ -551,39 +630,117 @@ AtmosListDirectoryRequest_add_system_tag(AtmosListDirectoryRequest *self,
  * @{
  */
 
+/**
+ * Contains common object metadata used by AtmosDirectoryEntry and
+ * AtmosObjectListing.
+ */
 typedef struct {
+    /** Parent class */
     Object parent;
-    char object_id[ATMOS_OID_LENGTH];
-    const char *type;
-    char filename[ATMOS_PATH_MAX];
+    /** Array of AtmosMetadata containing the regular metadata for the object */
     AtmosMetadata *meta;
+    /** Number of elements in meta */
     int meta_count;
+    /** Array of AtmosMetadata containing the listable metadata for the object*/
     AtmosMetadata *listable_meta;
+    /** Number of elements in listable_meta */
     int listable_meta_count;
+    /** Structure containing the system metadata properties for the object */
     AtmosSystemMetadata system_metadata;
+} AtmosObjectMetadata;
+
+/**
+ * Initializes a new AtmosObjectMetadata object.
+ * @param self the AtmosObjectMetadata object to initialize.
+ * @return the AtmosObjectMetadata object (same as 'self')
+ */
+AtmosObjectMetadata*
+AtmosObjectMetadata_init(AtmosObjectMetadata *self);
+
+/**
+ * Destroys an AtmosObjectMetadata object.
+ * @param self the AtmosObjectMetadata object to destroy.
+ */
+void
+AtmosObjectMetadata_destroy(AtmosObjectMetadata *self);
+
+
+/**
+ * Contains all of the information for one object in a directory listing.
+ */
+typedef struct {
+    /** Parent object */
+    AtmosObjectMetadata parent;
+    /** The Object's ID */
+    char object_id[ATMOS_OID_LENGTH];
+    /** The type of file.  Either ATMOS_TYPE_REGULAR or ATMOS_TYPE_DIRECTORY */
+    const char *type;
+    /** Filename of the object (local name only, not full path) */
+    char filename[ATMOS_PATH_MAX];
 } AtmosDirectoryEntry;
 
+/**
+ * Initializes an AtmosDirectoryEntry object.
+ * @param self the AtmosDirectoryEntry object to initialize
+ * @return the AtmosDirectoryEntry object (same as 'self')
+ */
 AtmosDirectoryEntry*
 AtmosDirectoryEntry_init(AtmosDirectoryEntry *self);
 
+/**
+ * Destroys an AtmosDirectoryEntry object.
+ * @param self the AtmosDirectoryEntry object to destroy.
+ */
 void
 AtmosDirectoryEntry_destroy(AtmosDirectoryEntry *self);
 
+/**
+ * Returns the value of a metadata element on the directory entry.
+ * @param self the AtmosDirectoryEntry to search.
+ * @param name the name of the metadata element to look for
+ * @param listable zero for regular metadata, nonzero for listable metadata.
+ * @return the value of the metadata element or NULL if the element was not
+ * found on the directory entry.
+ */
 const char *
 AtmosDirectoryEntry_get_metadata_value(AtmosDirectoryEntry *self,
         const char *name, int listable);
 
-
+/**
+ * Contains the results for a list directory operation.
+ */
 typedef struct {
+    /** Parent object.  Also contains the metadata for the directory itself */
     AtmosReadObjectResponse parent;
+    /**
+     * Pagination continuation token.  If not NULL, there are more results.
+     * Copy this token value into another AtmosListDirectoryRequest and execute
+     * it for more results.
+     */
     const char *token;
+    /**
+     * Array of AtmosDirectoryEntry objects containing the list of objects in
+     * the directory.
+     */
     AtmosDirectoryEntry *entries;
+    /**
+     * Number of items in entries.
+     */
     int entry_count;
 } AtmosListDirectoryResponse;
 
+/**
+ * Initializes a new AtmosListDirectoryResponse object.
+ * @param self the AtmosListDirectoryResponse object to initialize.
+ * @return the AtmosListDirectoryRespnose object (same as 'self')
+ */
 AtmosListDirectoryResponse*
 AtmosListDirectoryResponse_init(AtmosListDirectoryResponse *self);
 
+/**
+ * Destroys an AtmosListDirectoryResponse object.
+ * @param self the AtmosListDirectoryResponse object to destroy.
+ */
 void
 AtmosListDirectoryResponse_destroy(AtmosListDirectoryResponse *self);
 
@@ -594,17 +751,34 @@ AtmosListDirectoryResponse_destroy(AtmosListDirectoryResponse *self);
  * used to request the set of listable tags from Atmos.
  * @{
  */
+
+/**
+ * The AtmosGetListableTagsRequest object encapsulates the parameters for a
+ * get listable tags operation.
+ * Note that even though this class extends AtmosPaginatedRequest, the "limit"
+ * field is not used.  The server will always decide how many tags to return
+ * based on server load and system parameters.
+ */
 typedef struct {
-    RestRequest parent;
+    AtmosPaginatedRequest parent;
     char parent_tag[ATMOS_PATH_MAX];
-    char token[ATMOS_OID_LENGTH];
-    int limit;
 } AtmosGetListableTagsRequest;
 
+/**
+ * Initializes a new AtmosGetListableTagsRequest object.
+ * @param self the AtmosGetListableTagsRequest object to initialize.
+ * @param parent_tag the parent tag to list the subtags for.  Set to NULL to
+ * fetch the top-level tags.
+ * @return the AtmosGetListableTagsRequest object (same as self)
+ */
 AtmosGetListableTagsRequest*
 AtmosGetListableTagsRequest_init(AtmosGetListableTagsRequest *self,
         const char *parent_tag);
 
+/**
+ * Destroys an AtmosGetListableTagsRequest object.
+ * @param self the AtmosGetListableTagsRequest object to destroy.
+ */
 void
 AtmosGetListableTagsRequest_destroy(AtmosGetListableTagsRequest *self);
 
@@ -616,16 +790,36 @@ AtmosGetListableTagsRequest_destroy(AtmosGetListableTagsRequest *self);
  * @{
  */
 
+/**
+ * Contains the response from a get listable tags operation.
+ */
 typedef struct {
+    /** Parent object */
     AtmosResponse parent;
+    /**
+     * Pagination token.  If not NULL, there are more results available.  Copy
+     * this token into another AtmosGetListableTagsRequest and execute it to
+     * get more results.
+     */
     const char *token;
+    /** Array of listable tag names returned from the operation */
     char **tags;
+    /** number of items in tags */
     int tag_count;
 } AtmosGetListableTagsResponse;
 
+/**
+ * Initializes an AtmosGetListableTagsResponse object.
+ * @param self the AtmosGetListableTagsResponse object to initialize.
+ * @return the AtmosGetListableTagsResponse object (Same as 'self').
+ */
 AtmosGetListableTagsResponse*
 AtmosGetListableTagsResponse_init(AtmosGetListableTagsResponse *self);
 
+/**
+ * Destroys an AtmosGetListableTagsResponse object.
+ * @param self the AtmosGetListableTagsResponse object to destroy.
+ */
 void
 AtmosGetListableTagsResponse_destroy(AtmosGetListableTagsResponse *self);
 
@@ -636,23 +830,76 @@ AtmosGetListableTagsResponse_destroy(AtmosGetListableTagsResponse *self);
  * used to list objects indexed by a tag in Atmos.
  * @{
  */
+
+/**
+ * Encapsulates the parameters for a list objects request.  This lists the
+ * objects associated with a listable tag.
+ */
 typedef struct {
-    RestRequest parent;
+    /** Parent object */
+    AtmosPaginatedRequest parent;
+    /** Listable tag getting listed */
     char tag[ATMOS_PATH_MAX];
-    char token[ATMOS_OID_LENGTH];
-    int limit;
+    /** If nonzero, include object metadata with each object */
     int include_meta;
+    /**
+     * List of user metadata tags to include in the listing.  If both
+     * user_tags and system_tags are empty, all metadata for the object will
+     * be returned.
+     */
     char user_tags[ATMOS_META_COUNT_MAX][ATMOS_META_NAME_MAX];
+    /** Number of items in user_tags */
     int user_tag_count;
+    /**
+     * List of system metadata tags to include in the listing.  See the
+     * ATMOS_SYSTEM_META_* macros for valid values.
+     */
     char system_tags[ATMOS_SYSTEM_META_COUNT_MAX][ATMOS_META_NAME_MAX];
+    /** Number of items in system_tags */
     int system_tag_count;
 } AtmosListObjectsRequest;
 
+/**
+ * Initializes a new AtmosListObjectsRequest.
+ * @param self the AtmosListObjectsRequest to initialize.
+ * @param tag the tag you wish to get a listing for.
+ * @return the AtmosListObjectsRequest (same as 'self')
+ */
 AtmosListObjectsRequest*
 AtmosListObjectsRequest_init(AtmosListObjectsRequest *self, const char *tag);
 
+/**
+ * Destroys an AtmosListObjectsRequest object.
+ * @param self the AtmosListObjectsRequest to destroy.
+ */
 void
 AtmosListObjectsRequest_destroy(AtmosListObjectsRequest *self);
+
+/**
+ * Adds a tag to the list of user metadata elements to include with the
+ * object listing.  Be sure to set include_metadata to true.  If you don't
+ * call either add_user_tag or add_system_tag, all metadata elements for
+ * all the objects will be returned.
+ * @param self the AtmosListObjectsRequest to modify.
+ * @param tag the user metadata tag name to include in the results.
+ */
+void
+AtmosListObjectsRequest_add_user_tag(AtmosListObjectsRequest *self,
+        const char *tag);
+
+/**
+ * Adds a tag to the list of system metadata elements to include with the
+ * object listing.  Be sure to set include_metadata to true.  If you don't
+ * call either add_user_tag or add_system_tag, all metadata elements for all
+ * of the objects will be returned.
+ * @param self the AtmosListObjectsRequest to modify.
+ * @param tag the system metadata tag name to include in the results.  See the
+ * ATMOS_SYSTEM_META_* macros for valid values.
+ */
+void
+AtmosListObjectsRequest_add_system_tag(AtmosListObjectsRequest *self,
+        const char *tag);
+
 
 /**
  * @}
@@ -661,14 +908,74 @@ AtmosListObjectsRequest_destroy(AtmosListObjectsRequest *self);
  * used to capture the list of objects in a tag from Atmos.
  * @{
  */
+
+/**
+ * Contains the results from an object listing.
+ */
 typedef struct {
+    /** Parent object. */
+    AtmosObjectMetadata parent;
+    /** ID of the object. */
+    char object_id[ATMOS_OID_LENGTH];
+} AtmosObjectListing;
+
+/**
+ * Initializes a new AtmosObjectListing object.
+ * @param self the AtmosObjectListing to initialize.
+ * @return the AtmosObjectListing object (same as 'self')
+ */
+AtmosObjectListing*
+AtmosObjectListing_init(AtmosObjectListing *self);
+
+/**
+ * Destroys an AtmosObjectListing object.
+ * @param self the AtmosObjectListing object to destroy.
+ */
+void
+AtmosObjectListing_destroy(AtmosObjectListing *self);
+
+/**
+ * Returns the value of a metadata element on the object entry.
+ * @param self the AtmosObjectListing to search.
+ * @param name the name of the metadata element to look for
+ * @param listable zero for regular metadata, nonzero for listable metadata.
+ * @return the value of the metadata element or NULL if the element was not
+ * found on the directory entry.
+ */
+const char *
+AtmosObjectListing_get_metadata_value(AtmosObjectListing *self,
+        const char *name, int listable);
+
+/**
+ * Contains the response for a list objects operation.
+ */
+typedef struct {
+    /** Parent object */
     AtmosResponse parent;
-    // TODO: finish
+    /**
+     * Pagination continuation token.  If not NULL, there are more results.
+     * Copy this token value into another AtmosListObjectsRequest and execute
+     * it for more results.
+     */
+    const char *token;
+    /** Array of result objects */
+    AtmosObjectListing *results;
+    /** Number of result objects. */
+    int result_count;
 } AtmosListObjectsResponse;
 
+/**
+ * Initializes a new AtmosListObjectsResponse.
+ * @param self the AtmosListObjectsResponse to initialize.
+ * @return the AtmosListObjectsResponse object (same as 'self')
+ */
 AtmosListObjectsResponse*
 AtmosListObjectsResponse_init(AtmosListObjectsResponse *self);
 
+/**
+ * Destroys an AtmosListObjectsResponse object.
+ * @param self the AtmosListObjectsResponse object to destroy.
+ */
 void
 AtmosListObjectsResponse_destroy(AtmosListObjectsResponse *self);
 

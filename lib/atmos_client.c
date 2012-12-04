@@ -335,13 +335,20 @@ AtmosClient_delete_user_meta(AtmosClient *self, const char *object_id,
     char uri[ATMOS_OID_LENGTH+64];
     RestFilter *chain = NULL;
     RestRequest request;
+    int utf8;
+
+    utf8 = self->enable_utf8_metadata;
 
     snprintf(uri, ATMOS_OID_LENGTH+64, "/rest/objects/%s?metadata/user", object_id);
     RestRequest_init(&request, uri, HTTP_DELETE);
 
+    if(utf8) {
+        RestRequest_add_header(&request, ATMOS_HEADER_UTF8 ": true");
+    }
+
     // Set the headers
     if(meta_names && meta_name_count > 0) {
-        AtmosUtil_set_tags_header2(&request, meta_names, meta_name_count);
+        AtmosUtil_set_tags_header2(&request, meta_names, meta_name_count, utf8);
     }
 
     chain = AtmosClient_add_default_filters(self, chain);
@@ -360,13 +367,20 @@ AtmosClient_delete_user_meta_ns(AtmosClient *self, const char *path,
     char uri[ATMOS_PATH_MAX+64];
     RestFilter *chain = NULL;
     RestRequest request;
+    int utf8;
+
+    utf8 = self->enable_utf8_metadata;
 
     snprintf(uri, ATMOS_PATH_MAX+64, "/rest/namespace/%s?metadata/user", path);
     RestRequest_init(&request, uri, HTTP_DELETE);
 
+    if(utf8) {
+        RestRequest_add_header(&request, ATMOS_HEADER_UTF8 ": true");
+    }
+
     // Set the headers
     if(meta_names && meta_name_count > 0) {
-        AtmosUtil_set_tags_header2(&request, meta_names, meta_name_count);
+        AtmosUtil_set_tags_header2(&request, meta_names, meta_name_count, utf8);
     }
 
     chain = AtmosClient_add_default_filters(self, chain);
@@ -752,9 +766,45 @@ AtmosClient_list_directory(AtmosClient *self,
     // ACL, etc.
     chain = RestFilter_add(chain, AtmosFilter_parse_read_object_response);
     chain = RestFilter_add(chain, AtmosFilter_list_directory);
+    chain = RestFilter_add(chain, AtmosFilter_set_pagination_headers);
 
     RestClient_execute_request((RestClient*)self, chain,
             (RestRequest*)request, (RestResponse*)response);
 
     RestFilter_free(chain);
 }
+
+void
+AtmosClient_get_listable_tags(AtmosClient *self,
+        AtmosGetListableTagsRequest *request,
+        AtmosGetListableTagsResponse *response) {
+
+    RestFilter *chain = NULL;
+
+    chain = AtmosClient_add_default_filters(self, chain);
+    chain = RestFilter_add(chain, AtmosFilter_set_pagination_headers);
+    chain = RestFilter_add(chain, AtmosFilter_get_listable_tags);
+
+
+    RestClient_execute_request((RestClient*)self, chain,
+            (RestRequest*)request, (RestResponse*)response);
+
+    RestFilter_free(chain);
+}
+
+void
+AtmosClient_list_objects(AtmosClient *self, AtmosListObjectsRequest *request,
+        AtmosListObjectsResponse *response) {
+    RestFilter *chain = NULL;
+
+    chain = AtmosClient_add_default_filters(self, chain);
+    chain = RestFilter_add(chain, AtmosFilter_list_objects);
+    chain = RestFilter_add(chain, AtmosFilter_set_pagination_headers);
+
+    RestClient_execute_request((RestClient*)self, chain,
+            (RestRequest*)request, (RestResponse*)response);
+
+    RestFilter_free(chain);
+}
+
+

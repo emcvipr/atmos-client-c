@@ -234,14 +234,15 @@ void AtmosFilter_parse_get_user_meta_response(RestFilter *self, RestClient *rest
 void AtmosFilter_set_get_user_meta_headers(RestFilter *self, RestClient *rest,
         RestRequest *request, RestResponse *response) {
     AtmosGetUserMetaRequest *req = (AtmosGetUserMetaRequest*)request;
+    int utf8 = ((AtmosClient*)rest)->enable_utf8_metadata;
 
-    if(((AtmosClient*)rest)->enable_utf8_metadata) {
+    if(utf8) {
         RestRequest_add_header((RestRequest*)request,
                 ATMOS_HEADER_UTF8 ": true");
     }
 
     if(req->tags && req->tag_count > 0) {
-        AtmosUtil_set_tags_header(request, req->tags, req->tag_count);
+        AtmosUtil_set_tags_header(request, req->tags, req->tag_count, utf8);
     }
 
     // Pass to the next filter
@@ -357,7 +358,7 @@ AtmosFilter_get_system_metadata(RestFilter *self, RestClient *rest,
     }
 
     if(req->tags && req->tag_count > 0) {
-        AtmosUtil_set_tags_header(request, req->tags, req->tag_count);
+        AtmosUtil_set_tags_header(request, req->tags, req->tag_count, 0);
     }
 
     // Pass to the next filter
@@ -607,22 +608,48 @@ void AtmosFilter_parse_get_info_response(RestFilter *self, RestClient *rest,
             response->body, (size_t)response->content_length);
 }
 
+void AtmosFilter_set_pagination_headers(RestFilter *self, RestClient *rest,
+        RestRequest *request, RestResponse *response) {
+    AtmosPaginatedRequest *req = (AtmosPaginatedRequest*)request;
+    char buffer[ATMOS_TOKEN_MAX+64];
+
+    // Check for token
+    if(strlen(req->token) > 0) {
+        snprintf(buffer, ATMOS_TOKEN_MAX+64,
+                ATMOS_HEADER_TOKEN ": %s", req->token);
+        RestRequest_add_header(request, buffer);
+    }
+
+    // See if limit was specified
+    if(req->limit > 0) {
+        snprintf(buffer, ATMOS_TOKEN_MAX+64, ATMOS_HEADER_LIMIT ": %d",
+                req->limit);
+        RestRequest_add_header((RestRequest*)request, buffer);
+    }
+
+    // Pass to the next filter
+    if(self->next) {
+        ((rest_http_filter)self->next->func)(self->next, rest, request, response);
+    }
+}
+
 
 void AtmosFilter_list_directory(RestFilter *self, RestClient *rest,
         RestRequest *request, RestResponse *response) {
     AtmosListDirectoryRequest *req = (AtmosListDirectoryRequest*)request;
     AtmosListDirectoryResponse *res = (AtmosListDirectoryResponse*)response;
     const char *token;
-    char buffer[ATMOS_SIMPLE_HEADER_MAX];
     char *tag_header;
     size_t tag_header_size;
     int i;
+    int utf8;
+    CURL *curl = NULL;
 
-    // Check for token
-    if(strlen(req->token) > 0) {
-        snprintf(buffer, ATMOS_SIMPLE_HEADER_MAX,
-                ATMOS_HEADER_TOKEN ": %s", req->token);
-        RestRequest_add_header(request, buffer);
+    utf8 = ((AtmosClient*)rest)->enable_utf8_metadata;
+
+    if(utf8) {
+        RestRequest_add_header(request, ATMOS_HEADER_UTF8 ": true");
+        curl = curl_easy_init();
     }
 
     // Check the include metadata flag
@@ -635,13 +662,23 @@ void AtmosFilter_list_directory(RestFilter *self, RestClient *rest,
             tag_header_size = 0;
             tag_header = AtmosUtil_cstring_append(tag_header, &tag_header_size,
                     ATMOS_HEADER_USER_TAGS ": ");
-            tag_header = AtmosUtil_cstring_append(tag_header, &tag_header_size,
+            if(utf8) {
+                tag_header = AtmosUtil_cstring_append_utf8(tag_header,
+                        &tag_header_size, req->user_tags[0], curl);
+            } else {
+                tag_header = AtmosUtil_cstring_append(tag_header, &tag_header_size,
                     req->user_tags[0]);
+            }
             for(i=1; i<req->user_tag_count; i++) {
                 tag_header = AtmosUtil_cstring_append(tag_header, &tag_header_size,
                         ", ");
-                tag_header = AtmosUtil_cstring_append(tag_header, &tag_header_size,
+                if(utf8) {
+                    tag_header = AtmosUtil_cstring_append_utf8(tag_header,
+                            &tag_header_size, req->user_tags[i], curl);
+                } else {
+                    tag_header = AtmosUtil_cstring_append(tag_header, &tag_header_size,
                         req->user_tags[i]);
+                }
             }
 
             RestRequest_add_header((RestRequest*)request, tag_header);
@@ -666,12 +703,8 @@ void AtmosFilter_list_directory(RestFilter *self, RestClient *rest,
             free(tag_header);
         }
     }
-
-    // See if limit was specified
-    if(req->limit > 0) {
-        snprintf(buffer, ATMOS_SIMPLE_HEADER_MAX, ATMOS_HEADER_LIMIT ": %d",
-                req->limit);
-        RestRequest_add_header((RestRequest*)request, buffer);
+    if(curl) {
+        curl_easy_cleanup(curl);
     }
 
     // Pass to the next filter
@@ -723,54 +756,10 @@ AtmosListDirectoryResponse_destroy(AtmosListDirectoryResponse *self) {
     AtmosReadObjectResponse_destroy((AtmosReadObjectResponse*)self);
 }
 
-static void
-AtmosListDirectoryResponse_parse_meta(AtmosListDirectoryResponse *self,
-        xmlNode *metadata, char *name, char *value, int *listable) {
-    xmlNode *child;
-    xmlChar *xvalue;
-
-    for(child = metadata->children; child; child=child->next) {
-        if(child->type != XML_ELEMENT_NODE) {
-            continue;
-        }
-        if(!strcmp((char*)child->name, DIR_NODE_NAME)) {
-            xvalue = xmlNodeGetContent(child);
-            if(!xvalue) {
-                ATMOS_WARN("No value found for %s\n", child->name);
-            } else {
-                strncpy(name, (char*)xvalue, ATMOS_META_NAME_MAX);
-                xmlFree(xvalue);
-            }
-        } else if(!strcmp((char*)child->name, DIR_NODE_VALUE)) {
-            xvalue = xmlNodeGetContent(child);
-            if(!xvalue) {
-                ATMOS_WARN("No value found for %s\n", child->name);
-            } else {
-                strncpy(value, (char*)xvalue, ATMOS_META_VALUE_MAX);
-                xmlFree(xvalue);
-            }
-        } else if(!strcmp((char*)child->name, DIR_NODE_LISTABLE)) {
-            xvalue = xmlNodeGetContent(child);
-            if(!xvalue) {
-                ATMOS_WARN("No value found for %s\n", child->name);
-            } else {
-                if(!strcmp("true", (char*)xvalue)) {
-                    *listable = 1;
-                } else {
-                    *listable = 0;
-                }
-                xmlFree(xvalue);
-            }
-        } else {
-            ATMOS_WARN("Unknown node %s found inside %s\n", metadata->name,
-                    child->name);
-        }
-    }
-}
 
 static void
-AtmosListDirectoryResponse_parse_sysmeta(AtmosListDirectoryResponse *self,
-        xmlNode *sysmeta, AtmosDirectoryEntry *entry) {
+AtmosObjectMetadata_parse_system_meta(AtmosObjectMetadata *self,
+        xmlNode *sysmeta) {
     char name[ATMOS_META_NAME_MAX];
     char value[ATMOS_META_VALUE_MAX];
     xmlNode *child;
@@ -783,9 +772,8 @@ AtmosListDirectoryResponse_parse_sysmeta(AtmosListDirectoryResponse *self,
         if(!(strcmp(DIR_NODE_METADATA, (char*)child->name))) {
             name[0] = 0;
             value[0] = 0;
-            AtmosListDirectoryResponse_parse_meta(self, child, name, value,
-                    &listable);
-            AtmosUtil_set_system_meta_entry(&(entry->system_metadata),
+            AtmosUtil_parse_meta(child, name, value, &listable);
+            AtmosUtil_set_system_meta_entry(&(self->system_metadata),
                     name, value, 0, NULL);
         } else {
             ATMOS_WARN("Unexpected node in %s: %s",
@@ -795,8 +783,8 @@ AtmosListDirectoryResponse_parse_sysmeta(AtmosListDirectoryResponse *self,
 }
 
 static void
-AtmosListDirectoryResponse_parse_usermeta(AtmosListDirectoryResponse *self,
-        xmlNode *usermeta, AtmosDirectoryEntry *entry) {
+AtmosObjectMetadata_parse_usermeta(AtmosObjectMetadata *self,
+        xmlNode *usermeta) {
 
     char name[ATMOS_META_NAME_MAX];
     char value[ATMOS_META_VALUE_MAX];
@@ -814,7 +802,7 @@ AtmosListDirectoryResponse_parse_usermeta(AtmosListDirectoryResponse *self,
             name[0] = 0;
             value[0] = 0;
             listable = 0;
-            AtmosListDirectoryResponse_parse_meta(self, child, name, value,
+            AtmosUtil_parse_meta(child, name, value,
                     &listable);
             if(listable) {
                 listable_count++;
@@ -828,12 +816,12 @@ AtmosListDirectoryResponse_parse_usermeta(AtmosListDirectoryResponse *self,
     }
 
     if(regular_count>0) {
-        entry->meta = calloc(regular_count, sizeof(AtmosMetadata));
-        entry->meta_count = regular_count;
+        self->meta = calloc(regular_count, sizeof(AtmosMetadata));
+        self->meta_count = regular_count;
     }
     if(listable_count>0) {
-        entry->listable_meta = calloc(listable_count, sizeof(AtmosMetadata));
-        entry->listable_meta_count = listable_count;
+        self->listable_meta = calloc(listable_count, sizeof(AtmosMetadata));
+        self->listable_meta_count = listable_count;
     }
 
     regular_count = listable_count = 0;
@@ -847,18 +835,17 @@ AtmosListDirectoryResponse_parse_usermeta(AtmosListDirectoryResponse *self,
             name[0] = 0;
             value[0] = 0;
             listable = 0;
-            AtmosListDirectoryResponse_parse_meta(self, child, name, value,
-                    &listable);
+            AtmosUtil_parse_meta(child, name, value, &listable);
             if(listable) {
-                strncpy(entry->listable_meta[listable_count].name,
+                strncpy(self->listable_meta[listable_count].name,
                         name, ATMOS_META_NAME_MAX);
-                strncpy(entry->listable_meta[listable_count].value,
+                strncpy(self->listable_meta[listable_count].value,
                         value, ATMOS_META_VALUE_MAX);
                 listable_count++;
             } else {
-                strncpy(entry->meta[regular_count].name,
+                strncpy(self->meta[regular_count].name,
                         name, ATMOS_META_NAME_MAX);
-                strncpy(entry->meta[regular_count].value,
+                strncpy(self->meta[regular_count].value,
                         value, ATMOS_META_VALUE_MAX);
                 regular_count++;
             }
@@ -870,8 +857,8 @@ AtmosListDirectoryResponse_parse_usermeta(AtmosListDirectoryResponse *self,
 }
 
 static void
-AtmosListDirectoryResponse_parse_entry(AtmosListDirectoryResponse *self,
-        xmlNode *entrynode, AtmosDirectoryEntry *entry) {
+AtmosDirectoryEntry_parse_entry(AtmosDirectoryEntry *entry,
+        xmlNode *entrynode) {
     xmlNode *child = NULL;
     xmlChar *value;
 
@@ -912,9 +899,11 @@ AtmosListDirectoryResponse_parse_entry(AtmosListDirectoryResponse *self,
                 xmlFree(value);
             }
         } else if(!strcmp((char*)child->name, DIR_NODE_SYSTEM_METADATA_LIST)) {
-            AtmosListDirectoryResponse_parse_sysmeta(self, child, entry);
+            AtmosObjectMetadata_parse_system_meta((AtmosObjectMetadata*)entry,
+                    child);
         } else if(!strcmp((char*)child->name, DIR_NODE_USER_METADATA_LIST)) {
-            AtmosListDirectoryResponse_parse_usermeta(self, child, entry);
+            AtmosObjectMetadata_parse_usermeta((AtmosObjectMetadata*)entry,
+                    child);
         }
     }
 }
@@ -936,7 +925,7 @@ AtmosListDirectoryResponse_parse(AtmosListDirectoryResponse *self,
     doc = xmlReadMemory(xml, (int)xml_size,
             "noname.xml", NULL, 0);
     if (doc == NULL) {
-        ATMOS_ERROR("Failed to parse info response: %s\n", xml);
+        ATMOS_ERROR("Failed to parse list directory response: %s\n", xml);
         return;
     }
 
@@ -975,9 +964,7 @@ AtmosListDirectoryResponse_parse(AtmosListDirectoryResponse *self,
         AtmosDirectoryEntry_init(&(self->entries[i]));
 
         // Parse entry fields
-        AtmosListDirectoryResponse_parse_entry(self, entrynode,
-                &(self->entries[i]));
-
+        AtmosDirectoryEntry_parse_entry(&(self->entries[i]), entrynode);
     }
 
     // Cleanup
@@ -985,35 +972,44 @@ AtmosListDirectoryResponse_parse(AtmosListDirectoryResponse *self,
     xmlFreeDoc(doc);
 }
 
+AtmosObjectMetadata*
+AtmosObjectMetadata_init(AtmosObjectMetadata *self) {
+    Object_init_with_class_name((Object*)self, CLASS_ATMOS_OBJECT_METADATA);
+    OBJECT_ZERO(self, AtmosObjectMetadata, Object);
+
+    return self;
+}
+
+void
+AtmosObjectMetadata_destroy(AtmosObjectMetadata *self) {
+    OBJECT_ZERO(self, AtmosObjectMetadata, Object);
+
+    Object_destroy((Object*)self);
+}
+
+
 AtmosDirectoryEntry*
 AtmosDirectoryEntry_init(AtmosDirectoryEntry *self) {
-    Object_init_with_class_name((Object*)self, CLASS_ATMOS_DIRECTORY_ENTRY);
-    OBJECT_ZERO(self, AtmosDirectoryEntry, Object);
+    AtmosObjectMetadata_init((AtmosObjectMetadata*)self);
+    OBJECT_ZERO(self, AtmosDirectoryEntry, AtmosObjectMetadata);
+    ((Object*)self)->class_name = CLASS_ATMOS_DIRECTORY_ENTRY;
 
     return self;
 }
 
 void
 AtmosDirectoryEntry_destroy(AtmosDirectoryEntry *self) {
-    if(self->meta) {
-        free(self->meta);
-    }
+    OBJECT_ZERO(self, AtmosDirectoryEntry, AtmosObjectMetadata);
 
-    if(self->listable_meta) {
-        free(self->listable_meta);
-    }
-
-    OBJECT_ZERO(self, AtmosDirectoryEntry, Object);
-
-    Object_destroy((Object*)self);
+    AtmosObjectMetadata_destroy((AtmosObjectMetadata*)self);
 }
 
 const char *
 AtmosDirectoryEntry_get_metadata_value(AtmosDirectoryEntry *self,
         const char *name, int listable) {
     return AtmosUtil_get_metadata_value(name,
-            listable?self->listable_meta:self->meta,
-            listable?self->listable_meta_count:self->meta_count);
+            listable?self->parent.listable_meta:self->parent.meta,
+            listable?self->parent.listable_meta_count:self->parent.meta_count);
 }
 
 AtmosListDirectoryRequest*
@@ -1032,9 +1028,9 @@ AtmosListDirectoryRequest_init(AtmosListDirectoryRequest *self,
 
     snprintf(uri, ATMOS_PATH_MAX + 15, "/rest/namespace%s", path);
 
-    RestRequest_init((RestRequest*) self, uri, HTTP_GET);
+    AtmosPaginatedRequest_init((AtmosPaginatedRequest*) self, uri, HTTP_GET);
 
-    OBJECT_ZERO(self, AtmosListDirectoryRequest, RestRequest);
+    OBJECT_ZERO(self, AtmosListDirectoryRequest, AtmosPaginatedRequest);
     ((Object*)self)->class_name = CLASS_ATMOS_LIST_DIRECTORY_REQUEST;
 
     return self;
@@ -1042,8 +1038,8 @@ AtmosListDirectoryRequest_init(AtmosListDirectoryRequest *self,
 
 void
 AtmosListDirectoryRequest_destroy(AtmosListDirectoryRequest *self) {
-    OBJECT_ZERO(self, AtmosListDirectoryRequest, RestRequest);
-    RestRequest_destroy((RestRequest*)self);
+    OBJECT_ZERO(self, AtmosListDirectoryRequest, AtmosPaginatedRequest);
+    AtmosPaginatedRequest_destroy((AtmosPaginatedRequest*)self);
 }
 
 void
@@ -1057,6 +1053,432 @@ AtmosListDirectoryRequest_add_system_tag(AtmosListDirectoryRequest *self,
         const char *tag) {
     strncpy(self->system_tags[self->system_tag_count++], tag, ATMOS_META_NAME_MAX);
 
+}
+
+
+AtmosGetListableTagsRequest*
+AtmosGetListableTagsRequest_init(AtmosGetListableTagsRequest *self,
+        const char *parent_tag) {
+    AtmosPaginatedRequest_init((AtmosPaginatedRequest*)self,
+            "/rest/objects?listabletags", HTTP_GET);
+    OBJECT_ZERO(self, AtmosGetListableTagsRequest, AtmosPaginatedRequest);
+    ((Object*)self)->class_name = CLASS_ATMOS_GET_LISTABLE_TAGS_REQUEST;
+    if(parent_tag) {
+        strncpy(self->parent_tag, parent_tag, ATMOS_PATH_MAX);
+    }
+
+    return self;
+}
+
+void
+AtmosGetListableTagsRequest_destroy(AtmosGetListableTagsRequest *self) {
+    OBJECT_ZERO(self, AtmosGetListableTagsRequest, AtmosPaginatedRequest);
+    AtmosPaginatedRequest_destroy((AtmosPaginatedRequest*)self);
+}
+
+AtmosGetListableTagsResponse*
+AtmosGetListableTagsResponse_init(AtmosGetListableTagsResponse *self) {
+    AtmosResponse_init((AtmosResponse*)self);
+    OBJECT_ZERO(self, AtmosGetListableTagsResponse, AtmosResponse);
+    ((Object*)self)->class_name = CLASS_ATMOS_GET_LISTABLE_TAGS_RESPONSE;
+
+    return self;
+}
+
+void
+AtmosGetListableTagsResponse_destroy(AtmosGetListableTagsResponse *self) {
+    if(self->tags) {
+        int i;
+        for(i=0; i<self->tag_count; i++) {
+            if(self->tags[i]) {
+                free(self->tags[i]);
+            }
+        }
+        free(self->tags);
+    }
+    OBJECT_ZERO(self, AtmosGetListableTagsResponse, AtmosResponse);
+
+    AtmosResponse_destroy((AtmosResponse*)self);
+}
+
+void AtmosFilter_get_listable_tags(RestFilter *self, RestClient *rest,
+        RestRequest *request, RestResponse *response) {
+    AtmosGetListableTagsRequest *req = (AtmosGetListableTagsRequest*)request;
+    AtmosGetListableTagsResponse *res = (AtmosGetListableTagsResponse*)response;
+    char parent_header[ATMOS_PATH_MAX+12];
+    const char *token;
+    int tags_alloc;
+    const char *tag;
+    int utf8 = 0;
+
+    if(req->parent_tag[0]) {
+        snprintf(parent_header, ATMOS_PATH_MAX+12,
+                ATMOS_HEADER_TAGS ": %s", req->parent_tag);
+        RestRequest_add_header(request, parent_header);
+    }
+
+    if(((AtmosClient*)rest)->enable_utf8_metadata) {
+        RestRequest_add_header((RestRequest*)request,
+                ATMOS_HEADER_UTF8 ": true");
+    }
+
+    // Pass to the next filter
+    if(self->next) {
+        ((rest_http_filter)self->next->func)(self->next, rest, request, response);
+    }
+
+    // Now we're on the response.
+
+    // Check to make sure we had success before parsing.
+    if(response->http_code > 299) {
+        return;
+    }
+
+    const char *utf_mode = RestResponse_get_header_value(response, ATMOS_HEADER_UTF8);
+    if(utf_mode && !strcmp("true", utf_mode)) {
+        utf8 = 1;
+    }
+
+    // Parse the tags.
+    tags_alloc = 100;
+    res->tag_count = 0;
+    res->tags = calloc(tags_alloc, sizeof(char*));
+    tag = RestResponse_get_header_value(response, ATMOS_HEADER_LISTABLE_TAGS);
+    while(tag && *tag) {
+        int c = 0;
+        if(*tag == ' ') {
+            // skip whitespace
+            tag++;
+            continue;
+        }
+        const char *comma = strchr(tag, ',');
+        if(!comma) {
+            // End of string reached.  Take what's left.
+            c = strlen(tag);
+        } else {
+            c = comma - tag;
+        }
+        if(res->tag_count + 1 > tags_alloc) {
+            char **newalloc;
+            tags_alloc += 100;
+            newalloc = realloc(res->tags, tags_alloc * sizeof(char*));
+            if(!newalloc) {
+                ATMOS_ERROR("Failed to realloc %d tags\n", tags_alloc);
+                return;
+            }
+            res->tags = newalloc;
+        }
+
+        res->tags[res->tag_count++] = strndup(tag, c);
+
+        if(comma) {
+            tag = comma+1;
+        } else {
+            tag = NULL;
+        }
+    }
+
+
+    // Check for token
+    token = RestResponse_get_header_value(response, ATMOS_HEADER_TOKEN);
+    if(token) {
+        // Valid since this is a pointer into the response headers and will
+        // be freed at the same time as this object.
+        res->token = token;
+    }
+}
+
+AtmosPaginatedRequest*
+AtmosPaginatedRequest_init(AtmosPaginatedRequest *self, const char *uri,
+        enum http_method method) {
+    RestRequest_init((RestRequest*)self, uri, method);
+    OBJECT_ZERO(self, AtmosPaginatedRequest, RestRequest);
+
+    ((Object*)self)->class_name = CLASS_ATMOS_PAGINATED_REQUEST;
+
+    return self;
+}
+
+void
+AtmosPaginatedRequest_destroy(AtmosPaginatedRequest *self) {
+    OBJECT_ZERO(self, AtmosPaginatedRequest, RestRequest);
+
+    RestRequest_destroy((RestRequest*)self);
+}
+
+AtmosListObjectsRequest*
+AtmosListObjectsRequest_init(AtmosListObjectsRequest *self, const char *tag) {
+    AtmosPaginatedRequest_init((AtmosPaginatedRequest*) self, "/rest/objects",
+            HTTP_GET);
+
+    OBJECT_ZERO(self, AtmosListDirectoryRequest, AtmosPaginatedRequest);
+    ((Object*)self)->class_name = CLASS_ATMOS_LIST_DIRECTORY_REQUEST;
+
+    strncpy(self->tag, tag, ATMOS_PATH_MAX);
+
+    return self;
+}
+
+void
+AtmosListObjectsRequest_destroy(AtmosListObjectsRequest *self) {
+    OBJECT_ZERO(self, AtmosListDirectoryRequest, AtmosPaginatedRequest);
+    AtmosPaginatedRequest_destroy((AtmosPaginatedRequest*)self);
+}
+
+
+AtmosObjectListing*
+AtmosObjectListing_init(AtmosObjectListing *self) {
+    AtmosObjectMetadata_init((AtmosObjectMetadata*)self);
+    OBJECT_ZERO(self, AtmosObjectListing, AtmosObjectMetadata);
+
+    ((Object*)self)->class_name = CLASS_ATMOS_OBJECT_LISTING;
+
+    return self;
+}
+
+void
+AtmosObjectListing_destroy(AtmosObjectListing *self) {
+    OBJECT_ZERO(self, AtmosObjectListing, AtmosObjectMetadata);
+
+    AtmosObjectMetadata_destroy((AtmosObjectMetadata*)self);
+}
+
+AtmosListObjectsResponse*
+AtmosListObjectsResponse_init(AtmosListObjectsResponse *self) {
+    AtmosResponse_init((AtmosResponse*)self);
+    OBJECT_ZERO(self, AtmosListObjectsResponse, AtmosResponse);
+
+    ((Object*)self)->class_name = CLASS_ATMOS_LIST_OBJECTS_RESPONSE;
+
+    return self;
+}
+
+void
+AtmosListObjectsResponse_destroy(AtmosListObjectsResponse *self) {
+    if(self->results) {
+        free(self->results);
+    }
+    OBJECT_ZERO(self, AtmosListObjectsResponse, AtmosResponse);
+
+    AtmosResponse_destroy((AtmosResponse*)self);
+}
+
+static void
+AtmosObjectListing_parse_entry(AtmosObjectListing *entry,
+        xmlNode *entrynode) {
+    xmlNode *child = NULL;
+    xmlChar *value;
+
+    for(child = entrynode->children; child; child=child->next) {
+        if(child->type != XML_ELEMENT_NODE) {
+            continue;
+        }
+        if(!strcmp((char*)child->name, DIR_NODE_OBJECT_ID)) {
+            value = xmlNodeGetContent(child);
+            if(!value) {
+                ATMOS_WARN("No value found for %s\n", child->name);
+            } else {
+                strncpy(entry->object_id, (char*)value,
+                        ATMOS_OID_LENGTH);
+                xmlFree(value);
+            }
+        } else if(!strcmp((char*)child->name, DIR_NODE_SYSTEM_METADATA_LIST)) {
+            AtmosObjectMetadata_parse_system_meta((AtmosObjectMetadata*)entry,
+                    child);
+        } else if(!strcmp((char*)child->name, DIR_NODE_USER_METADATA_LIST)) {
+            AtmosObjectMetadata_parse_usermeta((AtmosObjectMetadata*)entry,
+                    child);
+        }
+    }
+}
+
+
+void
+AtmosListObjectsResponse_parse(AtmosListObjectsResponse *self,
+        const char *xml, size_t xml_size) {
+    xmlDocPtr doc;
+    xmlXPathObjectPtr xpathObjDirectoryEntry;
+    xmlNodeSetPtr xpathNodeSetDirectoryEntry;
+    int i;
+    int entrycount;
+
+    /*
+     * The document being in memory, it have no base per RFC 2396,
+     * and the "noname.xml" argument will serve as its base.
+     */
+    doc = xmlReadMemory(xml, (int)xml_size,
+            "noname.xml", NULL, 0);
+    if (doc == NULL) {
+        ATMOS_ERROR("Failed to parse list objects response: %s\n", xml);
+        return;
+    }
+
+    // Check response
+    i = AtmosUtil_count_nodes(doc, BAD_CAST "//cos:ListObjectsResponse", 1);
+    if(i == 0) {
+        // No results?
+        ATMOS_WARN("No object list found in response: %s\n", xml);
+        xmlFreeDoc(doc);
+        return;
+    }
+
+    // See how many entries there are.
+    xpathObjDirectoryEntry = AtmosUtil_select_nodes(doc, BAD_CAST "//cos:Object", 1);
+    if(!xpathObjDirectoryEntry) {
+        // Empty directory
+        xmlFreeDoc(doc);
+        return;
+    }
+    xpathNodeSetDirectoryEntry = xpathObjDirectoryEntry->nodesetval;
+    entrycount = xpathNodeSetDirectoryEntry->nodeNr;
+    if(entrycount == 0) {
+        // Empty directory
+        xmlXPathFreeObject(xpathObjDirectoryEntry);
+        xmlFreeDoc(doc);
+        return;
+    }
+
+    // Allocate directory entries
+    self->results = calloc(entrycount, sizeof(AtmosObjectListing));
+    self->result_count = entrycount;
+
+    // Iterate through entries
+    for(i=0; i<entrycount; i++) {
+        xmlNode *entrynode = xpathNodeSetDirectoryEntry->nodeTab[i];
+        AtmosObjectListing_init(&(self->results[i]));
+
+        // Parse entry fields
+        AtmosObjectListing_parse_entry(&(self->results[i]), entrynode);
+    }
+
+    // Cleanup
+    xmlXPathFreeObject(xpathObjDirectoryEntry);
+    xmlFreeDoc(doc);
+
+}
+
+void
+AtmosFilter_list_objects(RestFilter *self, RestClient *rest,
+        RestRequest *request, RestResponse *response) {
+    AtmosListObjectsRequest *req = (AtmosListObjectsRequest*)request;
+    AtmosListObjectsResponse *res = (AtmosListObjectsResponse*)response;
+    const char *token;
+    char *tag_header;
+    size_t tag_header_size;
+    int i;
+    char tagbuf[1][ATMOS_META_NAME_MAX];
+    int utf8;
+    CURL *curl = NULL;
+
+    utf8 = ((AtmosClient*)rest)->enable_utf8_metadata;
+
+    if(utf8) {
+        RestRequest_add_header(request, ATMOS_HEADER_UTF8 ": true");
+        curl = curl_easy_init();
+    }
+
+    // Set the tag header
+    strncpy(tagbuf[0], req->tag, ATMOS_META_NAME_MAX);
+    AtmosUtil_set_tags_header(request, tagbuf, 1, utf8);
+
+    // Check the include metadata flag
+    if(req->include_meta) {
+        RestRequest_add_header(request, ATMOS_HEADER_INCLUDE_META ": true");
+
+        // If include metadata was used, the tags might also be limited.
+        if(req->user_tag_count > 0) {
+            tag_header = NULL;
+            tag_header_size = 0;
+            tag_header = AtmosUtil_cstring_append(tag_header, &tag_header_size,
+                    ATMOS_HEADER_USER_TAGS ": ");
+            if(utf8) {
+                tag_header = AtmosUtil_cstring_append_utf8(tag_header,
+                        &tag_header_size, req->user_tags[0], curl);
+            } else {
+                tag_header = AtmosUtil_cstring_append(tag_header, &tag_header_size,
+                    req->user_tags[0]);
+            }
+            for(i=1; i<req->user_tag_count; i++) {
+                tag_header = AtmosUtil_cstring_append(tag_header, &tag_header_size,
+                        ", ");
+                if(utf8) {
+                    tag_header = AtmosUtil_cstring_append_utf8(tag_header,
+                            &tag_header_size, req->user_tags[i], curl);
+                } else {
+                    tag_header = AtmosUtil_cstring_append(tag_header, &tag_header_size,
+                        req->user_tags[i]);
+                }
+            }
+
+            RestRequest_add_header((RestRequest*)request, tag_header);
+            free(tag_header);
+        }
+
+        if(req->system_tag_count > 0) {
+            tag_header = NULL;
+            tag_header_size = 0;
+            tag_header = AtmosUtil_cstring_append(tag_header, &tag_header_size,
+                    ATMOS_HEADER_SYSTEM_TAGS ": ");
+            tag_header = AtmosUtil_cstring_append(tag_header, &tag_header_size,
+                    req->system_tags[0]);
+            for(i=1; i<req->system_tag_count; i++) {
+                tag_header = AtmosUtil_cstring_append(tag_header, &tag_header_size,
+                        ", ");
+                tag_header = AtmosUtil_cstring_append(tag_header, &tag_header_size,
+                        req->system_tags[i]);
+            }
+
+            RestRequest_add_header((RestRequest*)request, tag_header);
+            free(tag_header);
+        }
+    }
+    if(curl) {
+        curl_easy_cleanup(curl);
+    }
+
+    // Pass to the next filter
+    if(self->next) {
+        ((rest_http_filter)self->next->func)(self->next, rest, request, response);
+    }
+
+    // Now we're on the response.
+
+    // Check to make sure we had success before parsing.
+    if(response->http_code > 299) {
+        return;
+    }
+
+    AtmosListObjectsResponse_parse(res,
+            response->body, (size_t)response->content_length);
+
+    // Check for token
+    token = RestResponse_get_header_value(response, ATMOS_HEADER_TOKEN);
+    if(token) {
+        // Valid since this is a pointer into the response headers.
+        res->token = token;
+    }
+
+}
+
+void
+AtmosListObjectsRequest_add_user_tag(AtmosListObjectsRequest *self,
+        const char *tag) {
+    strncpy(self->user_tags[self->user_tag_count++], tag, ATMOS_META_NAME_MAX);
+}
+
+void
+AtmosListObjectsRequest_add_system_tag(AtmosListObjectsRequest *self,
+        const char *tag) {
+    strncpy(self->system_tags[self->system_tag_count++], tag,
+            ATMOS_META_NAME_MAX);
+}
+
+const char *
+AtmosObjectListing_get_metadata_value(AtmosObjectListing *self,
+        const char *name, int listable) {
+    return AtmosUtil_get_metadata_value(name,
+            listable?self->parent.listable_meta:self->parent.meta,
+            listable?self->parent.listable_meta_count:self->parent.meta_count);
 }
 
 

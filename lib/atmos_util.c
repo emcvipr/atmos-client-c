@@ -51,7 +51,7 @@ char *AtmosUtil_cstring_append_utf8(char *buf, size_t *bufsz,
     char *buf2;
     char *encoded;
 
-    encoded = curl_easy_escape(curl, str, strsz);
+    encoded = curl_easy_escape(curl, str, (int)strsz);
     if(!encoded) {
         ATMOS_ERROR("Failed to encode value: %s\n", str);
         return buf;
@@ -883,7 +883,7 @@ AtmosUtil_set_tags_header(RestRequest *request,
                 curl = curl_easy_init();
             }
             // Need to encode the tag name in case it's UTF-8.
-            encoded_tag = curl_easy_escape(curl, tags[i], strlen(tags[i]));
+            encoded_tag = curl_easy_escape(curl, tags[i], (int)strlen(tags[i]));
             if(!encoded_tag) {
                 ATMOS_ERROR("Unable to encode tag %s\n", tags[i]);
                 continue;
@@ -929,7 +929,7 @@ AtmosUtil_set_tags_header2(RestRequest *request,
                 curl = curl_easy_init();
             }
             // Need to encode the tag name in case it's UTF-8.
-            encoded_tag = curl_easy_escape(curl, tags[i], strlen(tags[i]));
+            encoded_tag = curl_easy_escape(curl, tags[i], (int)strlen(tags[i]));
             if(!encoded_tag) {
                 ATMOS_ERROR("Unable to encode tag %s\n", tags[i]);
                 continue;

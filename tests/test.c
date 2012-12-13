@@ -33,6 +33,7 @@
 
 #include "seatest.h"
 #include "test_atmos.h"
+#include "test_xmlbind.h"
 
 void start_test_msg(const char *test_name) {
 	printf("\nTEST: %s\n", test_name);
@@ -43,6 +44,8 @@ void start_test_msg(const char *test_name) {
 
 int main() {
 	// Run tests
-	return run_tests(test_atmos_suite);
-
+    if(run_tests(test_xmlbind_suite)) {
+        return 1;
+    }
+    return run_tests(test_atmos_suite);
 }

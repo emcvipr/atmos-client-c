@@ -327,5 +327,36 @@ void AtmosFilter_list_versions(RestFilter *self, RestClient *rest,
 void AtmosFilter_parse_create_version_response(RestFilter *self,
         RestClient *rest, RestRequest *request, RestResponse *response);
 
+/**
+ * Processes request and response for create access token
+ * @param self the current filter element in the chain.
+ * @param rest the RestClient executing the request.
+ * @param request the RestRequest to execute.
+ * @param response the RestResponse receiving the response.
+ */
+void AtmosFilter_create_access_token(RestFilter *self,
+        RestClient *rest, RestRequest *request, RestResponse *response);
+
+/**
+ * Processes response for list access tokens
+ * @param self the current filter element in the chain.
+ * @param rest the RestClient executing the request.
+ * @param request the RestRequest to execute.
+ * @param response the RestResponse receiving the response.
+ */
+void AtmosFilter_parse_list_access_tokens_response(RestFilter *self,
+        RestClient *rest, RestRequest *request, RestResponse *response);
+
+/**
+ * Processes response for get token info
+ * @param self the current filter element in the chain.
+ * @param rest the RestClient executing the request.
+ * @param request the RestRequest to execute.
+ * @param response the RestResponse receiving the response.
+ */
+void AtmosFilter_parse_get_token_info_response(RestFilter *self,
+        RestClient *rest, RestRequest *request, RestResponse *response);
+
+
 
 #endif /* ATMOS_PRIVATE_H_ */

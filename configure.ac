@@ -7,11 +7,13 @@ LT_INIT
 AC_PROG_CC
 AM_PROG_CC_C_O
 CFLAGS="$CFLAGS -Wall -Werror"
+AC_CHECK_PROG(USE_UNCRUSTIFY, uncrustify, yes, no)
+AC_SUBST(USE_UNCRUSTIFY)
 AC_CHECK_LIB([curl], [curl_easy_init], [CURLLIB=-lcurl])
 AC_SUBST([CURLLIB])
 PKG_CHECK_MODULES(XML, libxml-2.0 >= 2.4)
 AC_CHECK_HEADERS([libxml/parser.h])
 AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_FILES([Makefile lib/Makefile tests/Makefile])
+AC_CONFIG_FILES([Makefile xmlbind/Makefile lib/Makefile tests/Makefile])
 AC_CONFIG_SUBDIRS([dep/rest-client-c])
 AC_OUTPUT

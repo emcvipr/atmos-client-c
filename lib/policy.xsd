@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.example.org/policy" xmlns:tns="http://www.example.org/policy" elementFormDefault="qualified">
+
+    <element name="policy" type="tns:policyType"></element>
+    <element name="list-access-tokens-result" type="tns:listAccessTokenResultType"></element>
+    <element name="access-token" type="tns:accessTokenType"></element>
+    
+    <complexType name="policyType">
+    	<sequence>
+    		<element name="expiration" type="dateTime" maxOccurs="1"
+    			minOccurs="0">
+    		</element>
+    		<element name="max-uploads" type="int" maxOccurs="1"
+    			minOccurs="0">
+    		</element>
+    		<element name="max-downloads" type="int" maxOccurs="1"
+    			minOccurs="0">
+    		</element>
+    		<element name="source" type="tns:sourceType" maxOccurs="1"
+    			minOccurs="0">
+    		</element>
+    		<element name="content-length-range" minOccurs="0" maxOccurs="1" type="tns:contentLengthRangeType">
+    		</element>
+    		<element name="form-field" type="tns:formFieldType" maxOccurs="unbounded" minOccurs="0"></element>
+    	</sequence>
+    </complexType>
+
+    <complexType name="sourceType">
+    	<sequence>
+    		<element name="allow" type="string" maxOccurs="unbounded"
+    			minOccurs="0">
+    		</element>
+    		<element name="disallow" type="string" maxOccurs="unbounded" minOccurs="0"></element>
+    	</sequence>
+    </complexType>
+
+    <complexType name="formFieldType">
+    	<sequence>
+    		<element name="matches" type="string" maxOccurs="unbounded" minOccurs="0"></element>
+    		<element name="eq" type="string" maxOccurs="unbounded" minOccurs="0"></element>
+    		<element name="starts-with" type="string" maxOccurs="unbounded" minOccurs="0"></element>
+    		<element name="ends-with" type="string" maxOccurs="unbounded" minOccurs="0"></element>
+    		<element name="contains" type="string" maxOccurs="unbounded" minOccurs="0"></element>
+    	</sequence>
+    	<attribute name="name" type="string" use="required"></attribute>
+    	<attribute name="optional" type="boolean" use="optional"></attribute>
+    </complexType>
+    <complexType name="contentLengthRangeType">
+    	<attribute use="required" name="from" type="int"></attribute>
+    	<attribute use="required" name="to" type="int"></attribute>
+    </complexType>
+    
+        <complexType name="listAccessTokenResultType">
+        <sequence>
+            <element name="access-tokens-list" type="tns:accessTokensListType" minOccurs="1" maxOccurs="1"/>
+        </sequence>
+    </complexType>
+    
+    <complexType name="accessTokensListType">
+        <sequence>
+            <element name="access-token" type="tns:accessTokenType" minOccurs="0" maxOccurs="unbounded"/>
+        </sequence>
+    </complexType>
+    
+    <complexType name="accessTokenType">
+    	<sequence>
+    	    <element name="access-token-id" type="string" minOccurs="1" maxOccurs="1"/>
+    		<element name="expiration" type="dateTime" maxOccurs="1"
+    			minOccurs="0">
+    		</element>
+    		<element name="max-uploads" type="int" maxOccurs="1"
+    			minOccurs="0">
+    		</element>
+    		<element name="max-downloads" type="int" maxOccurs="1"
+    			minOccurs="0">
+    		</element>
+    		<element name="source" type="tns:sourceType" maxOccurs="1"
+    			minOccurs="0">
+    		</element>
+    		<element name="content-length-range" maxOccurs="1" minOccurs="1" type="tns:contentLengthRangeType">
+    		</element>
+    		<element name="uid" minOccurs="0" maxOccurs="1" type="string">
+    		</element>
+    		<element name="object-id" minOccurs="0" maxOccurs="1" type="string">
+    		</element>
+    		<element name="path" minOccurs="0" maxOccurs="1" type="string">
+    		</element>
+    	</sequence>
+    </complexType>
+    
+</schema>

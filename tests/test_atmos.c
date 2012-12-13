@@ -2482,7 +2482,8 @@ void test_get_object_info() {
         assert_true(strlen(info_response.replicas[i].location) > 0);
         assert_true(strlen(info_response.replicas[i].storage_type) > 0);
     }
-    assert_true(strlen(info_response.selection) > 0);
+    // Selection is empty in 2.1
+    //assert_true(strlen(info_response.selection) > 0);
     AtmosGetObjectInfoResponse_destroy(&info_response);
 
     // Expiration must be enabled by policy first before you can modify it.
@@ -2565,7 +2566,8 @@ void test_get_object_info_ns() {
         assert_true(strlen(info_response.replicas[i].location) > 0);
         assert_true(strlen(info_response.replicas[i].storage_type) > 0);
     }
-    assert_true(strlen(info_response.selection) > 0);
+    // Selection is empty in 2.1
+    //assert_true(strlen(info_response.selection) > 0);
     AtmosGetObjectInfoResponse_destroy(&info_response);
 
     // Expiration must be enabled by policy first before you can modify it.
@@ -3676,6 +3678,408 @@ void test_list_versions() {
     AtmosClient_destroy(&atmos);
 }
 
+void test_create_dl_token_obj() {
+    AtmosClient atmos;
+    AtmosCreateObjectResponse response;
+    RestResponse delete_response;
+    AtmosCreateAccessTokenRequest token_request;
+    AtmosCreateAccessTokenResponse token_response;
+    AtmosGetAccessTokenInfoResponse info_response;
+    RestRequest dl_request;
+    RestResponse dl_response;
+    RestFilter *chain = NULL;
+    time_t now;
+    char buffer[ATMOS_PATH_MAX];
+
+    get_atmos_client(&atmos);
+    AtmosCreateObjectResponse_init(&response);
+
+    AtmosClient_create_object_simple(&atmos, "test", 4, "text/plain", &response);
+    check_error((AtmosResponse*)&response);
+    assert_int_equal(201, response.parent.parent.http_code);
+    assert_true(strlen(response.object_id) > 0);
+
+    printf("Created object: %s\n", response.object_id);
+
+    // Create a download token
+    AtmosCreateAccessTokenRequest_init_obj(&token_request, response.object_id);
+    AtmosCreateAccessTokenResponse_init(&token_response);
+    time(&now);
+    now += 3600; // 1 hr
+    token_request.policy = Atmos_policyType_init(malloc(sizeof(Atmos_policyType)));
+    token_request.policy->max_downloads = 1;
+    token_request.policy->max_downloads_set = 1;
+    token_request.policy->expiration = now;
+    token_request.policy->expiration_set = 1;
+
+    AtmosClient_create_access_token(&atmos, &token_request, &token_response);
+    check_error((AtmosResponse*)&token_response);
+    assert_int_equal(201, token_response.parent.parent.http_code);
+    AtmosCreateAccessTokenRequest_destroy(&token_request);
+    assert_true(strlen(token_response.token_id) > 0);
+
+    // Verify the token
+    AtmosGetAccessTokenInfoResponse_init(&info_response);
+    AtmosClient_get_access_token_info(&atmos, token_response.token_id, &info_response);
+    check_error((AtmosResponse*)&info_response);
+    assert_int_equal(200, info_response.parent.parent.http_code);
+    assert_true(info_response.token_info != NULL);
+    if(info_response.token_info) {
+        assert_int64t_equal(now, info_response.token_info->expiration);
+        assert_int64t_equal(1, info_response.token_info->max_downloads);
+        assert_int64t_equal(1, info_response.token_info->max_downloads_set);
+        assert_string_equal(token_response.token_id, info_response.token_info->access_token_id);
+        assert_string_equal(response.object_id, info_response.token_info->object_id);
+    }
+
+    AtmosGetAccessTokenInfoResponse_destroy(&info_response);
+
+    // Try and download it.
+    snprintf(buffer, ATMOS_PATH_MAX, "/rest/accesstokens/%s", token_response.token_id);
+    RestRequest_init(&dl_request, buffer, HTTP_GET);
+    dl_request.uri_encoded = 1;
+    RestResponse_init(&dl_response);
+    chain = RestFilter_add(chain, RestFilter_execute_curl_request);
+    RestClient_execute_request((RestClient*)&atmos, chain, &dl_request, &dl_response);
+    assert_int_equal(200, dl_response.http_code);
+    assert_int64t_equal(4, dl_response.content_length);
+    assert_string_equal("test", dl_response.body);
+    RestRequest_destroy(&dl_request);
+    RestResponse_destroy(&dl_response);
+    RestFilter_free(chain);
+
+    // Cleanup
+    // Delete token (should already be deleted though if download succeeded)
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_access_token(&atmos, token_response.token_id,
+            &delete_response);
+    assert_int_equal(404, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    // Delete object
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_object(&atmos, response.object_id, &delete_response);
+    assert_int_equal(204, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    AtmosCreateAccessTokenResponse_destroy(&token_response);
+    AtmosCreateObjectResponse_destroy(&response);
+    AtmosClient_destroy(&atmos);
+}
+
+void test_create_dl_token_ns() {
+    AtmosClient atmos;
+    AtmosCreateObjectResponse response;
+    RestResponse delete_response;
+    AtmosCreateAccessTokenRequest token_request;
+    AtmosCreateAccessTokenResponse token_response;
+    AtmosGetAccessTokenInfoResponse info_response;
+    RestRequest dl_request;
+    RestResponse dl_response;
+    RestFilter *chain = NULL;
+    time_t now;
+    char buffer[ATMOS_PATH_MAX];
+    char path[ATMOS_PATH_MAX];
+    char randfile[9];
+
+    random_file(randfile, 8);
+    sprintf(path, "/atmos-c-unittest/%s.txt", randfile);
+    printf("Creating object: %s\n", path);
+
+    get_atmos_client(&atmos);
+    AtmosCreateObjectResponse_init(&response);
+
+    AtmosClient_create_object_simple_ns(&atmos, path, "test", 4, "text/plain", &response);
+    check_error((AtmosResponse*)&response);
+    assert_int_equal(201, response.parent.parent.http_code);
+    assert_true(strlen(response.object_id) > 0);
+
+    printf("Created object: %s\n", response.object_id);
+
+    // Create a download token
+    AtmosCreateAccessTokenRequest_init_ns(&token_request, path);
+    AtmosCreateAccessTokenResponse_init(&token_response);
+    time(&now);
+    now += 3600; // 1 hr
+    token_request.policy = Atmos_policyType_init(malloc(sizeof(Atmos_policyType)));
+    token_request.policy->max_downloads = 1;
+    token_request.policy->max_downloads_set = 1;
+    token_request.policy->expiration = now;
+    token_request.policy->expiration_set = 1;
+
+    AtmosClient_create_access_token(&atmos, &token_request, &token_response);
+    check_error((AtmosResponse*)&token_response);
+    assert_int_equal(201, token_response.parent.parent.http_code);
+    AtmosCreateAccessTokenRequest_destroy(&token_request);
+    assert_true(strlen(token_response.token_id) > 0);
+
+    // Verify the token
+    AtmosGetAccessTokenInfoResponse_init(&info_response);
+    AtmosClient_get_access_token_info(&atmos, token_response.token_id, &info_response);
+    check_error((AtmosResponse*)&info_response);
+    assert_int_equal(200, info_response.parent.parent.http_code);
+    assert_true(info_response.token_info != NULL);
+    if(info_response.token_info) {
+        assert_int64t_equal(now, info_response.token_info->expiration);
+        assert_int64t_equal(1, info_response.token_info->max_downloads);
+        assert_int64t_equal(1, info_response.token_info->max_downloads_set);
+        assert_string_equal(token_response.token_id, info_response.token_info->access_token_id);
+        assert_string_equal(path, info_response.token_info->path);
+    }
+
+    AtmosGetAccessTokenInfoResponse_destroy(&info_response);
+
+    // Try and download it.
+    snprintf(buffer, ATMOS_PATH_MAX, "/rest/accesstokens/%s", token_response.token_id);
+    RestRequest_init(&dl_request, buffer, HTTP_GET);
+    dl_request.uri_encoded = 1;
+    RestResponse_init(&dl_response);
+    chain = RestFilter_add(chain, RestFilter_execute_curl_request);
+    RestClient_execute_request((RestClient*)&atmos, chain, &dl_request, &dl_response);
+    assert_int_equal(200, dl_response.http_code);
+    assert_int64t_equal(4, dl_response.content_length);
+    assert_string_equal("test", dl_response.body);
+    RestRequest_destroy(&dl_request);
+    RestResponse_destroy(&dl_response);
+    RestFilter_free(chain);
+
+    // Cleanup
+    // Delete token (should already be deleted though if download succeeded)
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_access_token(&atmos, token_response.token_id,
+            &delete_response);
+    assert_int_equal(404, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    // Delete object
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_object_ns(&atmos, path, &delete_response);
+    assert_int_equal(204, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    AtmosCreateAccessTokenResponse_destroy(&token_response);
+    AtmosCreateObjectResponse_destroy(&response);
+    AtmosClient_destroy(&atmos);
+}
+
+// Form to upload to a token.. includes metadata and a short text file.
+#define FORM_DATA "--AAAAAA\r\n"\
+    "Content-Type: text/plain\r\n"\
+    "Content-Disposition: form-data; name=\"x-emc-meta\"\r\n"\
+    "\r\n"\
+    "name1=value1\r\n"\
+    "--AAAAAA\r\n"\
+    "Content-Disposition: form-data; name=\"data\"; filename=\"foo.txt\"\r\n"\
+    "Content-Type: text/plain\r\n"\
+    "\r\n"\
+    "Hello World!\r\n"\
+    "--AAAAAA--"
+
+
+void test_create_ul_token() {
+    AtmosClient atmos;
+    RestResponse delete_response;
+    AtmosCreateAccessTokenRequest token_request;
+    AtmosCreateAccessTokenResponse token_response;
+    AtmosGetAccessTokenInfoResponse info_response;
+    RestRequest ul_request;
+    RestResponse ul_response;
+    RestFilter *chain = NULL;
+    time_t now;
+    char buffer[ATMOS_PATH_MAX];
+    const char *formdata = FORM_DATA;
+    const char *location;
+    char object_id[ATMOS_OID_LENGTH];
+
+    get_atmos_client(&atmos);
+
+    // Create an upload token
+    AtmosCreateAccessTokenRequest_init(&token_request);
+    AtmosCreateAccessTokenResponse_init(&token_response);
+    time(&now);
+    now += 3600; // 1 hr
+    token_request.policy = Atmos_policyType_init(malloc(sizeof(Atmos_policyType)));
+    token_request.policy->max_uploads = 1;
+    token_request.policy->max_uploads_set = 1;
+    token_request.policy->expiration = now;
+    token_request.policy->expiration_set = 1;
+    token_request.policy->form_field = malloc(sizeof(Atmos_formFieldType));
+    token_request.policy->form_field_count = 1;
+    Atmos_formFieldType_init(&token_request.policy->form_field[0]);
+    token_request.policy->form_field[0].name = strdup("x-emc-meta");
+    token_request.policy->form_field[0].contains = malloc(sizeof(char*));
+    token_request.policy->form_field[0].contains_count = 1;
+    token_request.policy->form_field[0].contains[0] = strdup("name1");
+
+    AtmosClient_create_access_token(&atmos, &token_request, &token_response);
+    check_error((AtmosResponse*)&token_response);
+    assert_int_equal(201, token_response.parent.parent.http_code);
+    AtmosCreateAccessTokenRequest_destroy(&token_request);
+    assert_true(strlen(token_response.token_id) > 0);
+
+    // Verify the token
+    AtmosGetAccessTokenInfoResponse_init(&info_response);
+    AtmosClient_get_access_token_info(&atmos, token_response.token_id, &info_response);
+    check_error((AtmosResponse*)&info_response);
+    assert_int_equal(200, info_response.parent.parent.http_code);
+    assert_true(info_response.token_info != NULL);
+    if(info_response.token_info) {
+        assert_int64t_equal(now, info_response.token_info->expiration);
+        assert_int64t_equal(1, info_response.token_info->max_uploads);
+        assert_int64t_equal(1, info_response.token_info->max_uploads_set);
+        assert_string_equal(token_response.token_id, info_response.token_info->access_token_id);
+     }
+    AtmosGetAccessTokenInfoResponse_destroy(&info_response);
+
+    // Upload to the token.
+    snprintf(buffer, ATMOS_PATH_MAX, "/rest/accesstokens/%s", token_response.token_id);
+    RestRequest_init(&ul_request, buffer, HTTP_POST);
+    RestRequest_set_array_body(&ul_request, formdata, strlen(formdata), "multipart/form-data; boundary=AAAAAA");
+    ul_request.uri_encoded = 1;
+    RestResponse_init(&ul_response);
+    chain = RestFilter_add(chain, RestFilter_execute_curl_request);
+    chain = RestFilter_add(chain, RestFilter_set_content_headers);
+    RestClient_execute_request((RestClient*)&atmos, chain, &ul_request, &ul_response);
+    assert_int_equal(201, ul_response.http_code);
+    location = RestResponse_get_header_value(&ul_response, HTTP_HEADER_LOCATION);
+    assert_true(strstr(location, "/rest/objects/") == location);
+    strncpy(object_id, location+14, ATMOS_OID_LENGTH);
+    assert_int64t_equal(44, strlen(object_id));
+    RestRequest_destroy(&ul_request);
+    RestResponse_destroy(&ul_response);
+    RestFilter_free(chain);
+
+    // Cleanup
+    // Delete token
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_access_token(&atmos, token_response.token_id,
+            &delete_response);
+    assert_int_equal(404, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    // Delete object
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_object(&atmos, object_id, &delete_response);
+    assert_int_equal(204, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    AtmosCreateAccessTokenResponse_destroy(&token_response);
+    AtmosClient_destroy(&atmos);
+}
+
+void test_list_tokens() {
+    AtmosClient atmos;
+    AtmosCreateAccessTokenRequest token_request;
+    AtmosCreateAccessTokenResponse token_response;
+    AtmosListAccessTokensRequest list_request;
+    AtmosListAccessTokensResponse list_response;
+    RestResponse delete_response;
+    char token1[ATMOS_PATH_MAX];
+    char token2[ATMOS_PATH_MAX];
+    int pagecount;
+    int token1found;
+    int token2found;
+    time_t now;
+    char page_token[ATMOS_TOKEN_MAX];
+
+    get_atmos_client(&atmos);
+    time(&now);
+    now += 3600; // 1 hr
+
+    // Create two tokens
+    AtmosCreateAccessTokenRequest_init(&token_request);
+    AtmosCreateAccessTokenResponse_init(&token_response);
+    token_request.policy = Atmos_policyType_init(malloc(sizeof(Atmos_policyType)));
+    token_request.policy->max_uploads = 1;
+    token_request.policy->max_uploads_set = 1;
+    token_request.policy->expiration = now;
+    token_request.policy->expiration_set = 1;
+    AtmosClient_create_access_token(&atmos, &token_request, &token_response);
+    check_error((AtmosResponse*)&token_response);
+    assert_int_equal(201, token_response.parent.parent.http_code);
+    strncpy(token1, token_response.token_id, ATMOS_PATH_MAX);
+    AtmosCreateAccessTokenRequest_destroy(&token_request);
+    AtmosCreateAccessTokenResponse_destroy(&token_response);
+
+    AtmosCreateAccessTokenRequest_init(&token_request);
+    AtmosCreateAccessTokenResponse_init(&token_response);
+    token_request.policy = Atmos_policyType_init(malloc(sizeof(Atmos_policyType)));
+    token_request.policy->max_uploads = 1;
+    token_request.policy->max_uploads_set = 1;
+    token_request.policy->expiration = now;
+    token_request.policy->expiration_set = 1;
+    AtmosClient_create_access_token(&atmos, &token_request, &token_response);
+    check_error((AtmosResponse*)&token_response);
+    assert_int_equal(201, token_response.parent.parent.http_code);
+    strncpy(token2, token_response.token_id, ATMOS_PATH_MAX);
+    AtmosCreateAccessTokenRequest_destroy(&token_request);
+    AtmosCreateAccessTokenResponse_destroy(&token_response);
+
+    // List tokens and check
+    pagecount = 0;
+    token1found = 0;
+    token2found = 0;
+    *page_token = 0;
+    do {
+        Atmos_accessTokensListType *tokenlist;
+        int i;
+
+        AtmosListAccessTokensRequest_init(&list_request);
+        AtmosListAccessTokensResponse_init(&list_response);
+        list_request.parent.limit = 1;
+        if(*page_token) {
+            strcpy(list_request.parent.token, page_token);
+        }
+        AtmosClient_list_access_tokens(&atmos, &list_request, &list_response);
+        check_error((AtmosResponse*)&list_response);
+        assert_int_equal(200, list_response.parent.parent.http_code);
+        tokenlist = &list_response.token_list->access_tokens_list;
+        if(tokenlist) {
+            for(i=0; i<tokenlist->access_token_count; i++) {
+                if(!strcmp(token1, tokenlist->access_token[i].access_token_id)) {
+                    token1found++;
+                    assert_int64t_equal(now, tokenlist->access_token[i].expiration);
+                    assert_int_equal(1, tokenlist->access_token[i].expiration_set);
+                    assert_int64t_equal(1, tokenlist->access_token[i].max_uploads);
+                    assert_int_equal(1, tokenlist->access_token[i].max_uploads_set);
+                }
+                if(!strcmp(token2, tokenlist->access_token[i].access_token_id)) {
+                    token2found++;
+                    assert_int64t_equal(now, tokenlist->access_token[i].expiration);
+                    assert_int_equal(1, tokenlist->access_token[i].expiration_set);
+                    assert_int64t_equal(1, tokenlist->access_token[i].max_uploads);
+                    assert_int_equal(1, tokenlist->access_token[i].max_uploads_set);
+                }
+            }
+        }
+        pagecount++;
+        if(list_response.token) {
+            strcpy(page_token, list_response.token);
+        } else {
+            *page_token = 0;
+        }
+        AtmosListAccessTokensRequest_destroy(&list_request);
+        AtmosListAccessTokensResponse_destroy(&list_response);
+    } while(*page_token);
+
+    assert_true(pagecount > 1);
+    assert_int_equal(1, token1found);
+    assert_int_equal(1, token2found);
+
+    // Delete tokens
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_access_token(&atmos, token1,
+            &delete_response);
+    assert_int_equal(204, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_access_token(&atmos, token2,
+            &delete_response);
+    assert_int_equal(204, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+    AtmosClient_destroy(&atmos);
+}
+
 void test_atmos_suite() {
     char proxy_port_str[32];
 
@@ -3925,6 +4329,18 @@ void test_atmos_suite() {
 
     start_test_msg("test_list_versions");
     run_test(test_list_versions);
+
+    start_test_msg("test_create_dl_token_obj");
+    run_test(test_create_dl_token_obj);
+
+    start_test_msg("test_create_dl_token_ns");
+    run_test(test_create_dl_token_ns);
+
+    start_test_msg("test_create_ul_token");
+    run_test(test_create_ul_token);
+
+    start_test_msg("test_list_tokens");
+    run_test(test_list_tokens);
 
     test_fixture_end();
 

@@ -889,3 +889,83 @@ AtmosClient_restore_version(AtmosClient *self, const char *object_id,
     RestFilter_free(chain);
     RestRequest_destroy(&request);
 }
+
+
+void
+AtmosClient_create_access_token(AtmosClient *self,
+        AtmosCreateAccessTokenRequest *request,
+        AtmosCreateAccessTokenResponse *response) {
+    RestFilter *chain = NULL;
+
+    chain = AtmosClient_add_default_filters(self, chain);
+    chain = RestFilter_add(chain, AtmosFilter_create_access_token);
+
+    RestClient_execute_request((RestClient*)self, chain,
+            (RestRequest*)request, (RestResponse*)response);
+
+    RestFilter_free(chain);
+
+}
+
+
+void
+AtmosClient_delete_access_token(AtmosClient *self, const char *token_id,
+        RestResponse *response) {
+    char uri[ATMOS_PATH_MAX];
+    RestRequest request;
+    RestFilter *chain = NULL;
+
+    snprintf(uri, ATMOS_PATH_MAX, "/rest/accesstokens/%s", token_id);
+    RestRequest_init(&request, uri, HTTP_DELETE);
+    request.uri_encoded = 1;
+
+    chain = AtmosClient_add_default_filters(self, chain);
+
+    RestClient_execute_request((RestClient*)self, chain,
+            &request, response);
+
+    RestFilter_free(chain);
+    RestRequest_destroy(&request);
+}
+
+
+void
+AtmosClient_list_access_tokens(AtmosClient *self,
+        AtmosListAccessTokensRequest *request,
+        AtmosListAccessTokensResponse *response) {
+    RestFilter *chain = NULL;
+
+    chain = AtmosClient_add_default_filters(self, chain);
+    chain = RestFilter_add(chain, AtmosFilter_set_pagination_headers);
+    chain = RestFilter_add(chain, AtmosFilter_parse_list_access_tokens_response);
+
+    RestClient_execute_request((RestClient*)self, chain,
+            (RestRequest*)request, (RestResponse*)response);
+
+    RestFilter_free(chain);
+
+}
+
+
+void
+AtmosClient_get_access_token_info(AtmosClient *self, const char *token_id,
+        AtmosGetAccessTokenInfoResponse *response) {
+    char uri[ATMOS_PATH_MAX];
+    RestRequest request;
+    RestFilter *chain = NULL;
+
+    snprintf(uri, ATMOS_PATH_MAX, "/rest/accesstokens/%s?info", token_id);
+    RestRequest_init(&request, uri, HTTP_GET);
+    request.uri_encoded = 1;
+
+    chain = AtmosClient_add_default_filters(self, chain);
+    chain = RestFilter_add(chain, AtmosFilter_parse_get_token_info_response);
+
+    RestClient_execute_request((RestClient*)self, chain,
+            &request, (RestResponse*)response);
+
+    RestFilter_free(chain);
+    RestRequest_destroy(&request);
+
+}
+

@@ -1,0 +1,350 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		751967F3167297D7006C6760 /* atmos_token_policy.c in Sources */ = {isa = PBXBuildFile; fileRef = 751967F1167297D7006C6760 /* atmos_token_policy.c */; };
+		751967F7167297E9006C6760 /* test_xmlbind.c in Sources */ = {isa = PBXBuildFile; fileRef = 751967F5167297E9006C6760 /* test_xmlbind.c */; };
+		75FA846C1669633600D37229 /* atmos_access_tokens.c in Sources */ = {isa = PBXBuildFile; fileRef = 75FA84561669633600D37229 /* atmos_access_tokens.c */; };
+		75FA846D1669633600D37229 /* atmos_client.c in Sources */ = {isa = PBXBuildFile; fileRef = 75FA84581669633600D37229 /* atmos_client.c */; };
+		75FA846E1669633600D37229 /* atmos_common.c in Sources */ = {isa = PBXBuildFile; fileRef = 75FA845A1669633600D37229 /* atmos_common.c */; };
+		75FA846F1669633600D37229 /* atmos_create.c in Sources */ = {isa = PBXBuildFile; fileRef = 75FA845D1669633600D37229 /* atmos_create.c */; };
+		75FA84701669633600D37229 /* atmos_read.c in Sources */ = {isa = PBXBuildFile; fileRef = 75FA84601669633600D37229 /* atmos_read.c */; };
+		75FA84711669633600D37229 /* atmos_service_info.c in Sources */ = {isa = PBXBuildFile; fileRef = 75FA84621669633600D37229 /* atmos_service_info.c */; };
+		75FA84721669633600D37229 /* atmos_update.c in Sources */ = {isa = PBXBuildFile; fileRef = 75FA84641669633600D37229 /* atmos_update.c */; };
+		75FA84731669633600D37229 /* atmos_util.c in Sources */ = {isa = PBXBuildFile; fileRef = 75FA84661669633600D37229 /* atmos_util.c */; };
+		75FA84741669633600D37229 /* atmos_versions.c in Sources */ = {isa = PBXBuildFile; fileRef = 75FA84681669633600D37229 /* atmos_versions.c */; };
+		75FA84751669633600D37229 /* atmos.c in Sources */ = {isa = PBXBuildFile; fileRef = 75FA846A1669633600D37229 /* atmos.c */; };
+		75FA847D1669634900D37229 /* seatest.c in Sources */ = {isa = PBXBuildFile; fileRef = 75FA84771669634900D37229 /* seatest.c */; };
+		75FA847E1669634900D37229 /* test_atmos.c in Sources */ = {isa = PBXBuildFile; fileRef = 75FA84791669634900D37229 /* test_atmos.c */; };
+		75FA847F1669634900D37229 /* test.c in Sources */ = {isa = PBXBuildFile; fileRef = 75FA847B1669634900D37229 /* test.c */; };
+		75FA84841669636500D37229 /* object.c in Sources */ = {isa = PBXBuildFile; fileRef = 75FA84801669636500D37229 /* object.c */; };
+		75FA84851669636500D37229 /* rest_client.c in Sources */ = {isa = PBXBuildFile; fileRef = 75FA84821669636500D37229 /* rest_client.c */; };
+		75FA84871669638B00D37229 /* libxml2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 75FA84861669638B00D37229 /* libxml2.dylib */; };
+		75FA84891669643900D37229 /* libssl.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 75FA84881669643900D37229 /* libssl.dylib */; };
+		75FA848B1669647800D37229 /* libcurl.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 75FA848A1669647800D37229 /* libcurl.dylib */; };
+		75FA848D166965AF00D37229 /* libcrypto.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 75FA848C166965AF00D37229 /* libcrypto.dylib */; };
+		75FA84911669693900D37229 /* dirlist.xml in CopyFiles */ = {isa = PBXBuildFile; fileRef = 75FA848F1669691000D37229 /* dirlist.xml */; };
+		75FA84921669693F00D37229 /* atmostest.ini in CopyFiles */ = {isa = PBXBuildFile; fileRef = 75FA848E1669691000D37229 /* atmostest.ini */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		75FA8443166962CC00D37229 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = usr/share/man/man1;
+			dstSubfolderSpec = 7;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		75FA84901669693000D37229 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 7;
+			files = (
+				75FA84921669693F00D37229 /* atmostest.ini in CopyFiles */,
+				75FA84911669693900D37229 /* dirlist.xml in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		751967F1167297D7006C6760 /* atmos_token_policy.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = atmos_token_policy.c; path = ../../lib/atmos_token_policy.c; sourceTree = "<group>"; };
+		751967F2167297D7006C6760 /* atmos_token_policy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = atmos_token_policy.h; path = ../../lib/atmos_token_policy.h; sourceTree = "<group>"; };
+		751967F5167297E9006C6760 /* test_xmlbind.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = test_xmlbind.c; path = ../../tests/test_xmlbind.c; sourceTree = "<group>"; };
+		751967F6167297E9006C6760 /* test_xmlbind.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = test_xmlbind.h; path = ../../tests/test_xmlbind.h; sourceTree = "<group>"; };
+		75FA8445166962CD00D37229 /* atmos-c */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "atmos-c"; sourceTree = BUILT_PRODUCTS_DIR; };
+		75FA84561669633600D37229 /* atmos_access_tokens.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = atmos_access_tokens.c; path = ../../lib/atmos_access_tokens.c; sourceTree = "<group>"; };
+		75FA84571669633600D37229 /* atmos_access_tokens.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = atmos_access_tokens.h; path = ../../lib/atmos_access_tokens.h; sourceTree = "<group>"; };
+		75FA84581669633600D37229 /* atmos_client.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = atmos_client.c; path = ../../lib/atmos_client.c; sourceTree = "<group>"; };
+		75FA84591669633600D37229 /* atmos_client.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = atmos_client.h; path = ../../lib/atmos_client.h; sourceTree = "<group>"; };
+		75FA845A1669633600D37229 /* atmos_common.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = atmos_common.c; path = ../../lib/atmos_common.c; sourceTree = "<group>"; };
+		75FA845B1669633600D37229 /* atmos_common.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = atmos_common.h; path = ../../lib/atmos_common.h; sourceTree = "<group>"; };
+		75FA845C1669633600D37229 /* atmos_constants.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = atmos_constants.h; path = ../../lib/atmos_constants.h; sourceTree = "<group>"; };
+		75FA845D1669633600D37229 /* atmos_create.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = atmos_create.c; path = ../../lib/atmos_create.c; sourceTree = "<group>"; };
+		75FA845E1669633600D37229 /* atmos_create.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = atmos_create.h; path = ../../lib/atmos_create.h; sourceTree = "<group>"; };
+		75FA845F1669633600D37229 /* atmos_private.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = atmos_private.h; path = ../../lib/atmos_private.h; sourceTree = "<group>"; };
+		75FA84601669633600D37229 /* atmos_read.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = atmos_read.c; path = ../../lib/atmos_read.c; sourceTree = "<group>"; };
+		75FA84611669633600D37229 /* atmos_read.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = atmos_read.h; path = ../../lib/atmos_read.h; sourceTree = "<group>"; };
+		75FA84621669633600D37229 /* atmos_service_info.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = atmos_service_info.c; path = ../../lib/atmos_service_info.c; sourceTree = "<group>"; };
+		75FA84631669633600D37229 /* atmos_service_info.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = atmos_service_info.h; path = ../../lib/atmos_service_info.h; sourceTree = "<group>"; };
+		75FA84641669633600D37229 /* atmos_update.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = atmos_update.c; path = ../../lib/atmos_update.c; sourceTree = "<group>"; };
+		75FA84651669633600D37229 /* atmos_update.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = atmos_update.h; path = ../../lib/atmos_update.h; sourceTree = "<group>"; };
+		75FA84661669633600D37229 /* atmos_util.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = atmos_util.c; path = ../../lib/atmos_util.c; sourceTree = "<group>"; };
+		75FA84671669633600D37229 /* atmos_util.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = atmos_util.h; path = ../../lib/atmos_util.h; sourceTree = "<group>"; };
+		75FA84681669633600D37229 /* atmos_versions.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = atmos_versions.c; path = ../../lib/atmos_versions.c; sourceTree = "<group>"; };
+		75FA84691669633600D37229 /* atmos_versions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = atmos_versions.h; path = ../../lib/atmos_versions.h; sourceTree = "<group>"; };
+		75FA846A1669633600D37229 /* atmos.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = atmos.c; path = ../../lib/atmos.c; sourceTree = "<group>"; };
+		75FA846B1669633600D37229 /* atmos.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = atmos.h; path = ../../lib/atmos.h; sourceTree = "<group>"; };
+		75FA84771669634900D37229 /* seatest.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = seatest.c; path = ../../tests/seatest.c; sourceTree = "<group>"; };
+		75FA84781669634900D37229 /* seatest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = seatest.h; path = ../../tests/seatest.h; sourceTree = "<group>"; };
+		75FA84791669634900D37229 /* test_atmos.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = test_atmos.c; path = ../../tests/test_atmos.c; sourceTree = "<group>"; };
+		75FA847A1669634900D37229 /* test_atmos.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = test_atmos.h; path = ../../tests/test_atmos.h; sourceTree = "<group>"; };
+		75FA847B1669634900D37229 /* test.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = test.c; path = ../../tests/test.c; sourceTree = "<group>"; };
+		75FA847C1669634900D37229 /* test.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = test.h; path = ../../tests/test.h; sourceTree = "<group>"; };
+		75FA84801669636500D37229 /* object.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = object.c; path = "../../dep/rest-client-c/lib/object.c"; sourceTree = "<group>"; };
+		75FA84811669636500D37229 /* object.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = object.h; path = "../../dep/rest-client-c/lib/object.h"; sourceTree = "<group>"; };
+		75FA84821669636500D37229 /* rest_client.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rest_client.c; path = "../../dep/rest-client-c/lib/rest_client.c"; sourceTree = "<group>"; };
+		75FA84831669636500D37229 /* rest_client.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rest_client.h; path = "../../dep/rest-client-c/lib/rest_client.h"; sourceTree = "<group>"; };
+		75FA84861669638B00D37229 /* libxml2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libxml2.dylib; path = usr/lib/libxml2.dylib; sourceTree = SDKROOT; };
+		75FA84881669643900D37229 /* libssl.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libssl.dylib; path = usr/lib/libssl.dylib; sourceTree = SDKROOT; };
+		75FA848A1669647800D37229 /* libcurl.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcurl.dylib; path = usr/lib/libcurl.dylib; sourceTree = SDKROOT; };
+		75FA848C166965AF00D37229 /* libcrypto.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcrypto.dylib; path = usr/lib/libcrypto.dylib; sourceTree = SDKROOT; };
+		75FA848E1669691000D37229 /* atmostest.ini */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = atmostest.ini; path = "atmos-c/atmostest.ini"; sourceTree = "<group>"; };
+		75FA848F1669691000D37229 /* dirlist.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; name = dirlist.xml; path = "atmos-c/dirlist.xml"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		75FA8442166962CC00D37229 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				75FA848D166965AF00D37229 /* libcrypto.dylib in Frameworks */,
+				75FA848B1669647800D37229 /* libcurl.dylib in Frameworks */,
+				75FA84891669643900D37229 /* libssl.dylib in Frameworks */,
+				75FA84871669638B00D37229 /* libxml2.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		75FA843A166962CC00D37229 = {
+			isa = PBXGroup;
+			children = (
+				75FA848E1669691000D37229 /* atmostest.ini */,
+				75FA848F1669691000D37229 /* dirlist.xml */,
+				75FA848C166965AF00D37229 /* libcrypto.dylib */,
+				75FA848A1669647800D37229 /* libcurl.dylib */,
+				75FA84881669643900D37229 /* libssl.dylib */,
+				75FA84861669638B00D37229 /* libxml2.dylib */,
+				75FA8448166962CD00D37229 /* atmos-c */,
+				75FA8446166962CD00D37229 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		75FA8446166962CD00D37229 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				75FA8445166962CD00D37229 /* atmos-c */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		75FA8448166962CD00D37229 /* atmos-c */ = {
+			isa = PBXGroup;
+			children = (
+				751967F5167297E9006C6760 /* test_xmlbind.c */,
+				751967F6167297E9006C6760 /* test_xmlbind.h */,
+				751967F1167297D7006C6760 /* atmos_token_policy.c */,
+				751967F2167297D7006C6760 /* atmos_token_policy.h */,
+				75FA84801669636500D37229 /* object.c */,
+				75FA84811669636500D37229 /* object.h */,
+				75FA84821669636500D37229 /* rest_client.c */,
+				75FA84831669636500D37229 /* rest_client.h */,
+				75FA84771669634900D37229 /* seatest.c */,
+				75FA84781669634900D37229 /* seatest.h */,
+				75FA84791669634900D37229 /* test_atmos.c */,
+				75FA847A1669634900D37229 /* test_atmos.h */,
+				75FA847B1669634900D37229 /* test.c */,
+				75FA847C1669634900D37229 /* test.h */,
+				75FA84561669633600D37229 /* atmos_access_tokens.c */,
+				75FA84571669633600D37229 /* atmos_access_tokens.h */,
+				75FA84581669633600D37229 /* atmos_client.c */,
+				75FA84591669633600D37229 /* atmos_client.h */,
+				75FA845A1669633600D37229 /* atmos_common.c */,
+				75FA845B1669633600D37229 /* atmos_common.h */,
+				75FA845C1669633600D37229 /* atmos_constants.h */,
+				75FA845D1669633600D37229 /* atmos_create.c */,
+				75FA845E1669633600D37229 /* atmos_create.h */,
+				75FA845F1669633600D37229 /* atmos_private.h */,
+				75FA84601669633600D37229 /* atmos_read.c */,
+				75FA84611669633600D37229 /* atmos_read.h */,
+				75FA84621669633600D37229 /* atmos_service_info.c */,
+				75FA84631669633600D37229 /* atmos_service_info.h */,
+				75FA84641669633600D37229 /* atmos_update.c */,
+				75FA84651669633600D37229 /* atmos_update.h */,
+				75FA84661669633600D37229 /* atmos_util.c */,
+				75FA84671669633600D37229 /* atmos_util.h */,
+				75FA84681669633600D37229 /* atmos_versions.c */,
+				75FA84691669633600D37229 /* atmos_versions.h */,
+				75FA846A1669633600D37229 /* atmos.c */,
+				75FA846B1669633600D37229 /* atmos.h */,
+			);
+			path = "atmos-c";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		75FA8444166962CC00D37229 /* atmos-c */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 75FA844F166962CD00D37229 /* Build configuration list for PBXNativeTarget "atmos-c" */;
+			buildPhases = (
+				75FA8441166962CC00D37229 /* Sources */,
+				75FA8442166962CC00D37229 /* Frameworks */,
+				75FA8443166962CC00D37229 /* CopyFiles */,
+				75FA84901669693000D37229 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "atmos-c";
+			productName = "atmos-c";
+			productReference = 75FA8445166962CD00D37229 /* atmos-c */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		75FA843C166962CC00D37229 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0450;
+				ORGANIZATIONNAME = "Jason Cwik";
+			};
+			buildConfigurationList = 75FA843F166962CC00D37229 /* Build configuration list for PBXProject "atmos-c" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 75FA843A166962CC00D37229;
+			productRefGroup = 75FA8446166962CD00D37229 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				75FA8444166962CC00D37229 /* atmos-c */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		75FA8441166962CC00D37229 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				75FA846C1669633600D37229 /* atmos_access_tokens.c in Sources */,
+				75FA846D1669633600D37229 /* atmos_client.c in Sources */,
+				75FA846E1669633600D37229 /* atmos_common.c in Sources */,
+				75FA846F1669633600D37229 /* atmos_create.c in Sources */,
+				75FA84701669633600D37229 /* atmos_read.c in Sources */,
+				75FA84711669633600D37229 /* atmos_service_info.c in Sources */,
+				75FA84721669633600D37229 /* atmos_update.c in Sources */,
+				75FA84731669633600D37229 /* atmos_util.c in Sources */,
+				75FA84741669633600D37229 /* atmos_versions.c in Sources */,
+				75FA84751669633600D37229 /* atmos.c in Sources */,
+				75FA847D1669634900D37229 /* seatest.c in Sources */,
+				75FA847E1669634900D37229 /* test_atmos.c in Sources */,
+				75FA847F1669634900D37229 /* test.c in Sources */,
+				75FA84841669636500D37229 /* object.c in Sources */,
+				75FA84851669636500D37229 /* rest_client.c in Sources */,
+				751967F3167297D7006C6760 /* atmos_token_policy.c in Sources */,
+				751967F7167297E9006C6760 /* test_xmlbind.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		75FA844D166962CD00D37229 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		75FA844E166962CD00D37229 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		75FA8450166962CD00D37229 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				HEADER_SEARCH_PATHS = /usr/include/libxml2;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		75FA8451166962CD00D37229 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				HEADER_SEARCH_PATHS = /usr/include/libxml2;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		75FA843F166962CC00D37229 /* Build configuration list for PBXProject "atmos-c" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				75FA844D166962CD00D37229 /* Debug */,
+				75FA844E166962CD00D37229 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		75FA844F166962CD00D37229 /* Build configuration list for PBXNativeTarget "atmos-c" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				75FA8450166962CD00D37229 /* Debug */,
+				75FA8451166962CD00D37229 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 75FA843C166962CC00D37229 /* Project object */;
+}

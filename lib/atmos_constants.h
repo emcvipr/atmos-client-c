@@ -50,6 +50,7 @@
 #define ATMOS_HEADER_LIMIT "x-emc-limit"
 #define ATMOS_HEADER_LISTABLE_TAGS "x-emc-listable-tags"
 #define ATMOS_HEADER_VERSION_OID "x-emc-version-oid"
+#define ATMOS_HEADER_OBJECTID "x-emc-objectid"
 
 #define ATMOS_UID_MAX 255
 #define ATMOS_SECRET_MAX 64
@@ -107,9 +108,16 @@
 #define CLASS_ATMOS_CREATE_VERSION_RESPONSE "AtmosCreateVersionResponse"
 #define CLASS_ATMOS_LIST_VERSIONS_REQUEST "AtmosListVersionsRequest"
 #define CLASS_ATMOS_LIST_VERSIONS_RESPONSE "AtmosListVersionsResponse"
+#define CLASS_ATMOS_CREATE_ACCESS_TOKEN_REQUEST "AtmosCreateAccessTokenRequest"
+#define CLASS_ATMOS_CREATE_ACCESS_TOKEN_RESPONSE "AtmosCreateAccessTokenResponse"
+#define CLASS_ATMOS_LIST_ACCESS_TOKENS_REQUEST "AtmosListAccessTokensRequest"
+#define CLASS_ATMOS_LIST_ACCESS_TOKENS_RESPONSE "AtmosListAccessTokensResponse"
+#define CLASS_ATMOS_GET_ACCESS_TOKEN_INFO_RESPONSE "AtmosGetAccessTokenInfoResponse"
 
 #define ATMOS_OID_LOCATION_PREFIX "/rest/objects/"
 #define ATMOS_OID_LOCATION_PREFIX_SIZE 14
+
+#define ATMOS_ACCESS_TOKEN_LOCATION_PREFIX "/rest/accesstokens/"
 
 // System metadata names
 #define ATMOS_SYSTEM_META_ATIME "atime"

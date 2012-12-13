@@ -1154,9 +1154,9 @@ void AtmosFilter_get_listable_tags(RestFilter *self, RestClient *rest,
         const char *comma = strchr(tag, ',');
         if(!comma) {
             // End of string reached.  Take what's left.
-            c = strlen(tag);
+            c = (int)strlen(tag);
         } else {
-            c = comma - tag;
+            c = (int)(comma - tag);
         }
         if(res->tag_count + 1 > tags_alloc) {
             char **newalloc;

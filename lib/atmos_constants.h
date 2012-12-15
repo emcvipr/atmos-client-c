@@ -51,6 +51,7 @@
 #define ATMOS_HEADER_LISTABLE_TAGS "x-emc-listable-tags"
 #define ATMOS_HEADER_VERSION_OID "x-emc-version-oid"
 #define ATMOS_HEADER_OBJECTID "x-emc-objectid"
+#define ATMOS_HEADER_POOL "x-emc-pool"
 
 #define ATMOS_UID_MAX 255
 #define ATMOS_SECRET_MAX 64

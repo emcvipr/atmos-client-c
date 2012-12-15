@@ -6,6 +6,7 @@
  */
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include "atmos.h"
 #include "atmos_private.h"
@@ -53,6 +54,27 @@ AtmosReadObjectRequest_init_ns(AtmosReadObjectRequest *self, const char *path) {
 
     return self;
 }
+
+AtmosReadObjectRequest*
+AtmosReadObjectRequest_init_keypool(AtmosReadObjectRequest *self,
+        const char *pool, const char *key) {
+    char uri[ATMOS_PATH_MAX + 15];
+    char poolheader[ATMOS_PATH_MAX];
+
+    snprintf(uri, ATMOS_PATH_MAX + 15, "/rest/namespace/%s", key);
+
+    RestRequest_init((RestRequest*) self, uri, HTTP_GET);
+    AtmosReadObjectRequest_init_common(self);
+
+    snprintf(poolheader, ATMOS_PATH_MAX, ATMOS_HEADER_POOL ": %s", pool);
+    RestRequest_add_header((RestRequest*)self, poolheader);
+
+    strncpy(self->path, key, ATMOS_PATH_MAX);
+    strncpy(self->pool, pool, ATMOS_PATH_MAX);
+
+    return self;
+}
+
 
 void AtmosReadObjectRequest_destroy(AtmosReadObjectRequest *self) {
     self->object_id[0] = 0;
@@ -122,14 +144,14 @@ void AtmosFilter_set_read_object_headers(RestFilter *self, RestClient *rest,
 
     // Build a range header.
     if(req->range_start != -1 && req->range_end != -1) {
-        snprintf(buffer, ATMOS_SIMPLE_HEADER_MAX, "%s: Bytes=%lld-%lld", HTTP_HEADER_RANGE, req->range_start,
+        snprintf(buffer, ATMOS_SIMPLE_HEADER_MAX, "%s: Bytes=%" PRId64 "-%" PRId64, HTTP_HEADER_RANGE, req->range_start,
                 req->range_end);
         RestRequest_add_header(request, buffer);
     } else if(req->range_start != -1) {
-        snprintf(buffer, ATMOS_SIMPLE_HEADER_MAX, "%s: Bytes=%lld-", HTTP_HEADER_RANGE, req->range_start);
+        snprintf(buffer, ATMOS_SIMPLE_HEADER_MAX, "%s: Bytes=%" PRId64 "-", HTTP_HEADER_RANGE, req->range_start);
         RestRequest_add_header(request, buffer);
     } else if(req->range_end != -1) {
-        snprintf(buffer, ATMOS_SIMPLE_HEADER_MAX, "%s: Bytes=-%lld", HTTP_HEADER_RANGE, req->range_end);
+        snprintf(buffer, ATMOS_SIMPLE_HEADER_MAX, "%s: Bytes=-%" PRId64, HTTP_HEADER_RANGE, req->range_end);
         RestRequest_add_header(request, buffer);
     }
 
@@ -188,7 +210,12 @@ AtmosGetUserMetaRequest_init_ns(AtmosGetUserMetaRequest *self,
         const char *path) {
     char uri[ATMOS_PATH_MAX+64];
 
-    snprintf(uri, ATMOS_PATH_MAX+64, "/rest/namespace/%s?metadata/user", path);
+    if (path[0] != '/') {
+        ATMOS_ERROR("Path must start with a '/': %s\n", path);
+        return NULL;
+    }
+
+    snprintf(uri, ATMOS_PATH_MAX+64, "/rest/namespace%s?metadata/user", path);
     RestRequest_init((RestRequest*)self, uri, HTTP_GET);
 
     AtmosGetUserMetaRequest_common_init(self);
@@ -197,6 +224,27 @@ AtmosGetUserMetaRequest_init_ns(AtmosGetUserMetaRequest *self,
 
     return self;
 }
+
+AtmosGetUserMetaRequest*
+AtmosGetUserMetaRequest_init_keypool(AtmosGetUserMetaRequest *self,
+        const char *pool, const char *key) {
+    char uri[ATMOS_PATH_MAX+64];
+    char poolheader[ATMOS_PATH_MAX];
+
+    snprintf(uri, ATMOS_PATH_MAX+64, "/rest/namespace/%s?metadata/user", key);
+    RestRequest_init((RestRequest*)self, uri, HTTP_GET);
+
+    AtmosGetUserMetaRequest_common_init(self);
+
+    snprintf(poolheader, ATMOS_PATH_MAX, ATMOS_HEADER_POOL ": %s", pool);
+    RestRequest_add_header((RestRequest*)self, poolheader);
+
+    strncpy(self->path, key, ATMOS_PATH_MAX);
+    strncpy(self->pool, pool, ATMOS_PATH_MAX);
+
+    return self;
+}
+
 
 void
 AtmosGetUserMetaRequest_destroy(AtmosGetUserMetaRequest *self) {
@@ -304,7 +352,12 @@ AtmosGetSystemMetaRequest_init_ns(AtmosGetSystemMetaRequest *self,
         const char *path) {
     char uri[ATMOS_PATH_MAX+64];
 
-    snprintf(uri, ATMOS_PATH_MAX+64, "/rest/namespace/%s?metadata/system", path);
+    if (path[0] != '/') {
+        ATMOS_ERROR("Path must start with a '/': %s\n", path);
+        return NULL;
+    }
+
+    snprintf(uri, ATMOS_PATH_MAX+64, "/rest/namespace%s?metadata/system", path);
     RestRequest_init((RestRequest*)self, uri, HTTP_GET);
 
     AtmosGetSystemMetaRequest_init_common(self);
@@ -313,6 +366,27 @@ AtmosGetSystemMetaRequest_init_ns(AtmosGetSystemMetaRequest *self,
 
     return self;
 }
+
+AtmosGetSystemMetaRequest*
+AtmosGetSystemMetaRequest_init_keypool(AtmosGetSystemMetaRequest *self,
+        const char *pool, const char *key) {
+    char uri[ATMOS_PATH_MAX+64];
+    char poolheader[ATMOS_PATH_MAX];
+
+    snprintf(uri, ATMOS_PATH_MAX+64, "/rest/namespace/%s?metadata/system", key);
+    RestRequest_init((RestRequest*)self, uri, HTTP_GET);
+
+    AtmosGetSystemMetaRequest_init_common(self);
+
+    snprintf(poolheader, ATMOS_PATH_MAX, ATMOS_HEADER_POOL ": %s", pool);
+    RestRequest_add_header((RestRequest*)self, poolheader);
+
+    strncpy(self->path, key, ATMOS_PATH_MAX);
+    strncpy(self->pool, pool, ATMOS_PATH_MAX);
+
+    return self;
+}
+
 
 void
 AtmosGetSystemMetaRequest_destroy(AtmosGetSystemMetaRequest *self) {
@@ -1110,6 +1184,7 @@ void AtmosFilter_get_listable_tags(RestFilter *self, RestClient *rest,
     int tags_alloc;
     const char *tag;
     int utf8 = 0;
+    CURL *curl = NULL;
 
     if(req->parent_tag[0]) {
         snprintf(parent_header, ATMOS_PATH_MAX+12,
@@ -1137,6 +1212,7 @@ void AtmosFilter_get_listable_tags(RestFilter *self, RestClient *rest,
     const char *utf_mode = RestResponse_get_header_value(response, ATMOS_HEADER_UTF8);
     if(utf_mode && !strcmp("true", utf_mode)) {
         utf8 = 1;
+        curl = curl_easy_init();
     }
 
     // Parse the tags.
@@ -1169,7 +1245,14 @@ void AtmosFilter_get_listable_tags(RestFilter *self, RestClient *rest,
             res->tags = newalloc;
         }
 
-        res->tags[res->tag_count++] = strndup(tag, c);
+        if(utf8) {
+            int decoded_size;
+            char *decoded = curl_easy_unescape(curl, tag, c, &decoded_size);
+            res->tags[res->tag_count++] = strndup(decoded, decoded_size);
+            curl_free(decoded);
+        } else {
+            res->tags[res->tag_count++] = strndup(tag, c);
+        }
 
         if(comma) {
             tag = comma+1;
@@ -1185,6 +1268,10 @@ void AtmosFilter_get_listable_tags(RestFilter *self, RestClient *rest,
         // Valid since this is a pointer into the response headers and will
         // be freed at the same time as this object.
         res->token = token;
+    }
+
+    if(curl) {
+        curl_easy_cleanup(curl);
     }
 }
 

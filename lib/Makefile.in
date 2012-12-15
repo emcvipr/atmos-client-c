@@ -194,6 +194,8 @@ RANLIB = @RANLIB@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
+SSL_CFLAGS = @SSL_CFLAGS@
+SSL_LIBS = @SSL_LIBS@
 STRIP = @STRIP@
 USE_UNCRUSTIFY = @USE_UNCRUSTIFY@
 VERSION = @VERSION@
@@ -255,7 +257,7 @@ top_srcdir = @top_srcdir@
 lib_LTLIBRARIES = libatmos.la
 libatmos_la_SOURCES = atmos.c atmos_client.c atmos_common.c atmos_create.c \
  atmos_read.c atmos_service_info.c atmos_util.c atmos_access_tokens.c \
- atmos_update.c atmos_versions.c atmos_token_policy.c
+ atmos_update.c atmos_versions.c atmos_token_policy.c policy.xsd
 
 libatmos_la_LDFLAGS = -version-info 0:0:0
 libatmos_la_CFLAGS = $(XML_CFLAGS) -I$(top_srcdir)/dep/rest-client-c/lib

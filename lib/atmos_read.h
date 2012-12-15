@@ -51,6 +51,11 @@ typedef struct {
     RestRequest parent;
     /** Namespace path of object to read.  Should be empty if object_id is used. */
     char path[ATMOS_PATH_MAX];
+    /**
+     * For keypool requests, this is the pool used to create the object.  The
+     * key will be stored in 'path'.
+     */
+    char pool[ATMOS_PATH_MAX];
     /** Object ID of object to be read.  Should be empty if path is used. */
     char object_id[ATMOS_OID_LENGTH];
     /** Start of object range to read. Set to -1 for no start range */
@@ -77,6 +82,19 @@ AtmosReadObjectRequest_init(AtmosReadObjectRequest *self,
  */
 AtmosReadObjectRequest*
 AtmosReadObjectRequest_init_ns(AtmosReadObjectRequest *self, const char *path);
+
+/**
+ * Initializes a new AtmosReadObjectRequest.  This version will read an object
+ * from an Atmos 2.1.0+ keypool.
+ * @param self pointer to the AtmosReadObjectRequest to initialize
+ * @param pool the name of the pool containing the object.
+ * @param key the object key in the pool.
+ * @return the AtmosReadObjectRequest pointer (same as self)
+ * @since Atmos 2.1.0
+ */
+AtmosReadObjectRequest*
+AtmosReadObjectRequest_init_keypool(AtmosReadObjectRequest *self,
+        const char *pool, const char *key);
 
 /**
  * Destroys an AtmosReadObjectRequest.
@@ -245,6 +263,8 @@ typedef struct {
     char object_id[ATMOS_OID_LENGTH];
     /** Namespace path requested.  Should be empty if object_id is not */
     char path[ATMOS_PATH_MAX];
+    /** Atmos 2.1.0 pool containing the key.  Only used for keypool requests */
+    char pool[ATMOS_PATH_MAX];
     /** Names of the user metadata elements (tags) to load */
     char tags[ATMOS_META_COUNT_MAX][ATMOS_META_NAME_MAX];
     /** Number of tags to load.  If zero, all tags will be fetched */
@@ -269,6 +289,19 @@ AtmosGetUserMetaRequest_init(AtmosGetUserMetaRequest *self,
  */
 AtmosGetUserMetaRequest*
 AtmosGetUserMetaRequest_init_ns(AtmosGetUserMetaRequest *self, const char *path);
+
+/**
+ * Initializes a new AtmosGetUserMetaRequest object.  This version gets the
+ * metadata for an object in an Atmos 2.1.0+ keypool.
+ * @param self the AtmosGetUserMetaRequest object to initialize.
+ * @param pool the name of the pool containing the object.
+ * @param key the object key in the pool.
+ * @return the AtmosGetUserMetaRequest object (same as 'self')
+ * @since Atmos 2.1.0
+ */
+AtmosGetUserMetaRequest*
+AtmosGetUserMetaRequest_init_keypool(AtmosGetUserMetaRequest *self,
+        const char *pool, const char *key);
 
 /**
  * Destroys a AtmosGetUserMetaRequest object.
@@ -357,6 +390,8 @@ typedef struct {
     char object_id[ATMOS_OID_LENGTH];
     /** path requested. Should be empty if object_id is not */
     char path[ATMOS_PATH_MAX];
+    /** Atmos 2.1.0 pool containing the key.  Only used for keypool requests */
+    char pool[ATMOS_PATH_MAX];
     /** Array of tags requested.  See ATMOS_SYSTEM_META* macros */
     char tags[ATMOS_META_COUNT_MAX][ATMOS_META_NAME_MAX];
     /** Number of tags requested.  If zero, all tags will be fetched */
@@ -383,6 +418,19 @@ AtmosGetSystemMetaRequest_init(AtmosGetSystemMetaRequest *self,
 AtmosGetSystemMetaRequest*
 AtmosGetSystemMetaRequest_init_ns(AtmosGetSystemMetaRequest *self,
         const char *path);
+
+/**
+ * Initializes a new AtmosGetSystemMetaRequest.  This version gets the system
+ * metadata for an object in an Atmos 2.1.0 keypool.
+ * @param self the AtmosGetSystemMetaRequest object pointer to initialize.
+ * @param pool the name of the pool containing the object.
+ * @param key the object key in the pool.
+ * @return the AtmosGetSystemMetaRequest object (same as 'self').
+ * @since Atmos 2.1.0
+ */
+AtmosGetSystemMetaRequest*
+AtmosGetSystemMetaRequest_init_keypool(AtmosGetSystemMetaRequest *self,
+        const char *pool, const char *key);
 
 /**
  * Destroys a AtmosGetSystemMetaRequest object.
@@ -760,7 +808,9 @@ AtmosListDirectoryResponse_destroy(AtmosListDirectoryResponse *self);
  * based on server load and system parameters.
  */
 typedef struct {
+    /** Parent class */
     AtmosPaginatedRequest parent;
+    /** Parent tag to list the child tags of.  Empty to list the top level tags*/
     char parent_tag[ATMOS_PATH_MAX];
 } AtmosGetListableTagsRequest;
 

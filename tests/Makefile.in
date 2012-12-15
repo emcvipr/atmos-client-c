@@ -75,7 +75,8 @@ check_atmos_OBJECTS = $(am_check_atmos_OBJECTS)
 am__DEPENDENCIES_1 =
 check_atmos_DEPENDENCIES = ../lib/libatmos.la \
 	$(top_srcdir)/dep/rest-client-c/lib/librest.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
 check_atmos_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(check_atmos_CFLAGS) \
 	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
@@ -169,6 +170,8 @@ RANLIB = @RANLIB@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
+SSL_CFLAGS = @SSL_CFLAGS@
+SSL_LIBS = @SSL_LIBS@
 STRIP = @STRIP@
 USE_UNCRUSTIFY = @USE_UNCRUSTIFY@
 VERSION = @VERSION@
@@ -230,7 +233,10 @@ top_srcdir = @top_srcdir@
 AM_CFLAGS = -I$(srcdir)/../lib -I$(top_srcdir)/dep/rest-client-c/lib
 check_atmos_CFLAGS = $(XML_CFLAGS) -I$(top_srcdir)/dep/rest-client-c/lib $(AM_CFLAGS)
 check_atmos_SOURCES = seatest.c seatest.h test.c test.h test_atmos.c test_atmos.h test_xmlbind.c test_xmlbind.h
-check_atmos_LDADD = ../lib/libatmos.la $(top_srcdir)/dep/rest-client-c/lib/librest.la $(CURLLIB) $(XML_LIBS)
+check_atmos_LDADD = ../lib/libatmos.la \
+	$(top_srcdir)/dep/rest-client-c/lib/librest.la $(CURLLIB) $(XML_LIBS) \
+	$(SSL_LIBS)
+
 all: all-am
 
 .SUFFIXES:

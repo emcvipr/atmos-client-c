@@ -58,6 +58,11 @@ typedef struct {
      * object_id is not.
      */
     char path[ATMOS_PATH_MAX];
+    /**
+     * For keypool requests, this is the pool used to create the object.  The
+     * key will be stored in 'path'.
+     */
+    char pool[ATMOS_PATH_MAX];
     /** Metadata to apply to the object */
     AtmosMetadata meta[ATMOS_META_COUNT_MAX];
     /** Number of metadata entries */
@@ -89,12 +94,25 @@ AtmosUpdateObjectRequest_init(AtmosUpdateObjectRequest *self,
 /**
  * Initializes a new AtmosUpdateObjectRequest.
  * @param self the AtmosUpdateObjectRequest to initialize.
- * @param object_id the namespace path to the object in Atmos to update.
+ * @param path the namespace path to the object in Atmos to update.
  * @return the AtmosUpdateObjectRequest object (same as 'self')
  */
 AtmosUpdateObjectRequest*
 AtmosUpdateObjectRequest_init_ns(AtmosUpdateObjectRequest *self,
         const char *path);
+
+/**
+ * Initializes a new AtmosUpdateObjectRequest.  This version updates an object
+ * in an Atmos 2.1.0+ keypool.
+ * @param self the AtmosUpdateObjectRequest to initialize.
+ * @param pool the name of the pool containing the object.
+ * @param key the object key in the pool.
+ * @return the AtmosUpdateObjectRequest object (same as 'self')
+ * @since Atmos 2.1.0
+ */
+AtmosUpdateObjectRequest*
+AtmosUpdateObjectRequest_init_keypool(AtmosUpdateObjectRequest *self,
+        const char *pool, const char *key);
 
 /**
  * Destroys an AtmosUpdateObjectRequest.
@@ -163,10 +181,18 @@ AtmosUpdateObjectRequest_set_range_offset_size(AtmosUpdateObjectRequest *self,
  * @{
  */
 
+/**
+ * Contains the parameters for a set user metadata operation.
+ */
 typedef struct {
+    /** Parent class */
     RestRequest parent;
+    /** Object ID to update.  Will be empty if path is set */
     char object_id[ATMOS_UID_MAX];
+    /** Path (or key) to update.  Will be empty if object_id is set */
     char path[ATMOS_PATH_MAX];
+    /** Pool containing the key to update.  Only used for keypool requests */
+    char pool[ATMOS_PATH_MAX];
     /** Metadata entries for the new object */
     AtmosMetadata meta[ATMOS_META_COUNT_MAX];
     /** Number of metadata entries */
@@ -177,14 +203,44 @@ typedef struct {
     int listable_meta_count;
 } AtmosSetUserMetaRequest;
 
+/**
+ * Initializes a new AtmosSetUserMetaRequest object.
+ * @param self the AtmosSetUserMetaRequest object to initialize.
+ * @param object_id the Atmos ID of the object to update.
+ * @return the AtmosSetUserMetaRequest object (same as 'self')
+ */
 AtmosSetUserMetaRequest*
 AtmosSetUserMetaRequest_init(AtmosSetUserMetaRequest *self,
         const char *object_id);
 
+/**
+ * Initializes a new AtmosSetUserMetaRequest object.
+ * @param self the AtmosSetUserMetaRequest object to initialize.
+ * @param path the Atmos namespace path to the object to update.
+ * @return the AtmosSetUserMetaRequest object (same as 'self')
+ */
 AtmosSetUserMetaRequest*
 AtmosSetUserMetaRequest_init_ns(AtmosSetUserMetaRequest *self,
         const char *path);
 
+/**
+ * Initializes a new AtmosSetUserMetaRequest object.  This version updates an
+ * object in an Atmos 2.1.0+ keypool.
+ * @param self the AtmosSetUserMetaRequest object to initialize.
+ * @param pool the name of the pool containing the object.
+ * @param key the object key in the pool.
+ * @return the AtmosSetUserMetaRequest object (same as 'self')
+ * @since Atmos 2.1.0
+ */
+AtmosSetUserMetaRequest*
+AtmosSetUserMetaRequest_init_keypool(AtmosSetUserMetaRequest *self,
+        const char *pool, const char *key);
+
+
+/**
+ * Destroys an AtmosSetUserMetaRequest object.
+ * @param self the AtmosSetUserMetaRequest object to destroy.
+ */
 void
 AtmosSetUserMetaRequest_destroy(AtmosSetUserMetaRequest *self);
 

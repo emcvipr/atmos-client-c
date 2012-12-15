@@ -41,9 +41,32 @@ AtmosCreateObjectRequest_init_ns(AtmosCreateObjectRequest *self,
     snprintf(uri, ATMOS_PATH_MAX, "/rest/namespace%s", path);
 
     RestRequest_init((RestRequest*)self, uri, HTTP_POST);
+    strncpy(self->path, path, ATMOS_PATH_MAX);
 
     return AtmosCreateObjectRequest_common_init(self);
 }
+
+AtmosCreateObjectRequest*
+AtmosCreateObjectRequest_init_keypool(AtmosCreateObjectRequest *self,
+        const char *pool, const char *key) {
+    char poolheader[ATMOS_PATH_MAX];
+    char uri[ATMOS_PATH_MAX + 15];
+
+    snprintf(uri, ATMOS_PATH_MAX, "/rest/namespace/%s", key);
+
+    RestRequest_init((RestRequest*)self, uri, HTTP_POST);
+
+    AtmosCreateObjectRequest_common_init(self);
+
+    snprintf(poolheader, ATMOS_PATH_MAX, ATMOS_HEADER_POOL ": %s", pool);
+    RestRequest_add_header((RestRequest*)self, poolheader);
+
+    strncpy(self->path, key, ATMOS_PATH_MAX);
+    strncpy(self->pool, pool, ATMOS_PATH_MAX);
+
+    return self;
+}
+
 
 void
 AtmosCreateObjectRequest_destroy(AtmosCreateObjectRequest *self) {

@@ -160,6 +160,8 @@ RANLIB = @RANLIB@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
+SSL_CFLAGS = @SSL_CFLAGS@
+SSL_LIBS = @SSL_LIBS@
 STRIP = @STRIP@
 USE_UNCRUSTIFY = @USE_UNCRUSTIFY@
 VERSION = @VERSION@
@@ -219,7 +221,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 xmlbind_CFLAGS = $(XML_CFLAGS) $(AM_CFLAGS)
-xmlbind_SOURCES = xmlbind.c xmlbind.h
+xmlbind_SOURCES = xmlbind.c xmlbind.h xmlbind_macros.h
 xmlbind_LDADD = $(XML_LIBS)
 all: all-am
 

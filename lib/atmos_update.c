@@ -96,7 +96,12 @@ AtmosSetUserMetaRequest_init_ns(AtmosSetUserMetaRequest *self,
         const char *path) {
     char uri[ATMOS_PATH_MAX+64];
 
-    snprintf(uri, ATMOS_PATH_MAX+64, "/rest/namespace/%s?metadata/user", path);
+    if (path[0] != '/') {
+        ATMOS_ERROR("Path must start with a '/': %s\n", path);
+        return NULL;
+    }
+
+    snprintf(uri, ATMOS_PATH_MAX+64, "/rest/namespace%s?metadata/user", path);
     RestRequest_init((RestRequest*)self, uri, HTTP_POST);
 
     AtmosSetUserMetaRequest_init_common(self);
@@ -105,6 +110,27 @@ AtmosSetUserMetaRequest_init_ns(AtmosSetUserMetaRequest *self,
 
     return self;
 }
+
+AtmosSetUserMetaRequest*
+AtmosSetUserMetaRequest_init_keypool(AtmosSetUserMetaRequest *self,
+        const char *pool, const char *key) {
+    char uri[ATMOS_PATH_MAX+64];
+    char poolheader[ATMOS_PATH_MAX];
+
+    snprintf(uri, ATMOS_PATH_MAX+64, "/rest/namespace/%s?metadata/user", key);
+    RestRequest_init((RestRequest*)self, uri, HTTP_POST);
+
+    AtmosSetUserMetaRequest_init_common(self);
+
+    snprintf(poolheader, ATMOS_PATH_MAX, ATMOS_HEADER_POOL ": %s", pool);
+    RestRequest_add_header((RestRequest*)self, poolheader);
+
+    strncpy(self->path, key, ATMOS_PATH_MAX);
+    strncpy(self->pool, pool, ATMOS_PATH_MAX);
+
+    return self;
+}
+
 
 void
 AtmosSetUserMetaRequest_destroy(AtmosSetUserMetaRequest *self) {
@@ -147,14 +173,14 @@ void AtmosFilter_update_object(RestFilter *self, RestClient *rest,
 
     // Build a range header.
     if(req->range_start != -1 && req->range_end != -1) {
-        snprintf(buffer, ATMOS_SIMPLE_HEADER_MAX, "%s: Bytes=%lld-%lld", HTTP_HEADER_RANGE, req->range_start,
+        snprintf(buffer, ATMOS_SIMPLE_HEADER_MAX, "%s: Bytes=%" PRId64 "-%" PRId64, HTTP_HEADER_RANGE, req->range_start,
                 req->range_end);
         RestRequest_add_header(request, buffer);
     } else if(req->range_start != -1) {
-        snprintf(buffer, ATMOS_SIMPLE_HEADER_MAX, "%s: Bytes=%lld-", HTTP_HEADER_RANGE, req->range_start);
+        snprintf(buffer, ATMOS_SIMPLE_HEADER_MAX, "%s: Bytes=%" PRId64 "-", HTTP_HEADER_RANGE, req->range_start);
         RestRequest_add_header(request, buffer);
     } else if(req->range_end != -1) {
-        snprintf(buffer, ATMOS_SIMPLE_HEADER_MAX, "%s: Bytes=-%lld", HTTP_HEADER_RANGE, req->range_end);
+        snprintf(buffer, ATMOS_SIMPLE_HEADER_MAX, "%s: Bytes=-%" PRId64, HTTP_HEADER_RANGE, req->range_end);
         RestRequest_add_header(request, buffer);
     }
 
@@ -215,7 +241,12 @@ AtmosUpdateObjectRequest_init_ns(AtmosUpdateObjectRequest *self,
         const char *path) {
     char uri[ATMOS_PATH_MAX+64];
 
-    snprintf(uri, ATMOS_PATH_MAX+64, "/rest/namespace/%s", path);
+    if (path[0] != '/') {
+        ATMOS_ERROR("Path must start with a '/': %s\n", path);
+        return NULL;
+    }
+
+    snprintf(uri, ATMOS_PATH_MAX+64, "/rest/namespace%s", path);
     RestRequest_init((RestRequest*)self, uri, HTTP_PUT);
 
     AtmosUpdateObjectRequest_init_common(self);
@@ -224,6 +255,27 @@ AtmosUpdateObjectRequest_init_ns(AtmosUpdateObjectRequest *self,
 
     return self;
 }
+
+AtmosUpdateObjectRequest*
+AtmosUpdateObjectRequest_init_keypool(AtmosUpdateObjectRequest *self,
+        const char *pool, const char *key) {
+    char uri[ATMOS_PATH_MAX+64];
+    char poolheader[ATMOS_PATH_MAX];
+
+    snprintf(uri, ATMOS_PATH_MAX+64, "/rest/namespace/%s", key);
+    RestRequest_init((RestRequest*)self, uri, HTTP_PUT);
+
+    AtmosUpdateObjectRequest_init_common(self);
+
+    snprintf(poolheader, ATMOS_PATH_MAX, ATMOS_HEADER_POOL ": %s", pool);
+    RestRequest_add_header((RestRequest*)self, poolheader);
+
+    strncpy(self->path, key, ATMOS_PATH_MAX);
+    strncpy(self->pool, pool, ATMOS_PATH_MAX);
+
+    return self;
+}
+
 
 void
 AtmosUpdateObjectRequest_destroy(AtmosUpdateObjectRequest *self) {

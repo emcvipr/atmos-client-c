@@ -48,9 +48,17 @@
  * used to create a new access token in Atmos
  * @{
  */
+
+/** Contains the parameters for a create access token request */
 typedef struct {
+    /** Parent class */
     RestRequest parent;
+    /**
+     * Object ID to create an access token for. Empty for create tokens, or
+     * also empty if path is set.
+     */
     char object_id[ATMOS_OID_LENGTH];
+    /** Atmos namespace path to create an access token for.  Empty if object_id is set. */
     char path[ATMOS_PATH_MAX];
     /** Metadata entries for the new object */
     AtmosMetadata meta[ATMOS_META_COUNT_MAX];
@@ -234,5 +242,9 @@ AtmosGetAccessTokenInfoResponse_init(AtmosGetAccessTokenInfoResponse *self);
  */
 void
 AtmosGetAccessTokenInfoResponse_destroy(AtmosGetAccessTokenInfoResponse *self);
+
+/**
+ * @}
+ */
 
 #endif /* ATMOS_ACCESS_TOKENS_H_ */

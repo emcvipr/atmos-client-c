@@ -53,6 +53,11 @@ typedef struct {
      * an object with only an ID.
      */
     char path[ATMOS_PATH_MAX];
+    /**
+     * For keypool requests, this is the pool used to create the object.  The
+     * key will be stored in 'path'.
+     */
+    char pool[ATMOS_PATH_MAX];
     /** Metadata entries for the new object */
     AtmosMetadata meta[ATMOS_META_COUNT_MAX];
     /** Number of metadata entries */
@@ -82,20 +87,36 @@ typedef struct {
  * Initializes a new create object request.  With this version, an object will
  * be created with an Object ID only.
  * @param self pointer to the AtmosCreateObjectRequest to initialize.
+ * @return the AtmosCreateObjectRequest object (same as 'self').
  */
 AtmosCreateObjectRequest*
 AtmosCreateObjectRequest_init(AtmosCreateObjectRequest *self);
 
 /**
- * Initializes a new create object request.  With this version, an object wil
+ * Initializes a new create object request.  With this version, an object will
  * be created on the given path.
  * @param self pointer to the AtmosCreateObjectRequest to initialize.
  * @param path the Atmos namespace path for the new file, e.g. /dir/image.jpeg
  * or directory, e.g. /dir1/dir2/
+ * @return the AtmosCreateObjectRequest object (same as 'self').
  */
 AtmosCreateObjectRequest*
 AtmosCreateObjectRequest_init_ns(AtmosCreateObjectRequest *self,
         const char *path);
+
+/**
+ * Initializes a new create object request.  With this version, an object will
+ * be created as a key in the given pool.  This operation is only available in
+ * Atmos 2.1.0+
+ * @param self pointer to the AtmosCreateObjectRequest to initialize.
+ * @param pool the name of the pool to insert the object into.
+ * @param key the object key in the pool.
+ * @return the AtmosCreateObjectRequest object (same as 'self').
+ * @since Atmos 2.1.0
+ */
+AtmosCreateObjectRequest*
+AtmosCreateObjectRequest_init_keypool(AtmosCreateObjectRequest *self,
+        const char *pool, const char *key);
 
 /**
  * Destroys an AtmosCreateObjectRequest.

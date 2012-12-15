@@ -142,6 +142,25 @@ void
 AtmosClient_create_object_simple_ns(AtmosClient *self, const char *path,
         const char *data, size_t data_size, const char *content_type,
         AtmosCreateObjectResponse *response);
+/**
+ * Creates a new object in Atmos using the namespace. Note that you will get an
+ * error if an object already exists in the given location.  You can create a
+ * directory by specifying NULL for data and append a trailing slash to the.
+ * @param self the AtmosClient object pointer.
+ * @param pool the name of the pool to contain the new object.
+ * @param key the object key in the pool.
+ * @param data byte array containing the data for the new object's content.
+ * @param data_size the number of bytes to read from the byte array.
+ * @param content_type the MIME content type of the object, e.g. "image/jpeg".
+ * @param response the AtmosCreateObjectResponse object to receive the response
+ * information.
+ * @since Atmos 2.1.0
+ */
+void
+AtmosClient_create_object_simple_keypool(AtmosClient *self, const char *pool,
+        const char *key, const char *data, size_t data_size,
+        const char *content_type, AtmosCreateObjectResponse *response);
+
 
 /**
  * Creates a new object in Atmos.
@@ -176,6 +195,25 @@ AtmosClient_create_object_file_ns(AtmosClient *self, const char *path, FILE *f,
         AtmosCreateObjectResponse *response);
 
 /**
+ * Creates a new object in Atmos using a keypool. Note that you will get an
+ * error if an object already exists in the given location.
+ * @param self the AtmosClient object pointer.
+ * @param pool the name of the pool to contain the new object.
+ * @param key the object key in the pool.
+ * @param f file pointer to read the new object's content from.
+ * @param content_length the number of bytes to read from the file.
+ * @param content_type the MIME content type of the object, e.g. "image/jpeg".
+ * @param response the AtmosCreateObjectResponse object to receive the response
+ * information.
+ * @since Atmos 2.1.0
+ */
+void
+AtmosClient_create_object_file_keypool(AtmosClient *self, const char *pool,
+        const char *key, FILE *f, off_t content_length,
+        const char *content_type, AtmosCreateObjectResponse *response);
+
+
+/**
  * Deletes an object from Atmos by ID.
  * @param self the AtmosClient object pointer.
  * @param object_id the Atmos ObjectID to delete.
@@ -198,6 +236,19 @@ AtmosClient_delete_object(AtmosClient *self, const char *object_id,
 void
 AtmosClient_delete_object_ns(AtmosClient *self, const char *path,
         RestResponse *response);
+
+/**
+ * Deletes an object from an Atmos keypool.
+ * @param self the AtmosClient object pointer.
+ * @param pool the name of the pool that contains the object.
+ * @param key the object key in the pool.
+ * @param response the RestResponse object to receive the response information.
+ * The http_code will be 204 on success.
+ * @since Atmos 2.1.0
+ */
+void
+AtmosClient_delete_object_keypool(AtmosClient *self, const char *pool,
+        const char *key, RestResponse *response);
 
 /**
  * Reads an object from Atmos. By default, the object's contents will be written
@@ -243,6 +294,21 @@ AtmosClient_read_object_simple_ns(AtmosClient *self, const char *path,
         AtmosReadObjectResponse *response);
 
 /**
+ * Reads an object from Atmos. By default, the object's contents will be written
+ * into memory.  To write the contents into a file, execute
+ * RestResponse_use_file() on the response object.
+ * @param self the AtmosClient object pointer.
+ * @param pool the name of the pool that contains the object.
+ * @param key the object key in the pool.
+ * @param response the AtmosReadObjectResponse object to receive the object's
+ * contents.
+ * @since Atmos 2.1.0
+ */
+void
+AtmosClient_read_object_simple_keypool(AtmosClient *self, const char *pool,
+        const char *key, AtmosReadObjectResponse *response);
+
+/**
  * Updates an object in Atmos.  This is the advanced version that can update
  * the whole object, a range within the object, append to an object, or include
  * metadata and/or ACL updates with the data.
@@ -286,6 +352,23 @@ AtmosClient_update_object_simple_ns(AtmosClient *self, const char *path,
 
 /**
  * Updates an object in Atmos.  This version will replace the entire object's
+ * contents with the supplied byte array.
+ * @param self the AtmosClient object pointer
+ * @param pool the name of the pool that contains the object.
+ * @param key the object key in the pool.
+ * @param data the byte array containing the new data for the object.
+ * @param data_size the number of bytes to read from the byte array.
+ * @param content_type the MIME type of the object (e.g. image/jpeg)
+ * @param response the RestResponse object to receive the response.
+ * @since Atmos 2.1.0
+ */
+void
+AtmosClient_update_object_simple_keypool(AtmosClient *self, const char *pool,
+        const char *key, const char *data, size_t data_size,
+        const char *content_type, RestResponse *response);
+
+/**
+ * Updates an object in Atmos.  This version will replace the entire object's
  * contents with the supplied file.
  * @param self the AtmosClient object pointer
  * @param object_id the object ID to update
@@ -313,6 +396,23 @@ void
 AtmosClient_update_object_file_ns(AtmosClient *self, const char *path,
         FILE *f, off_t content_length, const char *content_type,
         RestResponse *response);
+
+/**
+ * Updates an object in Atmos.  This version will replace the entire object's
+ * contents with the supplied file.
+ * @param self the AtmosClient object pointer
+ * @param pool the name of the pool that contains the object.
+ * @param key the object key in the pool.
+ * @param f the file pointer containing the new data for the object.
+ * @param content_length the number of bytes to read from the file.
+ * @param content_type the MIME type of the object (e.g. image/jpeg)
+ * @param response the RestResponse object to receive the response.
+ * @since Atmos 2.1.0
+ */
+void
+AtmosClient_update_object_file_keypool(AtmosClient *self, const char *pool,
+        const char *key, FILE *f, off_t content_length,
+        const char *content_type, RestResponse *response);
 
 /**
  * Sets user metadata on an object.  Note that existing metadata elements on
@@ -352,6 +452,21 @@ AtmosClient_set_acl_ns(AtmosClient *self, const char *path,
         AtmosAclEntry *acl, int acl_count, AtmosResponse *response);
 
 /**
+ * Sets the ACL on an object.
+ * @param self the AtmosClient object pointer
+ * @param pool the name of the pool that contains the object.
+ * @param key the object key in the pool.
+ * @param acl array of ACL entries for the object
+ * @param acl_count number of items in 'acl'
+ * @param response the AtmosResponse object to receive the response.
+ * @since 2.1.0
+ */
+void
+AtmosClient_set_acl_keypool(AtmosClient *self, const char *pool,
+        const char *key, AtmosAclEntry *acl, int acl_count,
+        AtmosResponse *response);
+
+/**
  * Removes metadata entries from an object.
  * @param self the AtmosClient object pointer
  * @param object_id the object ID to update
@@ -384,6 +499,24 @@ AtmosClient_delete_user_meta_ns(AtmosClient *self, const char *path,
         RestResponse *response);
 
 /**
+ * Removes metadata entries from an object.
+ * @param self the AtmosClient object pointer
+ * @param pool the name of the pool that contains the object.
+ * @param key the object key in the pool.
+ * @param meta_names array of strings containing the metadata element names
+ * to remove.
+ * @param meta_name_count number of elements in 'meta_names'
+ * @param response RestResponse object to receive the response.  Note that this
+ * is a simple RestResponse because Atmos error messages are unavailable from
+ * DELETE operations.
+ * @since 2.1.0
+ */
+void
+AtmosClient_delete_user_meta_keypool(AtmosClient *self, const char *pool,
+        const char *key, const char const **meta_names, int meta_name_count,
+        RestResponse *response);
+
+/**
  * Gets the ACL for an object.
  * @param self the AtmosClient object pointer
  * @param object_id the object ID to get the ACL for.
@@ -402,6 +535,18 @@ AtmosClient_get_acl(AtmosClient *self, const char *object_id,
 void
 AtmosClient_get_acl_ns(AtmosClient *self, const char *path,
         AtmosGetAclResponse *response);
+
+/**
+ * Gets the ACL for an object.
+ * @param self the AtmosClient object pointer
+ * @param pool the name of the pool that contains the object.
+ * @param key the object key in the pool.
+ * @param response AtmosGetAclResponse object to receive the response.
+ * @since 2.1.0
+ */
+void
+AtmosClient_get_acl_keypool(AtmosClient *self, const char *pool,
+        const char *key, AtmosGetAclResponse *response);
 
 /**
  * Gets the user metadata for an object.  This is the 'advanced' version that
@@ -436,6 +581,18 @@ AtmosClient_get_user_meta_simple(AtmosClient *self, const char *object_id,
 void
 AtmosClient_get_user_meta_simple_ns(AtmosClient *self, const char *path,
         AtmosGetUserMetaResponse *response);
+
+/**
+ * Gets the user metadata for an object.
+ * @param self the AtmosClient object pointer
+ * @param pool the name of the pool that contains the object.
+ * @param key the object key in the pool.
+ * @param response the AtmosGetUserMetaResponse to receive the response.
+ * @since 2.1.0
+ */
+void
+AtmosClient_get_user_meta_simple_keypool(AtmosClient *self, const char *pool,
+        const char *key, AtmosGetUserMetaResponse *response);
 
 /**
  * Gets system metadata for an object.  This is the 'advanced' verison that
@@ -474,6 +631,19 @@ AtmosClient_get_system_meta_simple_ns(AtmosClient *self, const char *path,
         AtmosGetSystemMetaResponse *response);
 
 /**
+ * Gets system metadata for an object.
+ * @param self the AtmosClient object pointer
+ * @param pool the name of the pool that contains the object.
+ * @param key the object key in the pool.
+ * @param response the AtmosGetSystemMetaResponse object to receive the
+ * response.
+ * @since 2.1.0
+ */
+void
+AtmosClient_get_system_meta_simple_keypool(AtmosClient *self, const char *pool,
+        const char *key, AtmosGetSystemMetaResponse *response);
+
+/**
  * Gets storage information about an object.
  * @param self the AtmosClient object pointer
  * @param object_id the object ID to get information about.
@@ -495,6 +665,21 @@ AtmosClient_get_object_info(AtmosClient *self, const char *object_id,
 void
 AtmosClient_get_object_info_ns(AtmosClient *self, const char *path,
         AtmosGetObjectInfoResponse *response);
+
+/**
+ * Gets storage information about an object.  Note that this will return an
+ * error if called on a directory object since directories do not have storage.
+ * @param self the AtmosClient object pointer
+ * @param pool the name of the pool that contains the object.
+ * @param key the object key in the pool.
+ * @param response the AtmosGetObjectInfoResponse object to receive information
+ * about the object.
+ * @since 2.1.0
+ */
+void
+AtmosClient_get_object_info_keypool(AtmosClient *self, const char *pool,
+        const char *key, AtmosGetObjectInfoResponse *response);
+
 
 /**
  * Lists the contents of a directory.  Note that you must check the value of

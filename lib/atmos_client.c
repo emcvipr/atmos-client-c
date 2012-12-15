@@ -108,7 +108,7 @@ char *AtmosClient_canonicalize_request(AtmosClient *self, RestRequest *request) 
     firstheader = 1;
     for (i = 0; i < request->header_count; i++) {
         // Only include x-emc headers
-        if (strcasestr(emc_sorted_headers[i], "x-emc") == emc_sorted_headers[i]) {
+        if (strstr(emc_sorted_headers[i], "x-emc") == emc_sorted_headers[i]) {
             if (!firstheader) {
                 hash_string = AtmosUtil_cstring_append(hash_string, &hash_size,
                         "\n");
@@ -218,6 +218,22 @@ void AtmosClient_create_object_simple_ns(AtmosClient *self, const char *path,
     AtmosCreateObjectRequest_destroy(&request);
 }
 
+void AtmosClient_create_object_simple_keypool(AtmosClient *self,
+        const char *pool, const char *key, const char *data, size_t data_size,
+        const char *content_type, AtmosCreateObjectResponse *response) {
+    AtmosCreateObjectRequest request;
+
+    AtmosCreateObjectRequest_init_keypool(&request, pool, key);
+    if (data) {
+        RestRequest_set_array_body((RestRequest*) &request, data, data_size,
+                content_type);
+    }
+
+    AtmosClient_create_object(self, &request, response);
+
+    AtmosCreateObjectRequest_destroy(&request);
+}
+
 void AtmosClient_create_object_file(AtmosClient *self, FILE *f,
         off_t content_length, const char *content_type,
         AtmosCreateObjectResponse *response) {
@@ -240,6 +256,22 @@ void AtmosClient_create_object_file_ns(AtmosClient *self, const char *path,
     AtmosCreateObjectRequest request;
 
     AtmosCreateObjectRequest_init_ns(&request, path);
+    if (f) {
+        RestRequest_set_file_body((RestRequest*) &request, f, content_length,
+                content_type);
+    }
+
+    AtmosClient_create_object(self, &request, response);
+
+    AtmosCreateObjectRequest_destroy(&request);
+}
+
+void AtmosClient_create_object_file_keypool(AtmosClient *self, const char *pool,
+        const char *key, FILE *f, off_t content_length, const char *content_type,
+        AtmosCreateObjectResponse *response) {
+    AtmosCreateObjectRequest request;
+
+    AtmosCreateObjectRequest_init_keypool(&request, pool, key);
     if (f) {
         RestRequest_set_file_body((RestRequest*) &request, f, content_length,
                 content_type);
@@ -290,6 +322,30 @@ void AtmosClient_delete_object_ns(AtmosClient *self, const char *path,
     RestRequest_destroy(&request);
 }
 
+void AtmosClient_delete_object_keypool(AtmosClient *self, const char *pool,
+        const char *key, RestResponse *response) {
+    RestRequest request;
+    RestFilter *chain = NULL;
+    char uri[ATMOS_PATH_MAX+16];
+    char poolheader[ATMOS_PATH_MAX];
+
+    snprintf(uri, ATMOS_PATH_MAX+16, "/rest/namespace/%s", key);
+
+    RestRequest_init(&request, uri, HTTP_DELETE);
+
+    snprintf(poolheader, ATMOS_PATH_MAX, ATMOS_HEADER_POOL ": %s", pool);
+    RestRequest_add_header(&request, poolheader);
+
+    chain = AtmosClient_add_default_filters(self, chain);
+
+    RestClient_execute_request((RestClient*) self, chain, &request,
+            (RestResponse*) response);
+
+    RestFilter_free(chain);
+
+    RestRequest_destroy(&request);
+}
+
 void
 AtmosClient_read_object(AtmosClient *self, AtmosReadObjectRequest *request,
         AtmosReadObjectResponse *response) {
@@ -323,6 +379,18 @@ AtmosClient_read_object_simple_ns(AtmosClient *self, const char *path,
     AtmosReadObjectRequest request;
 
     AtmosReadObjectRequest_init_ns(&request, path);
+
+    AtmosClient_read_object(self, &request, response);
+
+    AtmosReadObjectRequest_destroy(&request);
+}
+
+void
+AtmosClient_read_object_simple_keypool(AtmosClient *self, const char *pool,
+        const char *key, AtmosReadObjectResponse *response) {
+    AtmosReadObjectRequest request;
+
+    AtmosReadObjectRequest_init_keypool(&request, pool, key);
 
     AtmosClient_read_object(self, &request, response);
 
@@ -394,6 +462,43 @@ AtmosClient_delete_user_meta_ns(AtmosClient *self, const char *path,
 }
 
 void
+AtmosClient_delete_user_meta_keypool(AtmosClient *self, const char *pool,
+        const char *key, const char const **meta_names, int meta_name_count,
+        RestResponse *response) {
+    char uri[ATMOS_PATH_MAX+64];
+    char poolheader[ATMOS_PATH_MAX];
+    RestFilter *chain = NULL;
+    RestRequest request;
+    int utf8;
+
+    utf8 = self->enable_utf8_metadata;
+
+    snprintf(uri, ATMOS_PATH_MAX+64, "/rest/namespace/%s?metadata/user", key);
+    RestRequest_init(&request, uri, HTTP_DELETE);
+
+    if(utf8) {
+        RestRequest_add_header(&request, ATMOS_HEADER_UTF8 ": true");
+    }
+
+    // Set the headers
+    if(meta_names && meta_name_count > 0) {
+        AtmosUtil_set_tags_header2(&request, meta_names, meta_name_count, utf8);
+    }
+
+    snprintf(poolheader, ATMOS_PATH_MAX, ATMOS_HEADER_POOL ": %s", pool);
+    RestRequest_add_header(&request, poolheader);
+
+    chain = AtmosClient_add_default_filters(self, chain);
+
+    RestClient_execute_request((RestClient*)self, chain,
+            &request, response);
+
+    RestFilter_free(chain);
+    RestRequest_destroy(&request);
+
+}
+
+void
 AtmosClient_get_user_meta(AtmosClient *self, AtmosGetUserMetaRequest *request,
         AtmosGetUserMetaResponse *response) {
     RestFilter *chain = NULL;
@@ -426,6 +531,19 @@ AtmosClient_get_user_meta_simple_ns(AtmosClient *self, const char *path,
     AtmosGetUserMetaRequest request;
 
     AtmosGetUserMetaRequest_init_ns(&request, path);
+
+    AtmosClient_get_user_meta(self, &request, response);
+
+    AtmosGetUserMetaRequest_destroy(&request);
+
+}
+
+void
+AtmosClient_get_user_meta_simple_keypool(AtmosClient *self, const char *pool,
+        const char *key, AtmosGetUserMetaResponse *response) {
+    AtmosGetUserMetaRequest request;
+
+    AtmosGetUserMetaRequest_init_keypool(&request, pool, key);
 
     AtmosClient_get_user_meta(self, &request, response);
 
@@ -491,6 +609,19 @@ AtmosClient_get_system_meta_simple_ns(AtmosClient *self, const char *path,
 }
 
 void
+AtmosClient_get_system_meta_simple_keypool(AtmosClient *self, const char *pool,
+        const char *key, AtmosGetSystemMetaResponse *response) {
+    AtmosGetSystemMetaRequest request;
+
+    AtmosGetSystemMetaRequest_init_keypool(&request, pool, key);
+
+    AtmosClient_get_system_meta(self, &request, response);
+
+    AtmosGetSystemMetaRequest_destroy(&request);
+
+}
+
+void
 AtmosClient_get_acl(AtmosClient *self, const char *object_id,
         AtmosGetAclResponse *response) {
     RestRequest request;
@@ -522,6 +653,32 @@ AtmosClient_get_acl_ns(AtmosClient *self, const char *path,
     snprintf(uri, ATMOS_PATH_MAX+64, "/rest/namespace%s?acl", path);
 
     RestRequest_init(&request, uri, HTTP_GET);
+
+    chain = AtmosClient_add_default_filters(self, chain);
+    chain = RestFilter_add(chain, AtmosFilter_parse_get_acl_response);
+
+    RestClient_execute_request((RestClient*) self, chain, &request,
+            (RestResponse*) response);
+
+    RestFilter_free(chain);
+
+    RestRequest_destroy(&request);
+}
+
+void
+AtmosClient_get_acl_keypool(AtmosClient *self, const char *pool,
+        const char *key, AtmosGetAclResponse *response) {
+    RestRequest request;
+    RestFilter *chain = NULL;
+    char uri[ATMOS_PATH_MAX+64];
+    char poolheader[ATMOS_PATH_MAX];
+
+    snprintf(uri, ATMOS_PATH_MAX+64, "/rest/namespace%s?acl", key);
+
+    RestRequest_init(&request, uri, HTTP_GET);
+
+    snprintf(poolheader, ATMOS_PATH_MAX, ATMOS_HEADER_POOL ": %s", pool);
+    RestRequest_add_header(&request, poolheader);
 
     chain = AtmosClient_add_default_filters(self, chain);
     chain = RestFilter_add(chain, AtmosFilter_parse_get_acl_response);
@@ -589,6 +746,38 @@ AtmosClient_set_acl_ns(AtmosClient *self, const char *path,
 }
 
 void
+AtmosClient_set_acl_keypool(AtmosClient *self, const char *pool,
+        const char *key, AtmosAclEntry *acl, int acl_count,
+        AtmosResponse *response) {
+    RestRequest request;
+    RestFilter *chain = NULL;
+    char uri[ATMOS_PATH_MAX+64];
+    char poolheader[ATMOS_PATH_MAX];
+
+    snprintf(uri, ATMOS_PATH_MAX+64, "/rest/namespace/%s?acl", key);
+
+    RestRequest_init(&request, uri, HTTP_POST);
+    // since there's no content, make sure there is a content
+    // type set otherwise curl will chose its own.
+    RestRequest_add_header((RestRequest*)&request,
+            HTTP_HEADER_CONTENT_TYPE ": application/octet-stream");
+    AtmosUtil_set_acl_header(acl, acl_count, &request);
+
+    snprintf(poolheader, ATMOS_PATH_MAX, ATMOS_HEADER_POOL ": %s", pool);
+    RestRequest_add_header(&request, poolheader);
+
+    chain = AtmosClient_add_default_filters(self, chain);
+    chain = RestFilter_add(chain, AtmosFilter_parse_get_acl_response);
+
+    RestClient_execute_request((RestClient*) self, chain, &request,
+            (RestResponse*) response);
+
+    RestFilter_free(chain);
+
+    RestRequest_destroy(&request);
+}
+
+void
 AtmosClient_update_object(AtmosClient *self, AtmosUpdateObjectRequest *request,
         RestResponse *response) {
     RestFilter *chain = NULL;
@@ -640,6 +829,24 @@ AtmosClient_update_object_simple_ns(AtmosClient *self, const char *path,
 }
 
 void
+AtmosClient_update_object_simple_keypool(AtmosClient *self, const char *pool,
+        const char *key, const char *data, size_t data_size,
+        const char *content_type, RestResponse *response) {
+    AtmosUpdateObjectRequest request;
+
+    AtmosUpdateObjectRequest_init_keypool(&request, pool, key);
+
+    if(data && data_size > 0) {
+        RestRequest_set_array_body((RestRequest*)&request, data, data_size,
+                content_type);
+    }
+
+    AtmosClient_update_object(self, &request, response);
+
+    AtmosUpdateObjectRequest_destroy(&request);
+}
+
+void
 AtmosClient_update_object_file(AtmosClient *self, const char *object_id,
         FILE *f, off_t content_length, const char *content_type,
         RestResponse *response) {
@@ -664,6 +871,24 @@ AtmosClient_update_object_file_ns(AtmosClient *self, const char *path,
     AtmosUpdateObjectRequest request;
 
     AtmosUpdateObjectRequest_init_ns(&request, path);
+
+    if(f && content_length > 0) {
+        RestRequest_set_file_body((RestRequest*)&request, f, content_length,
+                content_type);
+    }
+
+    AtmosClient_update_object(self, &request, response);
+
+    AtmosUpdateObjectRequest_destroy(&request);
+}
+
+void
+AtmosClient_update_object_file_keypool(AtmosClient *self, const char *pool,
+        const char *key, FILE *f, off_t content_length,
+        const char *content_type, RestResponse *response) {
+    AtmosUpdateObjectRequest request;
+
+    AtmosUpdateObjectRequest_init_keypool(&request, pool, key);
 
     if(f && content_length > 0) {
         RestRequest_set_file_body((RestRequest*)&request, f, content_length,
@@ -707,6 +932,32 @@ AtmosClient_get_object_info_ns(AtmosClient *self, const char *path,
     snprintf(uri, ATMOS_PATH_MAX+64, "/rest/namespace%s?info", path);
 
     RestRequest_init(&request, uri, HTTP_GET);
+
+    chain = AtmosClient_add_default_filters(self, chain);
+    chain = RestFilter_add(chain, AtmosFilter_parse_get_info_response);
+
+    RestClient_execute_request((RestClient*) self, chain, &request,
+            (RestResponse*) response);
+
+    RestFilter_free(chain);
+
+    RestRequest_destroy(&request);
+}
+
+void
+AtmosClient_get_object_info_keypool(AtmosClient *self, const char *pool,
+        const char *key, AtmosGetObjectInfoResponse *response) {
+    RestRequest request;
+    RestFilter *chain = NULL;
+    char uri[ATMOS_PATH_MAX+64];
+    char poolheader[ATMOS_PATH_MAX];
+
+    snprintf(uri, ATMOS_PATH_MAX+64, "/rest/namespace/%s?info", key);
+
+    RestRequest_init(&request, uri, HTTP_GET);
+
+    snprintf(poolheader, ATMOS_PATH_MAX, ATMOS_HEADER_POOL ": %s", pool);
+    RestRequest_add_header(&request, poolheader);
 
     chain = AtmosClient_add_default_filters(self, chain);
     chain = RestFilter_add(chain, AtmosFilter_parse_get_info_response);

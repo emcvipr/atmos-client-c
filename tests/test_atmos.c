@@ -654,13 +654,20 @@ void test_parse_dirlist() {
     AtmosListDirectoryResponse dir;
 
     f = fopen("dirlist.xml", "r");
+    if(!f) {
+        assert_fail("Missing dirlist.xml");
+        return;
+    }
     fseek(f, 0, SEEK_END);
     size = ftell(f);
     fseek(f, 0, SEEK_SET);
 
     xml = malloc(size);
 
-    fread(xml, size, 1, f);
+    if(!fread(xml, size, 1, f)) {
+        assert_fail("Failed to read dirlist.xml");
+        return;
+    }
 
 
     AtmosListDirectoryResponse_init(&dir);
@@ -1338,8 +1345,12 @@ void test_read_object_file() {
     fseek(f2, 0, SEEK_SET);
 
     for(i=0; i<8192; i++) {
-        fread(buffer, 256, 1, f1);
-        fread(buffer2, 256, 1, f2);
+        if(!fread(buffer, 256, 1, f1)) {
+            // ignore
+        }
+        if(!fread(buffer2, 256, 1, f2)) {
+            // ignore
+        }
 
         for(j=0; j<256; j++) {
             if(buffer[j] != buffer2[j]) {
@@ -4789,15 +4800,43 @@ void test_atmos_suite() {
     memset(key, 0, sizeof(key));
     memset(endpoint, 0, sizeof(endpoint));
 
-    fgets(user_id, 255, config);
-    fgets(key, 64, config);
-    fgets(endpoint, 255, config);
-    fgets(uid1, 64, config);
-    fgets(uid2, 64, config);
-    fgets(proxy_host, 256, config);
-    fgets(proxy_port_str, 32, config);
-    fgets(proxy_user, 256, config);
-    fgets(proxy_pass, 256, config);
+    if(!fgets(user_id, 255, config)) {
+        fprintf(stderr, "Missing user_id in atmostest.ini");
+        fprintf(stderr, "Check your atmostest.ini and try again\n");
+        exit(1);
+    }
+    if(!fgets(key, 64, config)) {
+        fprintf(stderr, "Missing secret key in atmostest.ini");
+        fprintf(stderr, "Check your atmostest.ini and try again\n");
+        exit(1);
+    }
+    if(!fgets(endpoint, 255, config)) {
+        fprintf(stderr, "Missing endpoint in atmostest.ini");
+        fprintf(stderr, "Check your atmostest.ini and try again\n");
+        exit(1);
+    }
+    if(!fgets(uid1, 64, config)) {
+        fprintf(stderr, "Missing uid1 in atmostest.ini");
+        fprintf(stderr, "Check your atmostest.ini and try again\n");
+        exit(1);
+    }
+    if(!fgets(uid2, 64, config)) {
+        fprintf(stderr, "Missing uid2 in atmostest.ini");
+        fprintf(stderr, "Check your atmostest.ini and try again\n");
+        exit(1);
+    }
+    if(!fgets(proxy_host, 256, config)) {
+        // OK, optional
+    }
+    if(!fgets(proxy_port_str, 32, config)) {
+        // OK, optional
+    }
+    if(!fgets(proxy_user, 256, config)) {
+        // OK, optional
+    }
+    if(!fgets(proxy_pass, 256, config)) {
+        // OK, optional
+    }
 
     // Strip newlines
     user_id[strlen(user_id) - 1] = 0;
@@ -4864,7 +4903,15 @@ void test_atmos_suite() {
         exit(1);
     }
 
+#ifdef srandomdev
     srandomdev();
+#else
+    {
+        time_t t;
+        time(&t);
+        srandom((unsigned int)t);
+    }
+#endif
 
     // Run tests
     test_fixture_start();

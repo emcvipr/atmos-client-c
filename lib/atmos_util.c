@@ -1,3 +1,5 @@
+#include "config.h"
+
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,6 +14,14 @@
 
 #include "atmos_util.h"
 #include "atmos_private.h"
+
+void AtmosUtil_strlcpy(char *dest, const char *src, size_t destsz) {
+    size_t i;
+    for(i=0; i<destsz-1 && *src; i++, src++, dest++) {
+        *dest = *src;
+    }
+    *dest=0;
+}
 
 int AtmosUtil_cstring_cmp(const void *a, const void *b) {
     return strcmp(*(char * const *) a, *(char * const *) b);
@@ -551,7 +561,7 @@ static void AtmosUtil_parse_meta_header_entry(const char *entry, char *name,
         strcpy(name, entry);
     } else {
         size_t namesz = delimiter - entry;
-        strlcpy(name, entry, namesz+1);
+        AtmosUtil_strlcpy(name, entry, namesz+1);
         valpos = entry+namesz+1;
         // Strip leading spaces
         while(*valpos == ' ') {
@@ -572,10 +582,10 @@ AtmosUtil_strlcpy_utf8(char *dest, const char *src, size_t destsz,
             ATMOS_WARN("Could not unescape string %s\n", src);
             return;
         }
-        strlcpy(dest, decoded, destsz);
+        AtmosUtil_strlcpy(dest, decoded, destsz);
         curl_free(decoded);
     } else {
-        strlcpy(dest, src, destsz);
+        AtmosUtil_strlcpy(dest, src, destsz);
     }
 }
 
@@ -600,7 +610,7 @@ static void AtmosUtil_parse_meta_header_string(const char *value,
             AtmosUtil_parse_meta_header_entry(value, entry_name, entry_value);
         } else {
             size_t valuesz = value_end - value;
-            strlcpy(entry, value, valuesz+1);
+            AtmosUtil_strlcpy(entry, value, valuesz+1);
             AtmosUtil_parse_meta_header_entry(entry, entry_name, entry_value);
         }
 
@@ -658,23 +668,36 @@ void AtmosUtil_parse_user_meta_headers(RestResponse *response,
     }
 }
 
+
 time_t
 AtmosUtil_parse_xml_datetime(const char *value) {
     struct tm t;
-    t.tm_gmtoff=0;
+    time_t tt;
     char buffer[ATMOS_SIMPLE_HEADER_MAX];
 
+    memset(&t, 0, sizeof(struct tm));
+
     // strptime doesn't accept "Z" as GMT.
-    strlcpy(buffer, value, ATMOS_SIMPLE_HEADER_MAX);
+    AtmosUtil_strlcpy(buffer, value, ATMOS_SIMPLE_HEADER_MAX);
     buffer[strlen(buffer)-1] = 0;
-    strlcat(buffer, "GMT", ATMOS_SIMPLE_HEADER_MAX);
+    strcat(buffer, "GMT");
 
     if(!strptime(buffer, "%FT%T%Z", &t)) {
         ATMOS_WARN("Could not parse dateTime value %s\n", buffer);
         return 0;
     }
 
-    return mktime(&t);
+    tt = mktime(&t);
+#ifdef HAVE_STRUCT_TM_TM_GMTOFF
+    /* BSD uses this member in mktime, so it's already TZ corrected to GMT */
+#elif HAVE_STRUCT_TM___TM_GMTOFF
+    /* Linux does not apply this member in mktime */
+    /* Correct the time_t to be in GMT, not localtime. */
+    tt -= timezone;
+#else
+#error Need either struct tm.tm_gmtoff or tm.__tm_gmtoff
+#endif
+    return tt;
 }
 
 void AtmosUtil_set_system_meta_entry(AtmosSystemMetadata *system_meta,
@@ -684,7 +707,7 @@ void AtmosUtil_set_system_meta_entry(AtmosSystemMetadata *system_meta,
     } else if (!strcmp(ATMOS_SYSTEM_META_CTIME, entry_name)) {
         system_meta->ctime = AtmosUtil_parse_xml_datetime(entry_value);
     } else if (!strcmp(ATMOS_SYSTEM_META_GID, entry_name)) {
-        strlcpy(system_meta->gid, entry_value, ATMOS_UID_MAX);
+        AtmosUtil_strlcpy(system_meta->gid, entry_value, ATMOS_UID_MAX);
     } else if (!strcmp(ATMOS_SYSTEM_META_ITIME, entry_name)) {
         system_meta->itime = AtmosUtil_parse_xml_datetime(entry_value);
     } else if (!strcmp(ATMOS_SYSTEM_META_MTIME, entry_name)) {
@@ -692,12 +715,12 @@ void AtmosUtil_set_system_meta_entry(AtmosSystemMetadata *system_meta,
     } else if (!strcmp(ATMOS_SYSTEM_META_NLINK, entry_name)) {
         system_meta->nlink = (int)strtol(entry_value, NULL, 10);
     } else if (!strcmp(ATMOS_SYSTEM_META_OBJECTID, entry_name)) {
-        strlcpy(system_meta->object_id, entry_value, ATMOS_OID_LENGTH);
+        AtmosUtil_strlcpy(system_meta->object_id, entry_value, ATMOS_OID_LENGTH);
     } else if (!strcmp(ATMOS_SYSTEM_META_OBJNAME, entry_name)) {
         AtmosUtil_strlcpy_utf8(system_meta->objname, entry_value,
                 ATMOS_PATH_MAX, utf8, curl);
     } else if (!strcmp(ATMOS_SYSTEM_META_POLICYNAME, entry_name)) {
-        strlcpy(system_meta->policyname, entry_value, ATMOS_UID_MAX);
+        AtmosUtil_strlcpy(system_meta->policyname, entry_value, ATMOS_UID_MAX);
     } else if (!strcmp(ATMOS_SYSTEM_META_SIZE, entry_name)) {
         system_meta->size = strtoll(entry_value, NULL, 10);
     } else if (!strcmp(ATMOS_SYSTEM_META_TYPE, entry_name)) {
@@ -707,9 +730,9 @@ void AtmosUtil_set_system_meta_entry(AtmosSystemMetadata *system_meta,
             system_meta->type = ATMOS_TYPE_REGULAR;
         }
     } else if (!strcmp(ATMOS_SYSTEM_META_UID, entry_name)) {
-        strlcpy(system_meta->uid, entry_value, ATMOS_UID_MAX);
+        AtmosUtil_strlcpy(system_meta->uid, entry_value, ATMOS_UID_MAX);
     } else if (!strcmp(ATMOS_SYSTEM_META_WSCHECKSUM, entry_name)) {
-        strlcpy(system_meta->wschecksum, entry_value, ATMOS_CHECKSUM_MAX);
+        AtmosUtil_strlcpy(system_meta->wschecksum, entry_value, ATMOS_CHECKSUM_MAX);
     }
 
 }
@@ -754,7 +777,7 @@ void AtmosUtil_parse_system_meta_header(RestResponse *response,
             AtmosUtil_parse_meta_header_entry(value, entry_name, entry_value);
         } else {
             size_t valuesz = value_end - value;
-            strlcpy(entry, value, valuesz+1);
+            AtmosUtil_strlcpy(entry, value, valuesz+1);
             AtmosUtil_parse_meta_header_entry(entry, entry_name, entry_value);
         }
         if(value_end) {
@@ -790,7 +813,7 @@ AtmosUtil_parse_acl(const char *value, AtmosAclEntry *acl, int *acl_count,
             AtmosUtil_parse_meta_header_entry(value, entry_name, entry_value);
         } else {
             size_t valuesz = value_end - value;
-            strlcpy(entry, value, valuesz+1);
+            AtmosUtil_strlcpy(entry, value, valuesz+1);
             AtmosUtil_parse_meta_header_entry(entry, entry_name, entry_value);
         }
         if(value_end) {
@@ -800,7 +823,7 @@ AtmosUtil_parse_acl(const char *value, AtmosAclEntry *acl, int *acl_count,
         }
 
         acl[*acl_count].type = type;
-        strlcpy(acl[*acl_count].principal, entry_name, ATMOS_UID_MAX);
+        AtmosUtil_strlcpy(acl[*acl_count].principal, entry_name, ATMOS_UID_MAX);
         if(!strcmp(ATMOS_ACL_PERMISSION_FULL, entry_value)) {
             acl[*acl_count].permission = ATMOS_PERM_FULL;
         } else if(!strcmp(ATMOS_ACL_PERMISSION_NONE, entry_value)) {

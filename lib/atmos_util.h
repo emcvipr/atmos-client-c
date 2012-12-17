@@ -9,6 +9,8 @@
 #include "atmos.h"
 #include "rest_client.h" // For decl of http_method enum
 
+void AtmosUtil_strlcpy(char *dest, const char *src, size_t destsz);
+
 void AtmosUtil_get_date(char *formated);
 void AtmosUtil_lowercase(char *s);
 void AtmosUtil_lowercaseheader(char *s);

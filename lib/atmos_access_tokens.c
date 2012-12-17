@@ -29,10 +29,12 @@
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+#include <string.h>
 
 #include "atmos.h"
 #include "atmos_private.h"
 #include "atmos_util.h"
+
 
 static void
 AtmosCreateAccessTokenRequest_init_common(AtmosCreateAccessTokenRequest *self) {

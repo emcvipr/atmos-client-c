@@ -24,6 +24,12 @@
 /* Define to 1 if you have the <string.h> header file. */
 #undef HAVE_STRING_H
 
+/* Define to 1 if `tm_gmtoff' is a member of `struct tm'. */
+#undef HAVE_STRUCT_TM_TM_GMTOFF
+
+/* Define to 1 if `__tm_gmtoff' is a member of `struct tm'. */
+#undef HAVE_STRUCT_TM___TM_GMTOFF
+
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #undef HAVE_SYS_STAT_H
 
@@ -66,3 +72,6 @@
 
 /* Version number of package */
 #undef VERSION
+
+/* Some required extensions */
+#undef _XOPEN_SOURCE

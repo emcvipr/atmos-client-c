@@ -19,31 +19,38 @@
  * Helper functions *
  ********************/
 
+#ifdef HAVE_STRUCT_TM_TM_GMTOFF
+#define TZ_CORRECT(TT, TM) /* BSD uses this member in mktime correctly */
+#elif HAVE_STRUCT_TM___TM_GMTOFF
+#define TZ_CORRECT(TT, TM) TT -= timezone; /* Linux does not apply this in mktime properly */
+#else
+#error Need either struct tm.tm_gmtoff or tm.__tm_gmtoff
+#endif
+
 #define DATETIME_PARSE \
     static time_t datetime_parse(xmlChar *value) {\
         time_t tt; \
         struct tm t; \
-        t.tm_gmtoff=0; \
         char buffer[255]; \
         char *decimal; \
+        memset(&t, 0, sizeof(struct tm));\
         size_t strsz; \
         strsz = strlen((char*)value);\
         /* strptime doesn't accept "Z" as GMT.*/\
         if(value[strsz-1] == 'Z') {\
-            strlcpy(buffer, (char*)value, 255); \
+            strcpy(buffer, (char*)value); \
             buffer[strlen(buffer)-1] = 0;\
             /** Also remove milliseconds if it's there */ \
             decimal = strchr(buffer, '.'); \
             if(decimal) { \
                 *decimal = 0;\
             }\
-            strlcat(buffer, "GMT", 255);\
+            strcat(buffer, "GMT");\
             if(!strptime(buffer, "%FT%T%Z", &t)) { \
                 fprintf(stderr, "Could not parse dateTime value %s\n", buffer); \
                 return 0; \
             }\
             tt = mktime(&t);\
-            return tt;\
         } else if(value[strsz-5] == '+' || value[strsz-5] == '-') {\
             /* RFC822 TZ (+-XXXX) is OK.*/\
             if(!strptime((char*)value, "%FT%T%z", &t)) { \
@@ -51,7 +58,6 @@
                 return 0; \
             }\
             tt = mktime(&t);\
-            return tt;\
         } else {\
             /** Unknown.  Try it as-is with named TZ. */\
             if(!strptime((char*)value, "%FT%T%Z", &t)) { \
@@ -59,8 +65,9 @@
                 return 0; \
             }\
             tt = mktime(&t);\
-            return tt;\
         }\
+        TZ_CORRECT(tt, t)\
+        return tt;\
    }\
 
 
@@ -576,12 +583,12 @@
     value = xmlGetProp(node, BAD_CAST #XML_NAME); \
     if(value) {\
         struct tm t; \
-        t.tm_gmtoff=0; \
         char buffer[255]; \
+        memset(&t, 0, sizeof(struct tm)); \
         /* strptime doesn't accept "Z" as GMT.*/\
-        strlcpy(buffer, (char*)value, 255); \
+        strcpy(buffer, (char*)value); \
         buffer[strlen(buffer)-1] = 0;\
-        strlcat(buffer, "GMT", 255);\
+        strcat(buffer, "GMT");\
         if(!strptime(buffer, "%FT%T%Z", &t)) { \
             fprintf(stderr, "Could not parse dateTime value %s\n", buffer); \
             return; \
@@ -617,12 +624,12 @@
     value = xmlGetProp(node, BAD_CAST #XML_NAME); \
     if(value) {\
         struct tm t; \
-        t.tm_gmtoff=0; \
         char buffer[255]; \
+        memset(&t, 0, sizeof(struct tm));\
         /* strptime doesn't accept "Z" as GMT.*/\
-        strlcpy(buffer, (char*)value, 255); \
+        strcpy(buffer, (char*)value); \
         buffer[strlen(buffer)-1] = 0;\
-        strlcat(buffer, "GMT", 255);\
+        strcat(buffer, "GMT");\
         if(!strptime(buffer, "%FT%T%Z", &t)) { \
             fprintf(stderr, "Could not parse dateTime value %s\n", buffer); \
             return; \

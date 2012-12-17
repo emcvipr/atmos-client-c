@@ -11,11 +11,11 @@ noinst_HEADERS = atmos_private.h
 BUILT_SOURCES = atmos_token_policy.c atmos_token_policy.h
 CLEANFILES = $(BUILT_SOURCES) atmos_token_policy.xb.c atmos_token_policy.xb.h
 atmos_token_policy.c : atmos_token_policy.xb.c atmos_token_policy.h
-	$(CC) -I../xmlbind -P -E atmos_token_policy.xb.c -o atmos_token_policy.c
+	$(CC) -I.. -I../xmlbind -P -E atmos_token_policy.xb.c -o atmos_token_policy.c
 	if [ "$(USE_UNCRUSTIFY)" == "yes" ]; then uncrustify -c uncrustify.cfg --replace -l C atmos_token_policy.c; fi
 	
 atmos_token_policy.h : atmos_token_policy.xb.c
-	$(CC) -I../xmlbind -P -E atmos_token_policy.xb.h -o atmos_token_policy.h
+	$(CC) -I.. -I../xmlbind -P -E atmos_token_policy.xb.h -o atmos_token_policy.h
 	if [ "$(USE_UNCRUSTIFY)" == "yes" ]; then uncrustify -c uncrustify.cfg --replace -l C atmos_token_policy.h; fi
 
 atmos_token_policy.xb.c : policy.xsd

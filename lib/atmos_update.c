@@ -35,43 +35,9 @@
 #include "atmos_util.h"
 #include "atmos_private.h"
 
-void AtmosFilter_set_user_meta_headers(RestFilter *self, RestClient *rest,
-        RestRequest *request, RestResponse *response) {
-    AtmosSetUserMetaRequest *req = (AtmosSetUserMetaRequest*)request;
-    AtmosClient *atmos = (AtmosClient*)rest;
-
-    // since there's no content, make sure there is a content
-    // type set otherwise curl will chose its own.
-    RestRequest_add_header(request,
-            HTTP_HEADER_CONTENT_TYPE ": application/octet-stream");
-
-
-    if(req->meta_count > 0) {
-        AtmosUtil_set_metadata_header(req->meta, req->meta_count, 0,
-                atmos->enable_utf8_metadata, request);
-    }
-
-    if(req->listable_meta_count > 0) {
-        AtmosUtil_set_metadata_header(req->listable_meta,
-                req->listable_meta_count, 1,
-                atmos->enable_utf8_metadata, request);
-    }
-
-    if(atmos->enable_utf8_metadata) {
-        RestRequest_add_header((RestRequest*)request,
-                ATMOS_HEADER_UTF8 ": true");
-    }
-
-    // Pass to the next filter
-    if(self->next) {
-        ((rest_http_filter)self->next->func)(self->next, rest, request, response);
-    }
-
-}
-
 static void
 AtmosSetUserMetaRequest_init_common(AtmosSetUserMetaRequest *self) {
-    OBJECT_ZERO(self, AtmosSetUserMetaRequest, RestRequest);
+    OBJECT_ZERO(self, AtmosSetUserMetaRequest, AtmosWriteObjectRequest);
 
     ((Object*)self)->class_name = CLASS_ATMOS_SET_USER_META_REQUEST;
 }
@@ -82,7 +48,7 @@ AtmosSetUserMetaRequest_init(AtmosSetUserMetaRequest *self,
     char uri[ATMOS_OID_LENGTH+64];
 
     snprintf(uri, ATMOS_OID_LENGTH+64, "/rest/objects/%s?metadata/user", object_id);
-    RestRequest_init((RestRequest*)self, uri, HTTP_POST);
+    AtmosWriteObjectRequest_init((AtmosWriteObjectRequest*)self, uri, HTTP_POST);
 
     AtmosSetUserMetaRequest_init_common(self);
 
@@ -102,7 +68,7 @@ AtmosSetUserMetaRequest_init_ns(AtmosSetUserMetaRequest *self,
     }
 
     snprintf(uri, ATMOS_PATH_MAX+64, "/rest/namespace%s?metadata/user", path);
-    RestRequest_init((RestRequest*)self, uri, HTTP_POST);
+    AtmosWriteObjectRequest_init((AtmosWriteObjectRequest*)self, uri, HTTP_POST);
 
     AtmosSetUserMetaRequest_init_common(self);
 
@@ -118,7 +84,7 @@ AtmosSetUserMetaRequest_init_keypool(AtmosSetUserMetaRequest *self,
     char poolheader[ATMOS_PATH_MAX];
 
     snprintf(uri, ATMOS_PATH_MAX+64, "/rest/namespace/%s?metadata/user", key);
-    RestRequest_init((RestRequest*)self, uri, HTTP_POST);
+    AtmosWriteObjectRequest_init((AtmosWriteObjectRequest*)self, uri, HTTP_POST);
 
     AtmosSetUserMetaRequest_init_common(self);
 
@@ -134,24 +100,17 @@ AtmosSetUserMetaRequest_init_keypool(AtmosSetUserMetaRequest *self,
 
 void
 AtmosSetUserMetaRequest_destroy(AtmosSetUserMetaRequest *self) {
-    OBJECT_ZERO(self, AtmosSetUserMetaRequest, RestRequest);
+    OBJECT_ZERO(self, AtmosSetUserMetaRequest, AtmosWriteObjectRequest);
 
-    RestRequest_destroy((RestRequest*)self);
+    AtmosWriteObjectRequest_destroy((AtmosWriteObjectRequest*)self);
 }
 
 void
 AtmosSetUserMetaRequest_add_metadata(AtmosSetUserMetaRequest *self,
         const char *name, const char *value,
         int listable) {
-    if(listable) {
-        int i = self->listable_meta_count++;
-        strncpy(self->listable_meta[i].name, name, ATMOS_META_NAME_MAX);
-        strncpy(self->listable_meta[i].value, value, ATMOS_META_VALUE_MAX);
-    } else {
-        int i = self->meta_count++;
-        strncpy(self->meta[i].name, name, ATMOS_META_NAME_MAX);
-        strncpy(self->meta[i].value, value, ATMOS_META_VALUE_MAX);
-    }
+    AtmosWriteObjectRequest_add_metadata((AtmosWriteObjectRequest*)self, name,
+            value, listable);
 }
 
 
@@ -164,14 +123,7 @@ void AtmosFilter_update_object(RestFilter *self, RestClient *rest,
     atmos = (AtmosClient*)rest;
     req = (AtmosUpdateObjectRequest*)request;
 
-    // Special case -- if there's no content, make sure there is a content
-    // type set otherwise curl will chose its own.
-    if (!((RestRequest*)request)->request_body) {
-        RestRequest_add_header((RestRequest*)request,
-                HTTP_HEADER_CONTENT_TYPE ": application/octet-stream");
-    }
-
-    // Build a range header.
+    // Build a range header if needed.
     if(req->range_start != -1 && req->range_end != -1) {
         snprintf(buffer, ATMOS_SIMPLE_HEADER_MAX, "%s: Bytes=%" PRId64 "-%" PRId64, HTTP_HEADER_RANGE, req->range_start,
                 req->range_end);
@@ -182,26 +134,6 @@ void AtmosFilter_update_object(RestFilter *self, RestClient *rest,
     } else if(req->range_end != -1) {
         snprintf(buffer, ATMOS_SIMPLE_HEADER_MAX, "%s: Bytes=-%" PRId64, HTTP_HEADER_RANGE, req->range_end);
         RestRequest_add_header(request, buffer);
-    }
-
-    if(req->meta_count > 0) {
-        AtmosUtil_set_metadata_header(req->meta, req->meta_count, 0,
-                atmos->enable_utf8_metadata, request);
-    }
-
-    if(req->listable_meta_count > 0) {
-        AtmosUtil_set_metadata_header(req->listable_meta,
-                req->listable_meta_count, 1,
-                atmos->enable_utf8_metadata, request);
-    }
-
-    if(atmos->enable_utf8_metadata) {
-        RestRequest_add_header((RestRequest*)request,
-                ATMOS_HEADER_UTF8 ": true");
-    }
-
-    if(req->acl_count > 0) {
-        AtmosUtil_set_acl_header(req->acl, req->acl_count, request);
     }
 
     // Pass to the next filter
@@ -227,7 +159,7 @@ AtmosUpdateObjectRequest_init(AtmosUpdateObjectRequest *self,
     char uri[ATMOS_OID_LENGTH+64];
 
     snprintf(uri, ATMOS_OID_LENGTH+64, "/rest/objects/%s", object_id);
-    RestRequest_init((RestRequest*)self, uri, HTTP_PUT);
+    AtmosWriteObjectRequest_init((AtmosWriteObjectRequest*)self, uri, HTTP_PUT);
 
     AtmosUpdateObjectRequest_init_common(self);
 
@@ -247,7 +179,7 @@ AtmosUpdateObjectRequest_init_ns(AtmosUpdateObjectRequest *self,
     }
 
     snprintf(uri, ATMOS_PATH_MAX+64, "/rest/namespace%s", path);
-    RestRequest_init((RestRequest*)self, uri, HTTP_PUT);
+    AtmosWriteObjectRequest_init((AtmosWriteObjectRequest*)self, uri, HTTP_PUT);
 
     AtmosUpdateObjectRequest_init_common(self);
 
@@ -263,7 +195,7 @@ AtmosUpdateObjectRequest_init_keypool(AtmosUpdateObjectRequest *self,
     char poolheader[ATMOS_PATH_MAX];
 
     snprintf(uri, ATMOS_PATH_MAX+64, "/rest/namespace/%s", key);
-    RestRequest_init((RestRequest*)self, uri, HTTP_PUT);
+    AtmosWriteObjectRequest_init((AtmosWriteObjectRequest*)self, uri, HTTP_PUT);
 
     AtmosUpdateObjectRequest_init_common(self);
 
@@ -279,23 +211,16 @@ AtmosUpdateObjectRequest_init_keypool(AtmosUpdateObjectRequest *self,
 
 void
 AtmosUpdateObjectRequest_destroy(AtmosUpdateObjectRequest *self) {
-    OBJECT_ZERO(self, AtmosUpdateObjectRequest, RestRequest);
-    RestRequest_destroy((RestRequest*)self);
+    OBJECT_ZERO(self, AtmosUpdateObjectRequest, AtmosWriteObjectRequest);
+    AtmosWriteObjectRequest_destroy((AtmosWriteObjectRequest*)self);
 }
 
 void
 AtmosUpdateObjectRequest_add_metadata(AtmosUpdateObjectRequest *self,
         const char *name, const char *value,
         int listable) {
-    if(listable) {
-        int i = self->listable_meta_count++;
-        strncpy(self->listable_meta[i].name, name, ATMOS_META_NAME_MAX);
-        strncpy(self->listable_meta[i].value, value, ATMOS_META_VALUE_MAX);
-    } else {
-        int i = self->meta_count++;
-        strncpy(self->meta[i].name, name, ATMOS_META_NAME_MAX);
-        strncpy(self->meta[i].value, value, ATMOS_META_VALUE_MAX);
-    }
+    AtmosWriteObjectRequest_add_metadata((AtmosWriteObjectRequest*)self, name,
+            value, listable);
 }
 
 void
@@ -303,10 +228,8 @@ AtmosUpdateObjectRequest_add_acl(AtmosUpdateObjectRequest *self,
         const char *principal,
         enum atmos_acl_principal_type type,
         enum atmos_acl_permission permission) {
-    self->acl[self->acl_count].permission = permission;
-    self->acl[self->acl_count].type = type;
-    strncpy(self->acl[self->acl_count].principal, principal, ATMOS_UID_MAX);
-    self->acl_count++;
+    AtmosWriteObjectRequest_add_acl((AtmosWriteObjectRequest*)self, principal,
+            type, permission);
 }
 
 void

@@ -47,7 +47,7 @@
  */
 typedef struct {
     /** Parent class */
-    RestRequest parent;
+    AtmosWriteObjectRequest parent;
     /**
      * Atmos namespace path to create the object at.  Can be empty to create
      * an object with only an ID.
@@ -58,18 +58,6 @@ typedef struct {
      * key will be stored in 'path'.
      */
     char pool[ATMOS_PATH_MAX];
-    /** Metadata entries for the new object */
-    AtmosMetadata meta[ATMOS_META_COUNT_MAX];
-    /** Number of metadata entries */
-    int meta_count;
-    /** Listable metadata entries for the new object */
-    AtmosMetadata listable_meta[ATMOS_META_COUNT_MAX];
-    /** Number of listable metadata entries */
-    int listable_meta_count;
-    /** ACL entries for the new object. */
-    AtmosAclEntry acl[ATMOS_ACL_COUNT_MAX];
-    /** Number of ACL entries.  May be zero to use the default ACL */
-    int acl_count;
 } AtmosCreateObjectRequest;
 
 /**

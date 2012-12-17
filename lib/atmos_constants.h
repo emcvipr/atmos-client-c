@@ -114,6 +114,7 @@
 #define CLASS_ATMOS_LIST_ACCESS_TOKENS_REQUEST "AtmosListAccessTokensRequest"
 #define CLASS_ATMOS_LIST_ACCESS_TOKENS_RESPONSE "AtmosListAccessTokensResponse"
 #define CLASS_ATMOS_GET_ACCESS_TOKEN_INFO_RESPONSE "AtmosGetAccessTokenInfoResponse"
+#define CLASS_ATMOS_WRITE_OBJECT_REQUEST "AtmosWriteObjectRequest"
 
 #define ATMOS_OID_LOCATION_PREFIX "/rest/objects/"
 #define ATMOS_OID_LOCATION_PREFIX_SIZE 14

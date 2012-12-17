@@ -50,7 +50,7 @@
  */
 typedef struct {
     /** Parent object */
-    RestRequest parent;
+    AtmosWriteObjectRequest parent;
     /** Object ID getting updated.  Will be empty if path is not */
     char object_id[ATMOS_UID_MAX];
     /**
@@ -63,18 +63,6 @@ typedef struct {
      * key will be stored in 'path'.
      */
     char pool[ATMOS_PATH_MAX];
-    /** Metadata to apply to the object */
-    AtmosMetadata meta[ATMOS_META_COUNT_MAX];
-    /** Number of metadata entries */
-    int meta_count;
-    /** Listable metadata entries to apply to the object */
-    AtmosMetadata listable_meta[ATMOS_META_COUNT_MAX];
-    /** Number of listable metadata entries */
-    int listable_meta_count;
-    /** ACL entries to apply to the object. */
-    AtmosAclEntry acl[ATMOS_ACL_COUNT_MAX];
-    /** Number of ACL entries.  May be zero to keep the existing ACL. */
-    int acl_count;
     /** Start of object range to update. Set to -1 for no start range */
     int64_t range_start;
     /** End of object range to update.  Set to -1 for no end range */
@@ -186,21 +174,13 @@ AtmosUpdateObjectRequest_set_range_offset_size(AtmosUpdateObjectRequest *self,
  */
 typedef struct {
     /** Parent class */
-    RestRequest parent;
+    AtmosWriteObjectRequest parent;
     /** Object ID to update.  Will be empty if path is set */
     char object_id[ATMOS_UID_MAX];
     /** Path (or key) to update.  Will be empty if object_id is set */
     char path[ATMOS_PATH_MAX];
     /** Pool containing the key to update.  Only used for keypool requests */
     char pool[ATMOS_PATH_MAX];
-    /** Metadata entries for the new object */
-    AtmosMetadata meta[ATMOS_META_COUNT_MAX];
-    /** Number of metadata entries */
-    int meta_count;
-    /** Listable metadata entries for the new object */
-    AtmosMetadata listable_meta[ATMOS_META_COUNT_MAX];
-    /** Number of listable metadata entries */
-    int listable_meta_count;
 } AtmosSetUserMetaRequest;
 
 /**

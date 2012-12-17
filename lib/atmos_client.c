@@ -178,7 +178,7 @@ void AtmosClient_create_object(AtmosClient *self,
 
     chain = AtmosClient_add_default_filters(self, chain);
     chain = RestFilter_add(chain, AtmosFilter_parse_create_response);
-    chain = RestFilter_add(chain, AtmosFilter_set_create_headers);
+    chain = RestFilter_add(chain, AtmosFilter_set_write_headers);
 
     RestClient_execute_request((RestClient*) self, chain,
             (RestRequest*) request, (RestResponse*) response);
@@ -557,7 +557,7 @@ AtmosClient_set_user_meta(AtmosClient *self, AtmosSetUserMetaRequest *request,
     RestFilter *chain = NULL;
 
     chain = AtmosClient_add_default_filters(self, chain);
-    chain = RestFilter_add(chain, AtmosFilter_set_user_meta_headers);
+    chain = RestFilter_add(chain, AtmosFilter_set_write_headers);
 
     RestClient_execute_request((RestClient*)self, chain,
             (RestRequest*)request, (RestResponse*)response);
@@ -783,6 +783,7 @@ AtmosClient_update_object(AtmosClient *self, AtmosUpdateObjectRequest *request,
     RestFilter *chain = NULL;
 
     chain = AtmosClient_add_default_filters(self, chain);
+    chain = RestFilter_add(chain, AtmosFilter_set_write_headers);
     chain = RestFilter_add(chain, AtmosFilter_update_object);
 
     RestClient_execute_request((RestClient*)self, chain,

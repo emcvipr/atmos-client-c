@@ -52,6 +52,9 @@
 #define ATMOS_HEADER_VERSION_OID "x-emc-version-oid"
 #define ATMOS_HEADER_OBJECTID "x-emc-objectid"
 #define ATMOS_HEADER_POOL "x-emc-pool"
+#define ATMOS_HEADER_WSCHECKSUM "x-emc-wschecksum"
+#define ATMOS_HEADER_GENERATE_CHECKSUM "x-emc-generate-checksum"
+#define ATMOS_HEADER_CONTENT_CHECKSUM "x-emc-content-checksum"
 
 #define ATMOS_UID_MAX 255
 #define ATMOS_SECRET_MAX 64
@@ -69,6 +72,7 @@
 #define ATMOS_OID_LENGTH 45 // 44+1
 
 #define ATMOS_SIMPLE_HEADER_MAX 255
+#define ATMOS_CHECKSUM_LENGTH_MAX 129
 
 #define ATMOS_ERROR_ROOT_NODE "Error"
 #define ATMOS_ERROR_CODE_NODE "Code"
@@ -82,6 +86,15 @@
 #define ATMOS_ACL_PERMISSION_FULL "FULL_CONTROL"
 #define ATMOS_ACL_GROUP_OTHER "other"
 
+#define ATMOS_CHECKSUM_ALG_SHA0 "sha0"
+/**
+ * Atmos 2.1+ only
+ */
+#define ATMOS_CHECKSUM_ALG_SHA1 "sha1"
+/**
+ * Atmos 2.1+ only
+ */
+#define ATMOS_CHECKSUM_ALG_MD5 "md5"
 
 #define CLASS_ATMOS_CLIENT "AtmosClient"
 #define CLASS_ATMOS_CREATE_OBJECT_REQUEST "AtmosCreateObjectRequest"
@@ -115,6 +128,7 @@
 #define CLASS_ATMOS_LIST_ACCESS_TOKENS_RESPONSE "AtmosListAccessTokensResponse"
 #define CLASS_ATMOS_GET_ACCESS_TOKEN_INFO_RESPONSE "AtmosGetAccessTokenInfoResponse"
 #define CLASS_ATMOS_WRITE_OBJECT_REQUEST "AtmosWriteObjectRequest"
+#define CLASS_ATMOS_CHECKSUM "AtmosChecksum"
 
 #define ATMOS_OID_LOCATION_PREFIX "/rest/objects/"
 #define ATMOS_OID_LOCATION_PREFIX_SIZE 14
@@ -156,5 +170,12 @@
 #define VER_NODE_VER_NUM "VerNum"
 #define VER_NODE_ITIME "itime"
 
+// Internal API errors set as Atmos error codes
+#define ATMOS_ERROR_API_FTELL_NOT_SUPPORTED 601
+#define ATMOS_ERROR_API_FTELL_NOT_SUPPORTED_STR "A file handle was used that does not support ftell() but it is required for wschecksum."
+#define ATMOS_ERROR_API_FSEEK_NOT_SUPPORTED 602
+#define ATMOS_ERROR_API_FSEEK_NOT_SUPPORTED_STR "A file handle was used that does not support fseek() but it is required for wschecksum."
+#define ATMOS_ERROR_API_CHECKSUM_FAILED 603
+#define ATMOS_ERROR_API_CHECKSUM_FAILED_STR "Checksum calculation failed"
 
 #endif /* ATMOS_CONSTANTS_H_ */

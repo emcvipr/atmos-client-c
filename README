@@ -10,7 +10,7 @@ openssl-dev .9.8k or greater
 libxml2 2.4 or greater
 
 Ubuntu: sudo apt-get install libcurl4-openssl-dev libssl-dev libxml2-dev
-CentOS/RHEL: 
+CentOS/RHEL: sudo yum install openssl-devel libxml2-devel libcurl-devel
 
 =========
 Building 

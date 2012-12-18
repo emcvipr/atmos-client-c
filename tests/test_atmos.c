@@ -39,6 +39,10 @@ char proxy_user[256];
 char proxy_pass[256];
 int proxy_port;
 
+int atmos_major;
+int atmos_minor;
+int atmos_sp;
+
 static const char
         *filechars =
                 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~!$&\"()*+;:";
@@ -247,6 +251,8 @@ void test_get_service_info() {
         // Atmos >= 2.x should support this
         assert_int_equal(1, res.utf8_metadata_supported);
     }
+    sscanf(res.version, "%d.%d.%d", &atmos_major, &atmos_minor, &atmos_sp);
+
     AtmosServiceInfoResponse_destroy(&res);
 
     AtmosClient_destroy(&atmos);
@@ -4786,6 +4792,466 @@ void test_list_tokens() {
     AtmosClient_destroy(&atmos);
 }
 
+#define CHECK_STRING_1 "hello world"
+#define CHECK_STRING_1a "hello"
+#define CHECK_STRING_1b " world"
+#define CHECK_STRING_1_SHA0 "9fce82c34887c1953b40b3a2883e18850c4fa8a6"
+#define CHECK_STRING_1a_SHA0 "ac62a630ca850b4ea07eda664eaecf9480843152"
+#define CHECK_STRING_1_SHA1 "2aae6c35c94fcfb415dbe95f408b9ce91ee846ed"
+#define CHECK_STRING_1a_SHA1 "aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d"
+#define CHECK_STRING_1_MD5 "5eb63bbbe01eeed093cb22bb8f5acdc3"
+#define CHECK_STRING_1a_MD5 "5d41402abc4b2a76b9719d911017c592"
+#define CHECK_STRING_1_OFFSET "/11/"
+
+void test_checksums() {
+    AtmosChecksum *ck;
+    char *value;
+
+    // SHA0
+    ck = AtmosChecksum_init(malloc(sizeof(AtmosChecksum)), ATMOS_WSCHECKSUM,
+            ATMOS_ALG_SHA0);
+    AtmosChecksum_update(ck, CHECK_STRING_1, strlen(CHECK_STRING_1));
+
+    value = AtmosChecksum_get_value(ck);
+    assert_string_equal(CHECK_STRING_1_SHA0, value);
+    free(value);
+
+    value = AtmosChecksum_get_state(ck);
+    assert_string_equal(ATMOS_CHECKSUM_ALG_SHA0 CHECK_STRING_1_OFFSET CHECK_STRING_1_SHA0, value);
+    free(value);
+
+    AtmosChecksum_destroy(ck);
+
+    // Incremental check
+    ck = AtmosChecksum_init(ck, ATMOS_WSCHECKSUM, ATMOS_ALG_SHA0);
+    AtmosChecksum_update(ck, CHECK_STRING_1a, strlen(CHECK_STRING_1a));
+
+    value = AtmosChecksum_get_value(ck);
+    assert_string_equal(CHECK_STRING_1a_SHA0, value);
+    free(value);
+
+    AtmosChecksum_update(ck, CHECK_STRING_1b, strlen(CHECK_STRING_1b));
+
+    value = AtmosChecksum_get_value(ck);
+    assert_string_equal(CHECK_STRING_1_SHA0, value);
+    free(value);
+
+    value = AtmosChecksum_get_state(ck);
+    assert_string_equal(ATMOS_CHECKSUM_ALG_SHA0 CHECK_STRING_1_OFFSET CHECK_STRING_1_SHA0, value);
+    free(value);
+
+    AtmosChecksum_destroy(ck);
+    free(ck);
+
+    // SHA1
+    ck = AtmosChecksum_init(malloc(sizeof(AtmosChecksum)), ATMOS_WSCHECKSUM,
+            ATMOS_ALG_SHA1);
+    AtmosChecksum_update(ck, CHECK_STRING_1, strlen(CHECK_STRING_1));
+
+    value = AtmosChecksum_get_state(ck);
+    assert_string_equal(ATMOS_CHECKSUM_ALG_SHA1 CHECK_STRING_1_OFFSET CHECK_STRING_1_SHA1, value);
+    free(value);
+
+    AtmosChecksum_destroy(ck);
+
+    // Incremental
+    ck = AtmosChecksum_init(ck, ATMOS_WSCHECKSUM, ATMOS_ALG_SHA1);
+    AtmosChecksum_update(ck, CHECK_STRING_1a, strlen(CHECK_STRING_1a));
+
+    value = AtmosChecksum_get_value(ck);
+    assert_string_equal(CHECK_STRING_1a_SHA1, value);
+    free(value);
+
+    AtmosChecksum_update(ck, CHECK_STRING_1b, strlen(CHECK_STRING_1b));
+
+    value = AtmosChecksum_get_value(ck);
+    assert_string_equal(CHECK_STRING_1_SHA1, value);
+    free(value);
+
+    value = AtmosChecksum_get_state(ck);
+    assert_string_equal(ATMOS_CHECKSUM_ALG_SHA1 CHECK_STRING_1_OFFSET CHECK_STRING_1_SHA1, value);
+    free(value);
+
+    AtmosChecksum_destroy(ck);
+    free(ck);
+
+    // MD5
+    ck = AtmosChecksum_init(malloc(sizeof(AtmosChecksum)), ATMOS_WSCHECKSUM,
+            ATMOS_ALG_MD5);
+    AtmosChecksum_update(ck, CHECK_STRING_1, strlen(CHECK_STRING_1));
+
+    value = AtmosChecksum_get_value(ck);
+    assert_string_equal(CHECK_STRING_1_MD5, value);
+    free(value);
+
+    value = AtmosChecksum_get_state(ck);
+    assert_string_equal(ATMOS_CHECKSUM_ALG_MD5 CHECK_STRING_1_OFFSET CHECK_STRING_1_MD5, value);
+    free(value);
+
+    AtmosChecksum_destroy(ck);
+
+    // Incremental
+    ck = AtmosChecksum_init(ck, ATMOS_WSCHECKSUM, ATMOS_ALG_MD5);
+    AtmosChecksum_update(ck, CHECK_STRING_1a, strlen(CHECK_STRING_1a));
+
+    value = AtmosChecksum_get_value(ck);
+    assert_string_equal(CHECK_STRING_1a_MD5, value);
+    free(value);
+
+    AtmosChecksum_update(ck, CHECK_STRING_1b, strlen(CHECK_STRING_1b));
+
+    value = AtmosChecksum_get_value(ck);
+    assert_string_equal(CHECK_STRING_1_MD5, value);
+    free(value);
+
+    value = AtmosChecksum_get_state(ck);
+    assert_string_equal(ATMOS_CHECKSUM_ALG_MD5 CHECK_STRING_1_OFFSET CHECK_STRING_1_MD5, value);
+    free(value);
+
+    AtmosChecksum_destroy(ck);
+    free(ck);
+}
+
+void test_create_object_wschecksum() {
+    AtmosClient atmos;
+    AtmosCreateObjectResponse response;
+    AtmosCreateObjectRequest request;
+    RestResponse delete_response;
+    AtmosChecksum ck;
+    char *value;
+
+    if(atmos_major < 2 && atmos_minor < 4) {
+        printf("...skipped (<1.4)\n");
+        return;
+    }
+
+    printf("SHA0\n");
+    get_atmos_client(&atmos);
+    AtmosCreateObjectResponse_init(&response);
+    AtmosCreateObjectRequest_init(&request);
+
+    RestRequest_set_array_body((RestRequest*)&request, CHECK_STRING_1,
+            strlen(CHECK_STRING_1), "text/plain");
+
+    AtmosChecksum_init(&ck, ATMOS_WSCHECKSUM, ATMOS_ALG_SHA0);
+    request.parent.checksum = &ck;
+
+    AtmosClient_create_object(&atmos, &request, &response);
+    check_error((AtmosResponse*)&response);
+    assert_int_equal(201, response.parent.parent.http_code);
+    assert_true(strlen(response.object_id) > 0);
+
+    printf("Created object: %s\n", response.object_id);
+
+    value = AtmosChecksum_get_value(&ck);
+    assert_string_equal(CHECK_STRING_1_SHA0, value);
+    free(value);
+
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_object(&atmos, response.object_id, &delete_response);
+    assert_int_equal(204, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    AtmosCreateObjectResponse_destroy(&response);
+    AtmosChecksum_destroy(&ck);
+
+    printf("SHA1\n");
+    if((atmos_major == 2 && atmos_minor >= 1) || atmos_major > 2) {
+        AtmosCreateObjectResponse_init(&response);
+        AtmosCreateObjectRequest_init(&request);
+
+        RestRequest_set_array_body((RestRequest*)&request, CHECK_STRING_1,
+                strlen(CHECK_STRING_1), "text/plain");
+
+        AtmosChecksum_init(&ck, ATMOS_WSCHECKSUM, ATMOS_ALG_SHA1);
+        request.parent.checksum = &ck;
+
+        AtmosClient_create_object(&atmos, &request, &response);
+        check_error((AtmosResponse*)&response);
+        assert_int_equal(201, response.parent.parent.http_code);
+        assert_true(strlen(response.object_id) > 0);
+
+        printf("Created object: %s\n", response.object_id);
+
+        value = AtmosChecksum_get_value(&ck);
+        assert_string_equal(CHECK_STRING_1_SHA1, value);
+        free(value);
+
+        RestResponse_init(&delete_response);
+        AtmosClient_delete_object(&atmos, response.object_id, &delete_response);
+        assert_int_equal(204, delete_response.http_code);
+        RestResponse_destroy(&delete_response);
+
+        AtmosCreateObjectResponse_destroy(&response);
+        AtmosChecksum_destroy(&ck);
+
+    } else {
+        printf("...skipped (atmos<2.1)\n");
+    }
+
+    printf("MD5\n");
+    if((atmos_major == 2 && atmos_minor >= 1) || atmos_major > 2) {
+        AtmosCreateObjectResponse_init(&response);
+        AtmosCreateObjectRequest_init(&request);
+
+        RestRequest_set_array_body((RestRequest*)&request, CHECK_STRING_1,
+                strlen(CHECK_STRING_1), "text/plain");
+
+        AtmosChecksum_init(&ck, ATMOS_WSCHECKSUM, ATMOS_ALG_MD5);
+        request.parent.checksum = &ck;
+
+        AtmosClient_create_object(&atmos, &request, &response);
+        check_error((AtmosResponse*)&response);
+        assert_int_equal(201, response.parent.parent.http_code);
+        assert_true(strlen(response.object_id) > 0);
+
+        printf("Created object: %s\n", response.object_id);
+
+        value = AtmosChecksum_get_value(&ck);
+        assert_string_equal(CHECK_STRING_1_MD5, value);
+        free(value);
+
+        RestResponse_init(&delete_response);
+        AtmosClient_delete_object(&atmos, response.object_id, &delete_response);
+        assert_int_equal(204, delete_response.http_code);
+        RestResponse_destroy(&delete_response);
+
+        AtmosCreateObjectResponse_destroy(&response);
+        AtmosChecksum_destroy(&ck);
+
+    } else {
+        printf("...skipped (atmos<2.1)\n");
+    }
+
+    AtmosClient_destroy(&atmos);
+}
+
+void test_append_object_wschecksum() {
+    AtmosClient atmos;
+    AtmosCreateObjectResponse response;
+    AtmosCreateObjectRequest request;
+    AtmosUpdateObjectRequest update_request;
+    RestResponse update_response;
+    RestResponse delete_response;
+    AtmosChecksum ck;
+    char *value;
+
+    if(atmos_major < 2 && atmos_minor < 4) {
+        printf("...skipped (<1.4)\n");
+        return;
+    }
+
+    printf("SHA0\n");
+    get_atmos_client(&atmos);
+    AtmosCreateObjectResponse_init(&response);
+    AtmosCreateObjectRequest_init(&request);
+
+    RestRequest_set_array_body((RestRequest*)&request, CHECK_STRING_1a,
+            strlen(CHECK_STRING_1a), "text/plain");
+
+    AtmosChecksum_init(&ck, ATMOS_WSCHECKSUM, ATMOS_ALG_SHA0);
+    request.parent.checksum = &ck;
+
+    AtmosClient_create_object(&atmos, &request, &response);
+    check_error((AtmosResponse*)&response);
+    assert_int_equal(201, response.parent.parent.http_code);
+    assert_true(strlen(response.object_id) > 0);
+
+    printf("Created object: %s\n", response.object_id);
+
+    AtmosUpdateObjectRequest_init(&update_request, response.object_id);
+    RestResponse_init(&update_response);
+    update_request.parent.checksum = &ck;
+    AtmosUpdateObjectRequest_set_range_offset_size(&update_request,
+            strlen(CHECK_STRING_1a), strlen(CHECK_STRING_1b));
+    RestRequest_set_array_body((RestRequest*)&update_request, CHECK_STRING_1b,
+            strlen(CHECK_STRING_1b), "text/plain");
+    AtmosClient_update_object(&atmos, &update_request, &update_response);
+    assert_int_equal(200, update_response.http_code);
+
+    value = AtmosChecksum_get_value(&ck);
+    assert_string_equal(CHECK_STRING_1_SHA0, value);
+    free(value);
+
+
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_object(&atmos, response.object_id, &delete_response);
+    assert_int_equal(204, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    AtmosCreateObjectResponse_destroy(&response);
+    AtmosChecksum_destroy(&ck);
+    AtmosClient_destroy(&atmos);
+}
+
+void test_generate_checksum() {
+    AtmosClient atmos;
+    AtmosCreateObjectResponse response;
+    AtmosCreateObjectRequest request;
+    RestResponse delete_response;
+    AtmosChecksum ck;
+    char *value;
+
+    if(atmos_major < 2 && atmos_minor < 4) {
+        printf("...skipped (<1.4)\n");
+        return;
+    }
+
+    printf("SHA0\n");
+    get_atmos_client(&atmos);
+    AtmosCreateObjectResponse_init(&response);
+    AtmosCreateObjectRequest_init(&request);
+
+    RestRequest_set_array_body((RestRequest*)&request, CHECK_STRING_1,
+            strlen(CHECK_STRING_1), "text/plain");
+
+    AtmosChecksum_init(&ck, ATMOS_GENERATE_CHECKSUM, ATMOS_ALG_SHA0);
+    request.parent.checksum = &ck;
+
+    AtmosClient_create_object(&atmos, &request, &response);
+    check_error((AtmosResponse*)&response);
+    assert_int_equal(201, response.parent.parent.http_code);
+    assert_true(strlen(response.object_id) > 0);
+
+    printf("Created object: %s\n", response.object_id);
+
+    assert_int_equal(1, AtmosChecksum_verify_response(&ck, (RestResponse*)&response));
+
+    value = AtmosChecksum_get_value(&ck);
+    assert_string_equal(CHECK_STRING_1_SHA0, value);
+    free(value);
+
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_object(&atmos, response.object_id, &delete_response);
+    assert_int_equal(204, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    AtmosCreateObjectResponse_destroy(&response);
+    AtmosChecksum_destroy(&ck);
+
+    printf("SHA1\n");
+    if((atmos_major == 2 && atmos_minor >= 1) || atmos_major > 2) {
+        AtmosCreateObjectResponse_init(&response);
+        AtmosCreateObjectRequest_init(&request);
+
+        RestRequest_set_array_body((RestRequest*)&request, CHECK_STRING_1,
+                strlen(CHECK_STRING_1), "text/plain");
+
+        AtmosChecksum_init(&ck, ATMOS_GENERATE_CHECKSUM, ATMOS_ALG_SHA1);
+        request.parent.checksum = &ck;
+
+        AtmosClient_create_object(&atmos, &request, &response);
+        check_error((AtmosResponse*)&response);
+        assert_int_equal(201, response.parent.parent.http_code);
+        assert_true(strlen(response.object_id) > 0);
+
+        printf("Created object: %s\n", response.object_id);
+
+        assert_int_equal(1, AtmosChecksum_verify_response(&ck, (RestResponse*)&response));
+
+        value = AtmosChecksum_get_value(&ck);
+        assert_string_equal(CHECK_STRING_1_SHA1, value);
+        free(value);
+
+        RestResponse_init(&delete_response);
+        AtmosClient_delete_object(&atmos, response.object_id, &delete_response);
+        assert_int_equal(204, delete_response.http_code);
+        RestResponse_destroy(&delete_response);
+
+        AtmosCreateObjectResponse_destroy(&response);
+        AtmosChecksum_destroy(&ck);
+
+    } else {
+        printf("...skipped (atmos<2.1)\n");
+    }
+
+    printf("MD5\n");
+    if((atmos_major == 2 && atmos_minor >= 1) || atmos_major > 2) {
+        AtmosCreateObjectResponse_init(&response);
+        AtmosCreateObjectRequest_init(&request);
+
+        RestRequest_set_array_body((RestRequest*)&request, CHECK_STRING_1,
+                strlen(CHECK_STRING_1), "text/plain");
+
+        AtmosChecksum_init(&ck, ATMOS_GENERATE_CHECKSUM, ATMOS_ALG_MD5);
+        request.parent.checksum = &ck;
+
+        AtmosClient_create_object(&atmos, &request, &response);
+        check_error((AtmosResponse*)&response);
+        assert_int_equal(201, response.parent.parent.http_code);
+        assert_true(strlen(response.object_id) > 0);
+
+        printf("Created object: %s\n", response.object_id);
+
+        assert_int_equal(1, AtmosChecksum_verify_response(&ck, (RestResponse*)&response));
+
+        value = AtmosChecksum_get_value(&ck);
+        assert_string_equal(CHECK_STRING_1_MD5, value);
+        free(value);
+
+        RestResponse_init(&delete_response);
+        AtmosClient_delete_object(&atmos, response.object_id, &delete_response);
+        assert_int_equal(204, delete_response.http_code);
+        RestResponse_destroy(&delete_response);
+
+        AtmosCreateObjectResponse_destroy(&response);
+        AtmosChecksum_destroy(&ck);
+
+    } else {
+        printf("...skipped (atmos<2.1)\n");
+    }
+
+    AtmosClient_destroy(&atmos);
+
+}
+
+void test_generate_checksum_file() {
+    AtmosClient atmos;
+    AtmosCreateObjectRequest request;
+    AtmosCreateObjectResponse response;
+    RestResponse delete_response;
+    AtmosChecksum ck;
+    FILE *f;
+    char *value;
+
+    f = tmpfile();
+    fwrite(CHECK_STRING_1, strlen(CHECK_STRING_1), 1, f);
+    fseek(f, 0, SEEK_SET);
+
+    get_atmos_client(&atmos);
+    //atmos.signature_debug = 1;
+    AtmosCreateObjectRequest_init(&request);
+    AtmosCreateObjectResponse_init(&response);
+    AtmosChecksum_init(&ck, ATMOS_GENERATE_CHECKSUM, ATMOS_ALG_SHA0);
+    request.parent.checksum = &ck;
+    RestRequest_set_file_body((RestRequest*)&request, f, strlen(CHECK_STRING_1), "text/plain");
+
+    AtmosClient_create_object(&atmos, &request, &response);
+    check_error((AtmosResponse*)&response);
+    assert_int_equal(201, response.parent.parent.http_code);
+    assert_true(strlen(response.object_id) > 0);
+
+    printf("Created object: %s\n", response.object_id);
+
+    // Verify the server's checksum response with our local one.
+    assert_int_equal(1, AtmosChecksum_verify_response(&ck, (RestResponse*)&response));
+
+    value = AtmosChecksum_get_value(&ck);
+    assert_string_equal(CHECK_STRING_1_SHA0, value);
+    free(value);
+
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_object(&atmos, response.object_id, &delete_response);
+    assert_int_equal(204, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    AtmosCreateObjectResponse_destroy(&response);
+    AtmosClient_destroy(&atmos);
+    AtmosChecksum_destroy(&ck);
+    fclose(f);
+}
+
+
 void test_atmos_suite() {
     char proxy_port_str[32];
 
@@ -4916,6 +5382,7 @@ void test_atmos_suite() {
     // Run tests
     test_fixture_start();
 
+    // Test internal functions
     start_test_msg("test_normalize_whitespace");
     run_test(test_normalize_whitespace);
 
@@ -4954,6 +5421,11 @@ void test_atmos_suite() {
 
     start_test_msg("test_parse_dirlist");
     run_test(test_parse_dirlist);
+
+    start_test_msg("test_checksums");
+    run_test(test_checksums);
+
+    // Start network tests to Atmos
 
     start_test_msg("test_get_service_info");
     run_test(test_get_service_info);
@@ -5113,6 +5585,18 @@ void test_atmos_suite() {
 
     start_test_msg("test_list_tokens");
     run_test(test_list_tokens);
+
+    start_test_msg("test_create_object_wschecksum");
+    run_test(test_create_object_wschecksum);
+
+    start_test_msg("test_append_object_wschecksum");
+    run_test(test_append_object_wschecksum);
+
+    start_test_msg("test_generate_checksum");
+    run_test(test_generate_checksum);
+
+    start_test_msg("test_generate_checksum_file");
+    run_test(test_generate_checksum_file);
 
     test_fixture_end();
 }

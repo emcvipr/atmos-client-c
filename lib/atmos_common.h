@@ -308,6 +308,7 @@ AtmosChecksum_verify_response(AtmosChecksum *self, RestResponse *response);
  * @{
  */
 typedef struct {
+    /** Parent class */
     RestRequest parent;
     /** Metadata entries for the new object */
     AtmosMetadata meta[ATMOS_META_COUNT_MAX];
@@ -369,7 +370,7 @@ AtmosWriteObjectRequest_add_metadata(AtmosWriteObjectRequest *self,
         const char *name, const char *value,
         int listable);
 
-/*
+/**
  * @}
  */
 

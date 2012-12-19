@@ -119,9 +119,7 @@ void AtmosFilter_update_object(RestFilter *self, RestClient *rest,
         RestRequest *request, RestResponse *response) {
     char buffer[ATMOS_SIMPLE_HEADER_MAX];
     AtmosUpdateObjectRequest *req;
-    AtmosClient *atmos;
 
-    atmos = (AtmosClient*)rest;
     req = (AtmosUpdateObjectRequest*)request;
 
     // Build a range header if needed.

@@ -5251,6 +5251,114 @@ void test_generate_checksum_file() {
     fclose(f);
 }
 
+void test_shareable_url() {
+    AtmosClient atmos;
+    AtmosCreateObjectResponse response;
+    RestResponse delete_response;
+    RestRequest dl_request;
+    RestResponse dl_response;
+    char *shareable_url;
+    time_t now;
+    RestFilter *chain = NULL;
+
+    get_atmos_client(&atmos);
+    AtmosCreateObjectResponse_init(&response);
+
+    AtmosClient_create_object_simple(&atmos, "test", 4,
+            "text/plain; charset=US-ASCII", &response);
+
+    assert_int_equal(201, response.parent.parent.http_code);
+    assert_true(strlen(response.object_id) > 0);
+
+    printf("Created object: %s\n", response.object_id);
+
+    now = time(NULL);
+    now += 3600;
+    shareable_url = AtmosClient_get_shareable_url(&atmos, response.object_id,
+            now, "attachment; filename=test.txt");
+
+    RestRequest_init(&dl_request, shareable_url + strlen(atmos.parent.host), HTTP_GET);
+    RestResponse_init(&dl_response);
+    chain = RestFilter_add(chain, RestFilter_execute_curl_request);
+    RestClient_execute_request((RestClient*)&atmos, chain, &dl_request, &dl_response);
+    assert_int_equal(200, dl_response.http_code);
+    assert_int64t_equal(4, dl_response.content_length);
+    assert_string_equal("test", dl_response.body);
+    assert_string_equal("attachment; filename=test.txt",
+            RestResponse_get_header_value(&dl_response, "Content-Disposition"));
+    RestRequest_destroy(&dl_request);
+    RestResponse_destroy(&dl_response);
+    RestFilter_free(chain);
+
+    free(shareable_url);
+
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_object(&atmos, response.object_id, &delete_response);
+    assert_int_equal(204, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    AtmosCreateObjectResponse_destroy(&response);
+    AtmosClient_destroy(&atmos);
+
+}
+
+void test_shareable_url_ns() {
+    AtmosClient atmos;
+    AtmosCreateObjectResponse response;
+    RestResponse delete_response;
+    RestRequest dl_request;
+    RestResponse dl_response;
+    char *shareable_url;
+    time_t now;
+    RestFilter *chain = NULL;
+    char path[ATMOS_PATH_MAX];
+    char randfile[9];
+
+    random_file(randfile, 8);
+    sprintf(path, "/atmos-c-unittest/%s.txt", randfile);
+    printf("Creating object: %s\n", path);
+
+    get_atmos_client(&atmos);
+    AtmosCreateObjectResponse_init(&response);
+
+    AtmosClient_create_object_simple_ns(&atmos, path, "test", 4,
+            "text/plain; charset=US-ASCII", &response);
+
+    assert_int_equal(201, response.parent.parent.http_code);
+    assert_true(strlen(response.object_id) > 0);
+
+    printf("Created object: %s\n", response.object_id);
+
+    now = time(NULL);
+    now += 3600;
+    shareable_url = AtmosClient_get_shareable_url_ns(&atmos, path,
+            now, "attachment; filename=test.txt");
+
+    RestRequest_init(&dl_request, shareable_url + strlen(atmos.parent.host), HTTP_GET);
+    RestResponse_init(&dl_response);
+    chain = RestFilter_add(chain, RestFilter_execute_curl_request);
+    RestClient_execute_request((RestClient*)&atmos, chain, &dl_request, &dl_response);
+    assert_int_equal(200, dl_response.http_code);
+    assert_int64t_equal(4, dl_response.content_length);
+    assert_string_equal("test", dl_response.body);
+    assert_string_equal("attachment; filename=test.txt",
+            RestResponse_get_header_value(&dl_response, "Content-Disposition"));
+    RestRequest_destroy(&dl_request);
+    RestResponse_destroy(&dl_response);
+    RestFilter_free(chain);
+
+    free(shareable_url);
+
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_object_ns(&atmos, path, &delete_response);
+    assert_int_equal(204, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    AtmosCreateObjectResponse_destroy(&response);
+    AtmosClient_destroy(&atmos);
+
+}
+
 
 void test_atmos_suite() {
     char proxy_port_str[32];
@@ -5597,6 +5705,12 @@ void test_atmos_suite() {
 
     start_test_msg("test_generate_checksum_file");
     run_test(test_generate_checksum_file);
+
+    start_test_msg("test_shareable_url");
+    run_test(test_shareable_url);
+
+    start_test_msg("test_shareable_url_ns");
+    run_test(test_shareable_url_ns);
 
     test_fixture_end();
 }

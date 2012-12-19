@@ -69,8 +69,8 @@ typedef struct {
 /**
  * Initializes a new AtmosClient object.
  * @param self pointer to the AtmosClient object to initialize.
- * @param host hostname or IP address of the Atmos access point,
- * e.g. http://api.atmosonline.com.
+ * @param endpoint hostname or IP address of the Atmos access point with
+ * protocol, e.g. http://api.atmosonline.com.
  * @param port the TCP port to connect to.  Use -1 to use the default port (80
  * or 443).
  * @param uid the Atmos UID for authorization.
@@ -78,7 +78,7 @@ typedef struct {
  * @return the AtmosClient pointer (same as 'self').
  */
 AtmosClient*
-AtmosClient_init(AtmosClient *self, const char *host, int port, const char *uid, const char *secret);
+AtmosClient_init(AtmosClient *self, const char *endpoint, int port, const char *uid, const char *secret);
 
 /**
  * Destroys and AtmosClient object.

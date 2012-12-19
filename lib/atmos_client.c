@@ -134,9 +134,9 @@ char *AtmosClient_canonicalize_request(AtmosClient *self, RestRequest *request) 
  ********************/
 
 AtmosClient*
-AtmosClient_init(AtmosClient *self, const char *host, int port,
+AtmosClient_init(AtmosClient *self, const char *endpoint, int port,
         const char *uid, const char *secret) {
-    RestClient_init((RestClient*) self, host, port);
+    RestClient_init((RestClient*) self, endpoint, port);
     memset(((void*)self)+sizeof(RestClient), 0, sizeof(AtmosClient) - sizeof(RestClient));
 
     ((Object*) self)->class_name = CLASS_ATMOS_CLIENT;
@@ -1218,6 +1218,99 @@ AtmosClient_get_access_token_info(AtmosClient *self, const char *token_id,
 
     RestFilter_free(chain);
     RestRequest_destroy(&request);
+}
 
+char *
+AtmosClient_get_shareable_url_internal(AtmosClient *self, const char *uri,
+        time_t expires, const char *disposition) {
+    CURL *curl;
+    char *hash_string = NULL;
+    char *signature;
+    size_t hash_string_sz = 0;
+    char expires_str[ATMOS_SIMPLE_HEADER_MAX];
+    char *url = NULL;
+    size_t url_sz = 0;
+    char *uri_lower;
+
+    curl = curl_easy_init();
+    hash_string = AtmosUtil_cstring_append(hash_string, &hash_string_sz,
+            "GET\n");
+
+    uri_lower = strdup(uri);
+    AtmosUtil_lowercase(uri_lower);
+    hash_string = AtmosUtil_cstring_append(hash_string, &hash_string_sz,
+            uri_lower);
+    free(uri_lower);
+
+    hash_string = AtmosUtil_cstring_append(hash_string, &hash_string_sz,
+            "\n");
+
+    hash_string = AtmosUtil_cstring_append(hash_string, &hash_string_sz,
+            self->uid);
+    hash_string = AtmosUtil_cstring_append(hash_string, &hash_string_sz,
+            "\n");
+
+    snprintf(expires_str, ATMOS_SIMPLE_HEADER_MAX, "%lld",
+            (long long)expires);
+    hash_string = AtmosUtil_cstring_append(hash_string, &hash_string_sz,
+            expires_str);
+
+    if(disposition) {
+        hash_string = AtmosUtil_cstring_append(hash_string, &hash_string_sz,
+                "\n");
+        hash_string = AtmosUtil_cstring_append(hash_string, &hash_string_sz,
+                disposition);
+    }
+
+    signature = AtmosClient_sign(self, hash_string);
+
+    // Got the signature, now build the URL.
+    url = AtmosUtil_cstring_append(url, &url_sz, self->parent.host);
+    if(self->parent.port != -1) {
+        char portbuf[ATMOS_SIMPLE_HEADER_MAX];
+        snprintf(portbuf, ATMOS_SIMPLE_HEADER_MAX, ":%d", self->parent.port);
+        url = AtmosUtil_cstring_append(url, &url_sz, portbuf);
+    }
+    url = AtmosUtil_cstring_append(url, &url_sz, uri);
+    url = AtmosUtil_cstring_append(url, &url_sz, "?uid=");
+    url = AtmosUtil_cstring_append_utf8(url, &url_sz,
+            self->uid, curl);
+    url = AtmosUtil_cstring_append(url, &url_sz, "&expires=");
+    url = AtmosUtil_cstring_append(url, &url_sz, expires_str);
+    url = AtmosUtil_cstring_append(url, &url_sz, "&signature=");
+    url = AtmosUtil_cstring_append_utf8(url, &url_sz, signature, curl);
+
+    if(disposition) {
+        url = AtmosUtil_cstring_append(url, &url_sz, "&disposition=");
+        url = AtmosUtil_cstring_append_utf8(url, &url_sz, disposition, curl);
+    }
+
+    free(signature);
+    free(hash_string);
+    curl_easy_cleanup(curl);
+
+    return url;
+}
+
+char *
+AtmosClient_get_shareable_url(AtmosClient *self, const char *object_id,
+        time_t expires, const char *disposition) {
+    char uri[ATMOS_PATH_MAX];
+
+    snprintf(uri, ATMOS_PATH_MAX, "/rest/objects/%s", object_id);
+
+    return AtmosClient_get_shareable_url_internal(self, uri, expires,
+            disposition);
+}
+
+char *
+AtmosClient_get_shareable_url_ns(AtmosClient *self, const char *path,
+        time_t expires, const char *disposition) {
+    char uri[ATMOS_PATH_MAX];
+
+    snprintf(uri, ATMOS_PATH_MAX, "/rest/namespace%s", path);
+
+    return AtmosClient_get_shareable_url_internal(self, uri, expires,
+            disposition);
 }
 

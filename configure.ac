@@ -6,7 +6,8 @@ AM_INIT_AUTOMAKE([foreign -Wall -Werror])
 LT_INIT
 AC_PROG_CC
 AM_PROG_CC_C_O
-CFLAGS="$CFLAGS -Wall -Werror"
+AX_CHECK_COMPILE_FLAG([-Wall], [CFLAGS="$CFLAGS -Wall"], [], [])
+AX_CHECK_COMPILE_FLAG([-Werror], [CFLAGS="$CFLAGS -Werror"], [], [])
 AC_CHECK_PROG(USE_UNCRUSTIFY, uncrustify, yes, no)
 AC_SUBST(USE_UNCRUSTIFY)
 AC_CHECK_LIB([curl], [curl_easy_init], [CURLLIB=-lcurl])

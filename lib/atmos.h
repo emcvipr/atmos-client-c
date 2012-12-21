@@ -13,7 +13,6 @@
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
-#include "config.h"
 #include "rest_client.h"
 
 #include "atmos_constants.h"

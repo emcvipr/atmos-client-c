@@ -567,8 +567,9 @@ source_start() {
         headerstart = outfile;
     }
 
-    fprintf(srcfile, "#include \"config.h\"\n");
     fprintf(srcfile, "#define IGNORE_PASS\n");
+    fprintf(srcfile, "#include \"config.h\"\n");
+    fprintf(srcfile, "IGNORE_PASS #include \"config.h\"\n");
     fprintf(srcfile, "IGNORE_PASS #include <string.h>\n");
     fprintf(srcfile, "IGNORE_PASS #include <time.h>\n");
     fprintf(srcfile, "IGNORE_PASS #include <stdint.h>\n");

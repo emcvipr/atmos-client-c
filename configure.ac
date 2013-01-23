@@ -8,8 +8,10 @@ AC_PROG_CC
 AM_PROG_CC_C_O
 AX_CFLAGS_WARN_ALL
 AX_CHECK_COMPILE_FLAG([-Werror], [CFLAGS="$CFLAGS -Werror"], [], [])
-AC_CHECK_PROG(USE_UNCRUSTIFY, uncrustify, yes, no)
-AC_SUBST(USE_UNCRUSTIFY)
+AC_CHECK_PROG(USE_XSLTPROC, xsltproc, yes, no)
+if test $USE_XSLTPROC = "no" ; then
+    AC_MSG_ERROR([The xsltproc command from libxml2 is required.])
+fi
 AC_CHECK_LIB([curl], [curl_easy_init], [CURLLIB=-lcurl])
 AC_SUBST([CURLLIB])
 PKG_CHECK_MODULES(XML, libxml-2.0 >= 2.4)

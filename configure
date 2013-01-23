@@ -645,7 +645,7 @@ PKG_CONFIG_LIBDIR
 PKG_CONFIG_PATH
 PKG_CONFIG
 CURLLIB
-USE_UNCRUSTIFY
+USE_XSLTPROC
 CPP
 OTOOL64
 OTOOL
@@ -12316,15 +12316,15 @@ else
   :
 fi
 
-# Extract the first word of "uncrustify", so it can be a program name with args.
-set dummy uncrustify; ac_word=$2
+# Extract the first word of "xsltproc", so it can be a program name with args.
+set dummy xsltproc; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_USE_UNCRUSTIFY+:} false; then :
+if ${ac_cv_prog_USE_XSLTPROC+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  if test -n "$USE_UNCRUSTIFY"; then
-  ac_cv_prog_USE_UNCRUSTIFY="$USE_UNCRUSTIFY" # Let the user override the test.
+  if test -n "$USE_XSLTPROC"; then
+  ac_cv_prog_USE_XSLTPROC="$USE_XSLTPROC" # Let the user override the test.
 else
 as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
 for as_dir in $PATH
@@ -12333,7 +12333,7 @@ do
   test -z "$as_dir" && as_dir=.
     for ac_exec_ext in '' $ac_executable_extensions; do
   if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_USE_UNCRUSTIFY="yes"
+    ac_cv_prog_USE_XSLTPROC="yes"
     $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi
@@ -12341,20 +12341,22 @@ done
   done
 IFS=$as_save_IFS
 
-  test -z "$ac_cv_prog_USE_UNCRUSTIFY" && ac_cv_prog_USE_UNCRUSTIFY="no"
+  test -z "$ac_cv_prog_USE_XSLTPROC" && ac_cv_prog_USE_XSLTPROC="no"
 fi
 fi
-USE_UNCRUSTIFY=$ac_cv_prog_USE_UNCRUSTIFY
-if test -n "$USE_UNCRUSTIFY"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $USE_UNCRUSTIFY" >&5
-$as_echo "$USE_UNCRUSTIFY" >&6; }
+USE_XSLTPROC=$ac_cv_prog_USE_XSLTPROC
+if test -n "$USE_XSLTPROC"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $USE_XSLTPROC" >&5
+$as_echo "$USE_XSLTPROC" >&6; }
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
 
 
-
+if test $USE_XSLTPROC = "no" ; then
+    as_fn_error $? "The xsltproc command from libxml2 is required." "$LINENO" 5
+fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for curl_easy_init in -lcurl" >&5
 $as_echo_n "checking for curl_easy_init in -lcurl... " >&6; }
 if ${ac_cv_lib_curl_curl_easy_init+:} false; then :

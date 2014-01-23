@@ -71,14 +71,12 @@ xmlns:exsl="http://exslt.org/common"
 		<!-- Make sure first letter of first token is lowercase. -->
 		<xsl:variable name="lower" select="translate(substring($first_token/text(),1,1), 
 				'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
-				'abcdefghijklmnopqrstuvwxyz')">
-		</xsl:variable>
+				'abcdefghijklmnopqrstuvwxyz')"/>
 		<xsl:value-of select="concat($lower, substring($first_token/text(),2))"/>
 		<xsl:for-each select="$other_tokens">
 			<xsl:variable name="upper" select="translate(substring(text(),1,1), 
 				'abcdefghijklmnopqrstuvwxyz',
-				'ABCDEFGHIJKLMNOPQRSTUVWXYZ')">
-			</xsl:variable>
+				'ABCDEFGHIJKLMNOPQRSTUVWXYZ')"/>
 			<xsl:value-of select="concat($upper, substring(text(),2))"/>
 		</xsl:for-each>
 	</xsl:template>

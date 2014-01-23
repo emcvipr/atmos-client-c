@@ -9,7 +9,8 @@ libcurl 7.20 or greater
 openssl-dev .9.8k or greater
 libxml2 2.4 or greater (xsltproc must be on your path)
 
-Ubuntu: sudo apt-get install libcurl4-openssl-dev libssl-dev libxml2-dev
+Ubuntu: sudo apt-get install libcurl4-openssl-dev libssl-dev libxml2-dev \
+             xsltproc
 CentOS/RHEL: sudo yum install openssl-devel libxml2-devel libcurl-devel
 
 =========
@@ -20,6 +21,11 @@ This package uses autotools, so the standard GNU build procedure can be used:
 ./configure
 make
 sudo make install
+
+** Note that SVN does not include any generated files from autotools.  You
+   need to run autogen.sh first.  This requires the packages libtool, 
+   automake, and aclocal.  If you don't want to bother with that you
+   should download a tarball release instead.
 
 =============
 Documentation

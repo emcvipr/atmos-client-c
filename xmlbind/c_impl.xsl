@@ -103,6 +103,11 @@
 		
 			<!-- C File Preamble -->
 			<xsl:text>#define _XOPEN_SOURCE 500
+#ifdef __APPLE__
+// To get snprintf and strdup
+#define _DARWIN_C_SOURCE
+#endif
+#include &lt;stdio.h&gt;
 #include &lt;string.h&gt;
 #include &lt;time.h&gt;
 #include &lt;stdint.h&gt;
@@ -2262,7 +2267,6 @@
 static time_t
 datetime_parse(xmlChar *value) {
     time_t tt;
-    time_t nowt;
     struct tm t;
     struct tm now;
     char buffer[255];
@@ -2301,17 +2305,18 @@ datetime_parse(xmlChar *value) {
     tt = mktime(&amp;t);
     
 #ifdef __GLIBC__
-    /* glibc only pretends to support %Z and %z. */
-    /* so the date will be parsed in the local TZ */
-    /* instead of UTC */
-    nowt = time(NULL);
-    localtime_r(&amp;nowt, &amp;now);
+    {
+        /* glibc only pretends to support %Z and %z. */
+        /* so the date will be parsed in the local TZ */
+        /* instead of UTC */
+        time_t nowt = time(NULL);
+        localtime_r(&amp;nowt, &amp;now);
 #ifdef	__USE_BSD
-    tt += now.tm_gmtoff;
+        tt += now.tm_gmtoff;
 #else
-    tt += now.__tm_gmtoff;
+        tt += now.__tm_gmtoff;
 #endif
-    
+    }
 #endif
     
     return tt;

@@ -398,6 +398,42 @@ AtmosClient_read_object_simple_keypool(AtmosClient *self, const char *pool,
 }
 
 void
+AtmosClient_head_object(AtmosClient *self, const char *object_id,
+        AtmosReadObjectResponse *response) {
+    AtmosReadObjectRequest request;
+
+    AtmosReadObjectRequest_init_head(&request, object_id);
+
+    AtmosClient_read_object(self, &request, response);
+
+    AtmosReadObjectRequest_destroy(&request);
+}
+
+void
+AtmosClient_head_object_ns(AtmosClient *self, const char *path,
+        AtmosReadObjectResponse *response) {
+    AtmosReadObjectRequest request;
+
+    AtmosReadObjectRequest_init_ns_head(&request, path);
+
+    AtmosClient_read_object(self, &request, response);
+
+    AtmosReadObjectRequest_destroy(&request);
+}
+
+void
+AtmosClient_head_object_keypool(AtmosClient *self, const char *pool,
+        const char *key, AtmosReadObjectResponse *response) {
+    AtmosReadObjectRequest request;
+
+    AtmosReadObjectRequest_init_keypool_head(&request, pool, key);
+
+    AtmosClient_read_object(self, &request, response);
+
+    AtmosReadObjectRequest_destroy(&request);
+}
+
+void
 AtmosClient_delete_user_meta(AtmosClient *self, const char *object_id,
         const char const **meta_names, int meta_name_count, RestResponse *response) {
     char uri[ATMOS_OID_LENGTH+64];

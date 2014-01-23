@@ -140,17 +140,18 @@ void AtmosFilter_parse_create_response(RestFilter *self, RestClient *rest,
     }
 
     // Header will be /rest/objects/oid
-    // Take last 44 digits.
+    // Take last 44-64 digits.
     location_len = strlen(location);
-    if(location_len != ATMOS_OID_LENGTH-1+ATMOS_OID_LOCATION_PREFIX_SIZE) {
-        ATMOS_ERROR("Error: location was %zd bytes; expected %zd",
+    if(location_len > ATMOS_OID_LENGTH-1+ATMOS_OID_LOCATION_PREFIX_SIZE) {
+        ATMOS_ERROR("Error: location was %zd bytes; expected max %zd",
                 location_len,
                 (size_t)ATMOS_OID_LENGTH-1+ATMOS_OID_LOCATION_PREFIX_SIZE);
         return;
 
     }
     strncpy(((AtmosCreateObjectResponse*)response)->object_id,
-            location+ATMOS_OID_LOCATION_PREFIX_SIZE, ATMOS_OID_LENGTH);
+            location+ATMOS_OID_LOCATION_PREFIX_SIZE,
+            location_len-ATMOS_OID_LOCATION_PREFIX_SIZE);
 }
 
 

@@ -308,6 +308,58 @@ void
 AtmosClient_read_object_simple_keypool(AtmosClient *self, const char *pool,
         const char *key, AtmosReadObjectResponse *response);
 
+
+/**
+ * Gets information about an object by issuing a HEAD call.  This fetches
+ * the object's system metadata, user metadata, and ACL.  Note that this
+ * is slightly more expensive than get_system_metadata, so if all you want
+ * is size and other system attributes, you should use that.  Likewise, if
+ * all you want is user metadata, you should call get_user_meta.
+ * @param self the AtmosClient object pointer.
+ * @param object_id the Atmos object ID to read.
+ * @param response the AtmosReadObjectResponse object to receive the object's
+ * information.
+ */
+void
+AtmosClient_head_object(AtmosClient *self, const char *object_id,
+        AtmosReadObjectResponse *response);
+
+/**
+ * Gets information about an object by issuing a HEAD call.  This fetches
+ * the object's system metadata, user metadata, and ACL.  Note that this
+ * is slightly more expensive than get_system_metadata, so if all you want
+ * is size and other system attributes, you should use that.  Likewise, if
+ * all you want is user metadata, you should call get_user_meta.
+ * @param self the AtmosClient object pointer.
+ * @param path the Atmos namespace path to read. Note that you will generally
+ * use AtmosClient_read_directory_simple() to read directory objects instead
+ * of this method. Using this method on the directory will return the raw XML
+ * of the directory contents.
+ * @param response the AtmosReadObjectResponse object to receive the object's
+ * information.
+ */
+void
+AtmosClient_head_object_ns(AtmosClient *self, const char *path,
+        AtmosReadObjectResponse *response);
+
+/**
+ * Gets information about an object by issuing a HEAD call.  This fetches
+ * the object's system metadata, user metadata, and ACL.  Note that this
+ * is slightly more expensive than get_system_metadata, so if all you want
+ * is size and other system attributes, you should use that.  Likewise, if
+ * all you want is user metadata, you should call get_user_meta.
+ * @param self the AtmosClient object pointer.
+ * @param pool the name of the pool that contains the object.
+ * @param key the object key in the pool.
+ * @param response the AtmosReadObjectResponse object to receive the object's
+ * information.
+ * @since Atmos 2.1.0
+ */
+void
+AtmosClient_head_object_keypool(AtmosClient *self, const char *pool,
+        const char *key, AtmosReadObjectResponse *response);
+
+
 /**
  * Updates an object in Atmos.  This is the advanced version that can update
  * the whole object, a range within the object, append to an object, or include

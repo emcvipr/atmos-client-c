@@ -97,6 +97,39 @@ AtmosReadObjectRequest_init_keypool(AtmosReadObjectRequest *self,
         const char *pool, const char *key);
 
 /**
+ * Initializes a new AtmosReadObjectRequest in HEAD mode.
+ * @param self pointer to the AtmosReadObjectRequest to initialize
+ * @param object_id the ID of the object to read.
+ * @return the AtmosReadObjectRequest pointer (same as self)
+ */
+AtmosReadObjectRequest*
+AtmosReadObjectRequest_init_head(AtmosReadObjectRequest *self,
+        const char *object_id);
+
+/**
+ * Initializes a new AtmosReadObjectRequest in HEAD mode.
+ * @param self pointer to the AtmosReadObjectRequest to initialize
+ * @param path the namespace path of the object to read.
+ * @return the AtmosReadObjectRequest pointer (same as self)
+ */
+AtmosReadObjectRequest*
+AtmosReadObjectRequest_init_ns_head(AtmosReadObjectRequest *self, const char *path);
+
+/**
+ * Initializes a new AtmosReadObjectRequest in HEAD mode.  This version will read an object
+ * from an Atmos 2.1.0+ keypool.
+ * @param self pointer to the AtmosReadObjectRequest to initialize
+ * @param pool the name of the pool containing the object.
+ * @param key the object key in the pool.
+ * @return the AtmosReadObjectRequest pointer (same as self)
+ * @since Atmos 2.1.0
+ */
+AtmosReadObjectRequest*
+AtmosReadObjectRequest_init_keypool_head(AtmosReadObjectRequest *self,
+        const char *pool, const char *key);
+
+
+/**
  * Destroys an AtmosReadObjectRequest.
  * @param self the AtmosReadObjectRequest to destroy.
  */

@@ -102,7 +102,8 @@
 		<exsl:document href="{$cfile}" method="text" omit-xml-declaration="yes">
 		
 			<!-- C File Preamble -->
-			<xsl:text>#include &lt;string.h&gt;
+			<xsl:text>#define _XOPEN_SOURCE 500
+#include &lt;string.h&gt;
 #include &lt;time.h&gt;
 #include &lt;stdint.h&gt;
 #include &lt;inttypes.h&gt;
@@ -2261,12 +2262,15 @@
 static time_t
 datetime_parse(xmlChar *value) {
     time_t tt;
+    time_t nowt;
     struct tm t;
+    struct tm now;
     char buffer[255];
     char *decimal;
 
 
     memset(&amp;t, 0, sizeof(struct tm));
+    memset(&amp;now, 0, sizeof(struct tm));
     size_t strsz;
     strsz = strlen((char*)value);
     if(value[strsz-1] == 'Z') {
@@ -2282,20 +2286,35 @@ datetime_parse(xmlChar *value) {
             fprintf(stderr, "Could not parse dateTime value %s\n", buffer);
             return 0;
         }
-        tt = mktime(&amp;t);
     } else if(value[strsz-5] == '+' || value[strsz-5] == '-') {
         if(!strptime((char*)value, "%FT%T%z", &amp;t)) {
             fprintf(stderr, "Could not parse dateTime value %s\n", buffer);
             return 0;
         }
-        tt = mktime(&amp;t);
     } else {
         if(!strptime((char*)value, "%FT%T%Z", &amp;t)) {
             fprintf(stderr, "Could not parse dateTime value %s\n", buffer);
             return 0;
         }
-        tt = mktime(&amp;t);
-    } return tt;
+    } 
+    
+    tt = mktime(&amp;t);
+    
+#ifdef __GLIBC__
+    /* glibc only pretends to support %Z and %z. */
+    /* so the date will be parsed in the local TZ */
+    /* instead of UTC */
+    nowt = time(NULL);
+    localtime_r(&amp;nowt, &amp;now);
+#ifdef	__USE_BSD
+    tt += now.tm_gmtoff;
+#else
+    tt += now.__tm_gmtoff;
+#endif
+    
+#endif
+    
+    return tt;
 }
 
 xmlNsPtr

@@ -2324,6 +2324,159 @@ void test_get_system_meta_keypool() {
     free(key);
 }
 
+void test_head_object() {
+    AtmosClient atmos;
+    AtmosCreateObjectResponse response;
+    RestResponse delete_response;
+    AtmosReadObjectResponse meta_response;
+
+    get_atmos_client(&atmos);
+    AtmosCreateObjectResponse_init(&response);
+
+    AtmosClient_create_object_simple(&atmos, "test", 4, "text/plain", &response);
+    check_error((AtmosResponse*)&response);
+    assert_int_equal(201, response.parent.parent.http_code);
+    assert_true(strlen(response.object_id) > 0);
+
+    printf("Created object: %s\n", response.object_id);
+
+    // Simple version
+    AtmosReadObjectResponse_init(&meta_response);
+    AtmosClient_head_object(&atmos, response.object_id, &meta_response);
+    check_error((AtmosResponse*)&meta_response);
+    assert_int_equal(200, meta_response.parent.parent.http_code);
+
+    assert_true(0 < meta_response.system_metadata.atime);
+    assert_true(0 < meta_response.system_metadata.ctime);
+    assert_string_equal("apache", meta_response.system_metadata.gid);
+    assert_true(0 < meta_response.system_metadata.itime);
+    assert_true(0 < meta_response.system_metadata.mtime);
+    assert_true(0 == meta_response.system_metadata.nlink);
+    assert_string_equal(response.object_id, meta_response.system_metadata.object_id);
+    assert_string_equal("", meta_response.system_metadata.objname);
+    assert_string_equal("default", meta_response.system_metadata.policyname);
+    assert_int64t_equal(4, meta_response.system_metadata.size);
+    assert_string_equal("regular", meta_response.system_metadata.type);
+    assert_string_equal(uid1, meta_response.system_metadata.uid);
+
+    AtmosReadObjectResponse_destroy(&meta_response);
+
+    // Cleanup
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_object(&atmos, response.object_id, &delete_response);
+    assert_int_equal(204, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    AtmosCreateObjectResponse_destroy(&response);
+    AtmosClient_destroy(&atmos);
+}
+
+void test_head_object_ns() {
+    AtmosClient atmos;
+    AtmosCreateObjectResponse response;
+    AtmosReadObjectResponse meta_response;
+    char path[ATMOS_PATH_MAX];
+    char randfile[13];
+    RestResponse delete_response;
+
+    random_file(randfile, 8);
+    strcat(randfile, ".txt");
+    sprintf(path, "/atmos-c-unittest/%s", randfile);
+    printf("Creating object: %s\n", path);
+
+    get_atmos_client(&atmos);
+    AtmosCreateObjectResponse_init(&response);
+
+    AtmosClient_create_object_simple_ns(&atmos, path, "test", 4, "text/plain", &response);
+    check_error((AtmosResponse*)&response);
+    assert_int_equal(201, response.parent.parent.http_code);
+    assert_true(strlen(response.object_id) > 0);
+
+    printf("Created object: %s\n", response.object_id);
+
+    // Simple version
+    AtmosReadObjectResponse_init(&meta_response);
+    AtmosClient_head_object_ns(&atmos, path, &meta_response);
+    check_error((AtmosResponse*)&meta_response);
+    assert_int_equal(200, meta_response.parent.parent.http_code);
+
+    assert_true(0 < meta_response.system_metadata.atime);
+    assert_true(0 < meta_response.system_metadata.ctime);
+    assert_string_equal("apache", meta_response.system_metadata.gid);
+    assert_true(0 < meta_response.system_metadata.itime);
+    assert_true(0 < meta_response.system_metadata.mtime);
+    assert_true(1 == meta_response.system_metadata.nlink);
+    assert_string_equal(response.object_id, meta_response.system_metadata.object_id);
+    assert_string_equal(randfile, meta_response.system_metadata.objname);
+    assert_string_equal("default", meta_response.system_metadata.policyname);
+    assert_int64t_equal(4, meta_response.system_metadata.size);
+    assert_string_equal("regular", meta_response.system_metadata.type);
+    assert_string_equal(uid1, meta_response.system_metadata.uid);
+
+    AtmosReadObjectResponse_destroy(&meta_response);
+
+    // Cleanup
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_object_ns(&atmos, path, &delete_response);
+    assert_int_equal(204, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    AtmosCreateObjectResponse_destroy(&response);
+    AtmosClient_destroy(&atmos);
+}
+
+void test_head_object_keypool() {
+    AtmosClient atmos;
+    AtmosCreateObjectResponse response;
+    AtmosReadObjectResponse meta_response;
+    RestResponse delete_response;
+    char *key = random_key();
+
+    printf("Creating key: %s\n", key);
+
+    get_atmos_client(&atmos);
+    atmos.enable_utf8_metadata = 1;
+    AtmosCreateObjectResponse_init(&response);
+
+    AtmosClient_create_object_simple_keypool(&atmos, TEST_KEYPOOL, key, "test", 4, "text/plain", &response);
+    check_error((AtmosResponse*)&response);
+    assert_int_equal(201, response.parent.parent.http_code);
+    assert_true(strlen(response.object_id) > 0);
+
+    printf("Created object: %s\n", response.object_id);
+
+    // Simple version
+    AtmosReadObjectResponse_init(&meta_response);
+    AtmosClient_head_object_keypool(&atmos, TEST_KEYPOOL, key, &meta_response);
+    check_error((AtmosResponse*)&meta_response);
+    assert_int_equal(200, meta_response.parent.parent.http_code);
+
+    assert_true(0 < meta_response.system_metadata.atime);
+    assert_true(0 < meta_response.system_metadata.ctime);
+    assert_string_equal("apache", meta_response.system_metadata.gid);
+    assert_true(0 < meta_response.system_metadata.itime);
+    assert_true(0 < meta_response.system_metadata.mtime);
+    assert_true(1 == meta_response.system_metadata.nlink);
+    assert_string_equal(response.object_id, meta_response.system_metadata.object_id);
+    assert_string_equal(key, meta_response.system_metadata.objname);
+    assert_string_equal("default", meta_response.system_metadata.policyname);
+    assert_int64t_equal(4, meta_response.system_metadata.size);
+    assert_string_equal("regular", meta_response.system_metadata.type);
+    assert_string_equal(uid1, meta_response.system_metadata.uid);
+
+    AtmosReadObjectResponse_destroy(&meta_response);
+
+    // Cleanup
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_object_keypool(&atmos, TEST_KEYPOOL, key, &delete_response);
+    assert_int_equal(204, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    AtmosCreateObjectResponse_destroy(&response);
+    AtmosClient_destroy(&atmos);
+    free(key);
+}
+
 
 void test_set_get_acl() {
     AtmosClient atmos;
@@ -5711,6 +5864,15 @@ void test_atmos_suite() {
 
     start_test_msg("test_shareable_url_ns");
     run_test(test_shareable_url_ns);
+
+    start_test_msg("test_head_object");
+    run_test(test_head_object);
+
+    start_test_msg("test_head_object_ns");
+    run_test(test_head_object_ns);
+
+    start_test_msg("test_head_object_keypool");
+    run_test(test_head_object_keypool);
 
     test_fixture_end();
 }

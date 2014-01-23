@@ -75,6 +75,60 @@ AtmosReadObjectRequest_init_keypool(AtmosReadObjectRequest *self,
     return self;
 }
 
+AtmosReadObjectRequest*
+AtmosReadObjectRequest_init_head(AtmosReadObjectRequest *self, const char *object_id) {
+    char uri[15+ATMOS_OID_LENGTH];
+
+    snprintf(uri, 15+ATMOS_OID_LENGTH, "/rest/objects/%s", object_id);
+
+    RestRequest_init((RestRequest*) self, uri, HTTP_HEAD);
+    AtmosReadObjectRequest_init_common(self);
+
+    strncpy(self->object_id, object_id, ATMOS_OID_LENGTH);
+
+    return self;
+}
+
+AtmosReadObjectRequest*
+AtmosReadObjectRequest_init_ns_head(AtmosReadObjectRequest *self, const char *path) {
+    char uri[ATMOS_PATH_MAX + 15];
+
+    if (path[0] != '/') {
+        ATMOS_ERROR("Path must start with a '/': %s\n", path);
+        return NULL;
+    }
+
+    snprintf(uri, ATMOS_PATH_MAX + 15, "/rest/namespace%s", path);
+
+    RestRequest_init((RestRequest*) self, uri, HTTP_HEAD);
+    AtmosReadObjectRequest_init_common(self);
+
+    strncpy(self->path, path, ATMOS_PATH_MAX);
+
+    return self;
+}
+
+AtmosReadObjectRequest*
+AtmosReadObjectRequest_init_keypool_head(AtmosReadObjectRequest *self,
+        const char *pool, const char *key) {
+    char uri[ATMOS_PATH_MAX + 15];
+    char poolheader[ATMOS_PATH_MAX];
+
+    snprintf(uri, ATMOS_PATH_MAX + 15, "/rest/namespace/%s", key);
+
+    RestRequest_init((RestRequest*) self, uri, HTTP_HEAD);
+    AtmosReadObjectRequest_init_common(self);
+
+    snprintf(poolheader, ATMOS_PATH_MAX, ATMOS_HEADER_POOL ": %s", pool);
+    RestRequest_add_header((RestRequest*)self, poolheader);
+
+    strncpy(self->path, key, ATMOS_PATH_MAX);
+    strncpy(self->pool, pool, ATMOS_PATH_MAX);
+
+    return self;
+}
+
+
 
 void AtmosReadObjectRequest_destroy(AtmosReadObjectRequest *self) {
     self->object_id[0] = 0;

@@ -13,6 +13,10 @@
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "rest_client.h"
 
 #include "atmos_constants.h"
@@ -24,5 +28,9 @@
 #include "atmos_versions.h"
 #include "atmos_access_tokens.h"
 #include "atmos_client.h"
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif /* ATMOS_H_ */

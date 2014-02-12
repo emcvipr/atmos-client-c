@@ -531,7 +531,7 @@ AtmosClient_set_acl_keypool(AtmosClient *self, const char *pool,
  */
 void
 AtmosClient_delete_user_meta(AtmosClient *self, const char *object_id,
-        const char const **meta_names, int meta_name_count,
+        const char **meta_names, int meta_name_count,
         RestResponse *response);
 
 /**
@@ -547,7 +547,7 @@ AtmosClient_delete_user_meta(AtmosClient *self, const char *object_id,
  */
 void
 AtmosClient_delete_user_meta_ns(AtmosClient *self, const char *path,
-        const char const **meta_names, int meta_name_count,
+        const char **meta_names, int meta_name_count,
         RestResponse *response);
 
 /**
@@ -565,7 +565,7 @@ AtmosClient_delete_user_meta_ns(AtmosClient *self, const char *path,
  */
 void
 AtmosClient_delete_user_meta_keypool(AtmosClient *self, const char *pool,
-        const char *key, const char const **meta_names, int meta_name_count,
+        const char *key, const char **meta_names, int meta_name_count,
         RestResponse *response);
 
 /**

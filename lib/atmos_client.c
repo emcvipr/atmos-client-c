@@ -87,6 +87,12 @@ char *AtmosClient_canonicalize_request(AtmosClient *self, RestRequest *request) 
     header = RestRequest_get_header_value(request, HTTP_HEADER_RANGE);
     if (header) {
         hash_string = AtmosUtil_cstring_append(hash_string, &hash_size, header);
+    } else {
+        // another version
+        header = RestRequest_get_header_value(request, HTTP_HEADER_CONTENT_RANGE);
+        if(header) {
+            hash_string = AtmosUtil_cstring_append(hash_string, &hash_size, header);
+        }
     }
     hash_string = AtmosUtil_cstring_append(hash_string, &hash_size, "\n");
 

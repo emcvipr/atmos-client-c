@@ -861,7 +861,7 @@ void AtmosFilter_list_directory(RestFilter *self, RestClient *rest,
 
 AtmosListDirectoryResponse*
 AtmosListDirectoryResponse_init(AtmosListDirectoryResponse *self) {
-    AtmosResponse_init((AtmosResponse*)self);
+    AtmosReadObjectResponse_init((AtmosReadObjectResponse*)self);
     OBJECT_ZERO(self, AtmosListDirectoryResponse, AtmosReadObjectResponse);
     ((Object*)self)->class_name = CLASS_ATMOS_LIST_DIRECTORY_RESPONSE;
 

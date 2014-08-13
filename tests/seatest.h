@@ -32,7 +32,7 @@ void seatest_assert_int64t_equal(int64_t expected, int64_t actual, const char* f
 void seatest_assert_ulong_equal(unsigned long expected, unsigned long actual, const char* function, unsigned int line);
 void seatest_assert_float_equal(float expected, float actual, float delta, const char* function, unsigned int line);
 void seatest_assert_double_equal(double expected, double actual, double delta, const char* function, unsigned int line);
-void seatest_assert_string_equal(const char* expected, const const char* actual, const char* function, unsigned int line);
+void seatest_assert_string_equal(const char* expected, const char* actual, const char* function, unsigned int line);
 void seatest_assert_string_ends_with(const char* expected, const char* actual, const char* function, unsigned int line);
 void seatest_assert_string_starts_with(const char* expected, const char* actual, const char* function, unsigned int line);
 void seatest_assert_string_contains(const char* expected, const char* actual, const char* function, unsigned int line);

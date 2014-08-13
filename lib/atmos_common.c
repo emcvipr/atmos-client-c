@@ -12,7 +12,7 @@
 #include <openssl/err.h>
 #include <inttypes.h>
 
-const char const *ATMOS_SYSTEM_META_NAMES[] = {ATMOS_SYSTEM_META_ATIME,
+const char *ATMOS_SYSTEM_META_NAMES[] = {ATMOS_SYSTEM_META_ATIME,
 ATMOS_SYSTEM_META_CTIME, ATMOS_SYSTEM_META_GID, ATMOS_SYSTEM_META_ITIME,
 ATMOS_SYSTEM_META_MTIME, ATMOS_SYSTEM_META_NLINK, ATMOS_SYSTEM_META_OBJECTID,
 ATMOS_SYSTEM_META_OBJNAME, ATMOS_SYSTEM_META_POLICYNAME, ATMOS_SYSTEM_META_SIZE,
@@ -145,7 +145,7 @@ void AtmosFilter_set_write_headers(RestFilter *self, RestClient *rest,
                     return;
                 }
                 AtmosChecksum_update_file(req->checksum, f, request->request_body->data_size);
-                if(!fseeko(f, cur, SEEK_SET)) {
+                if(fseeko(f, cur, SEEK_SET) == -1) {
                     ATMOS_ERROR(
                             "Error calling fseeko for checksumming file: %s\n",
                             strerror(errno));
@@ -332,9 +332,9 @@ AtmosChecksum_update_file(AtmosChecksum *self, FILE *data, int64_t count) {
     int64_t read = 0;
     do {
         if(read + sizeof(buffer) > count) {
-            c = fread(buffer, count - read, 1, data);
+            c = fread(buffer, 1, count - read, data);
         } else {
-            c = fread(buffer, sizeof(buffer), 1, data);
+            c = fread(buffer, 1, sizeof(buffer), data);
         }
         if(c == 0) {
             // EOF

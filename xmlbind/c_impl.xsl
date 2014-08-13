@@ -103,6 +103,8 @@
 		
 			<!-- C File Preamble -->
 			<xsl:text>#define _XOPEN_SOURCE 500
+// to get timegm
+#define _BSD_SOURCE
 #ifdef __APPLE__
 // To get snprintf and strdup
 #define _DARWIN_C_SOURCE
@@ -2264,61 +2266,43 @@
 	<!-- Defines some helper functions in C -->
 	<xsl:template name="c-helper-functions">
 <xsl:text>
+/**
+ * Parse an ISO-8601 timestamp.  Note that we only support
+ * timestamps in GMT (or 'Z')
+ * Note that we don't use strptime because it is not consistent across platforms
+ * with regard to TZ support.
+ */
 static time_t
 datetime_parse(xmlChar *value) {
     time_t tt;
+    char tz[8];
+    int year = 1970;
+    int month = 0;
+    int day = 0;
+    int hour = 0;
+    int minute = 0;
+    int second = 0;
+    int rv;
     struct tm t;
-    struct tm now;
-    char buffer[255];
-    char *decimal;
 
-
+    memset(tz, 0, 8);
     memset(&amp;t, 0, sizeof(struct tm));
-    memset(&amp;now, 0, sizeof(struct tm));
-    size_t strsz;
-    strsz = strlen((char*)value);
-    if(value[strsz-1] == 'Z') {
-        strcpy(buffer, (char*)value);
-        buffer[strlen(buffer)-1] = 0;
-        // If there's milliseconds in the timestamp, strip it out.
-        decimal = strchr(buffer, '.');
-        if(decimal) {
-            *decimal = 0;
-        }
-        strcat(buffer, "GMT");
-        if(!strptime(buffer, "%FT%T%Z", &amp;t)) {
-            fprintf(stderr, "Could not parse dateTime value %s\n", buffer);
-            return 0;
-        }
-    } else if(value[strsz-5] == '+' || value[strsz-5] == '-') {
-        if(!strptime((char*)value, "%FT%T%z", &amp;t)) {
-            fprintf(stderr, "Could not parse dateTime value %s\n", buffer);
-            return 0;
-        }
-    } else {
-        if(!strptime((char*)value, "%FT%T%Z", &amp;t)) {
-            fprintf(stderr, "Could not parse dateTime value %s\n", buffer);
-            return 0;
-        }
-    } 
-    
-    tt = mktime(&amp;t);
-    
-#ifdef __GLIBC__
-    {
-        /* glibc only pretends to support %Z and %z. */
-        /* so the date will be parsed in the local TZ */
-        /* instead of UTC */
-        time_t nowt = time(NULL);
-        localtime_r(&amp;nowt, &amp;now);
-#ifdef	__USE_BSD
-        tt += now.tm_gmtoff;
-#else
-        tt += now.__tm_gmtoff;
-#endif
+
+    rv = sscanf((char*) value, "%d-%d-%dT%d:%d:%d%7s", &amp;year, &amp;month, &amp;day, &amp;hour, &amp;minute, &amp;second, tz);
+    if(rv == 0) {
+        // could not parse, just return 0
+        return 0;
     }
-#endif
-    
+   
+    t.tm_sec = second;
+    t.tm_min = minute;
+    t.tm_hour = hour;
+    t.tm_mday = day;
+    t.tm_mon = month-1;
+    t.tm_year = year-1900;
+
+    tt = timegm(&amp;t);
+
     return tt;
 }
 

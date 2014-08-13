@@ -441,7 +441,7 @@ AtmosClient_head_object_keypool(AtmosClient *self, const char *pool,
 
 void
 AtmosClient_delete_user_meta(AtmosClient *self, const char *object_id,
-        const char const **meta_names, int meta_name_count, RestResponse *response) {
+        const char **meta_names, int meta_name_count, RestResponse *response) {
     char uri[ATMOS_OID_LENGTH+64];
     RestFilter *chain = NULL;
     RestRequest request;
@@ -472,7 +472,7 @@ AtmosClient_delete_user_meta(AtmosClient *self, const char *object_id,
 
 void
 AtmosClient_delete_user_meta_ns(AtmosClient *self, const char *path,
-        const char const **meta_names, int meta_name_count,
+        const char **meta_names, int meta_name_count,
         RestResponse *response) {
     char uri[ATMOS_PATH_MAX+64];
     RestFilter *chain = NULL;
@@ -505,7 +505,7 @@ AtmosClient_delete_user_meta_ns(AtmosClient *self, const char *path,
 
 void
 AtmosClient_delete_user_meta_keypool(AtmosClient *self, const char *pool,
-        const char *key, const char const **meta_names, int meta_name_count,
+        const char *key, const char **meta_names, int meta_name_count,
         RestResponse *response) {
     char uri[ATMOS_PATH_MAX+64];
     char poolheader[ATMOS_PATH_MAX];

@@ -11,7 +11,7 @@
 /**
  * List of system metadata names for filtering from user metadata
  */
-extern const char const *ATMOS_SYSTEM_META_NAMES[];
+extern const char *ATMOS_SYSTEM_META_NAMES[];
 /**
  * Number of system metadata names.
  */

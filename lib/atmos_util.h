@@ -83,7 +83,7 @@ AtmosUtil_set_tags_header(RestRequest *request,
 
 void
 AtmosUtil_set_tags_header2(RestRequest *request,
-        const char const **tags, int tag_count, int utf8);
+        const char **tags, int tag_count, int utf8);
 
 // Debugging
 void

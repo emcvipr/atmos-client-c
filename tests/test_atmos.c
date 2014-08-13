@@ -4956,6 +4956,13 @@ void test_list_tokens() {
 #define CHECK_STRING_1a_MD5 "5d41402abc4b2a76b9719d911017c592"
 #define CHECK_STRING_1_OFFSET "/11/"
 
+#define CHECK_STRING_LONG_SHA0 "138c6daebee78809bcbdc9b57de0233b1993a677"
+#define CHECK_STRING_LONG_SHA1 "f613fcbb54ef5e04d50d734fb0457b245833702b"
+#define CHECK_STRING_LONG_MD5 "9f05e7adb91551ca82cf646ca371344a"
+#define CHECK_STRING_LONG_OFFSET 2097152L
+#define CHECK_STRING_LONG_BYTES CHECK_STRING_LONG_OFFSET
+
+
 void test_checksums() {
     AtmosChecksum *ck;
     char *value;
@@ -5178,6 +5185,260 @@ void test_create_object_wschecksum() {
 
     AtmosClient_destroy(&atmos);
 }
+
+void test_create_object_wschecksum_file() {
+    AtmosClient atmos;
+    AtmosCreateObjectResponse response;
+    AtmosCreateObjectRequest request;
+    RestResponse delete_response;
+    AtmosChecksum ck;
+    char *value;
+    FILE *f;
+
+    if(atmos_major < 2 && atmos_minor < 4) {
+        printf("...skipped (<1.4)\n");
+        return;
+    }
+
+    f = tmpfile();
+    fwrite(CHECK_STRING_1, strlen(CHECK_STRING_1), 1, f);
+    fseek(f, 0, SEEK_SET);
+
+    printf("SHA0\n");
+    get_atmos_client(&atmos);
+    AtmosCreateObjectResponse_init(&response);
+    AtmosCreateObjectRequest_init(&request);
+
+    RestRequest_set_file_body((RestRequest*)&request, f,
+    		strlen(CHECK_STRING_1), "text/plain");
+
+    AtmosChecksum_init(&ck, ATMOS_WSCHECKSUM, ATMOS_ALG_SHA0);
+    request.parent.checksum = &ck;
+
+    AtmosClient_create_object(&atmos, &request, &response);
+    check_error((AtmosResponse*)&response);
+    assert_int_equal(201, response.parent.parent.http_code);
+    assert_true(strlen(response.object_id) > 0);
+
+    printf("Created object: %s\n", response.object_id);
+
+    value = AtmosChecksum_get_value(&ck);
+    assert_string_equal(CHECK_STRING_1_SHA0, value);
+    free(value);
+
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_object(&atmos, response.object_id, &delete_response);
+    assert_int_equal(204, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    AtmosCreateObjectResponse_destroy(&response);
+    AtmosChecksum_destroy(&ck);
+
+    printf("SHA1\n");
+    if((atmos_major == 2 && atmos_minor >= 1) || atmos_major > 2) {
+        AtmosCreateObjectResponse_init(&response);
+        AtmosCreateObjectRequest_init(&request);
+
+        fseek(f, 0, SEEK_SET);
+        RestRequest_set_file_body((RestRequest*)&request, f,
+        		strlen(CHECK_STRING_1), "text/plain");
+
+        AtmosChecksum_init(&ck, ATMOS_WSCHECKSUM, ATMOS_ALG_SHA1);
+        request.parent.checksum = &ck;
+
+        AtmosClient_create_object(&atmos, &request, &response);
+        check_error((AtmosResponse*)&response);
+        assert_int_equal(201, response.parent.parent.http_code);
+        assert_true(strlen(response.object_id) > 0);
+
+        printf("Created object: %s\n", response.object_id);
+
+        value = AtmosChecksum_get_value(&ck);
+        assert_string_equal(CHECK_STRING_1_SHA1, value);
+        free(value);
+
+        RestResponse_init(&delete_response);
+        AtmosClient_delete_object(&atmos, response.object_id, &delete_response);
+        assert_int_equal(204, delete_response.http_code);
+        RestResponse_destroy(&delete_response);
+
+        AtmosCreateObjectResponse_destroy(&response);
+        AtmosChecksum_destroy(&ck);
+
+    } else {
+        printf("...skipped (atmos<2.1)\n");
+    }
+
+    printf("MD5\n");
+    if((atmos_major == 2 && atmos_minor >= 1) || atmos_major > 2) {
+        AtmosCreateObjectResponse_init(&response);
+        AtmosCreateObjectRequest_init(&request);
+
+        fseek(f, 0, SEEK_SET);
+        RestRequest_set_file_body((RestRequest*)&request, f,
+        		strlen(CHECK_STRING_1), "text/plain");
+
+        AtmosChecksum_init(&ck, ATMOS_WSCHECKSUM, ATMOS_ALG_MD5);
+        request.parent.checksum = &ck;
+
+        AtmosClient_create_object(&atmos, &request, &response);
+        check_error((AtmosResponse*)&response);
+        assert_int_equal(201, response.parent.parent.http_code);
+        assert_true(strlen(response.object_id) > 0);
+
+        printf("Created object: %s\n", response.object_id);
+
+        value = AtmosChecksum_get_value(&ck);
+        assert_string_equal(CHECK_STRING_1_MD5, value);
+        free(value);
+
+        RestResponse_init(&delete_response);
+        AtmosClient_delete_object(&atmos, response.object_id, &delete_response);
+        assert_int_equal(204, delete_response.http_code);
+        RestResponse_destroy(&delete_response);
+
+        AtmosCreateObjectResponse_destroy(&response);
+        AtmosChecksum_destroy(&ck);
+
+    } else {
+        printf("...skipped (atmos<2.1)\n");
+    }
+
+    AtmosClient_destroy(&atmos);
+}
+
+/**
+ * Check a 2MB file to ensure we can work through
+ * multiple buffers.
+ */
+void test_create_object_wschecksum_file_long() {
+    AtmosClient atmos;
+    AtmosCreateObjectResponse response;
+    AtmosCreateObjectRequest request;
+    RestResponse delete_response;
+    AtmosChecksum ck;
+    char *value;
+    FILE *f;
+    int i;
+
+    if(atmos_major < 2 && atmos_minor < 4) {
+        printf("...skipped (<1.4)\n");
+        return;
+    }
+
+    f = tmpfile();
+    for(i=0; i<CHECK_STRING_LONG_BYTES; i++) {
+    	fputc(1, f);
+    }
+    fseek(f, 0, SEEK_SET);
+
+    printf("SHA0\n");
+    get_atmos_client(&atmos);
+    AtmosCreateObjectResponse_init(&response);
+    AtmosCreateObjectRequest_init(&request);
+
+    RestRequest_set_file_body((RestRequest*)&request, f,
+    		CHECK_STRING_LONG_BYTES, "text/plain");
+
+    AtmosChecksum_init(&ck, ATMOS_WSCHECKSUM, ATMOS_ALG_SHA0);
+    request.parent.checksum = &ck;
+
+    AtmosClient_create_object(&atmos, &request, &response);
+    check_error((AtmosResponse*)&response);
+    assert_int_equal(201, response.parent.parent.http_code);
+    assert_true(strlen(response.object_id) > 0);
+
+    printf("Created object: %s\n", response.object_id);
+
+    value = AtmosChecksum_get_value(&ck);
+    assert_string_equal(CHECK_STRING_LONG_SHA0, value);
+    free(value);
+    assert_int64t_equal(CHECK_STRING_LONG_OFFSET, ck.offset);
+
+    RestResponse_init(&delete_response);
+    AtmosClient_delete_object(&atmos, response.object_id, &delete_response);
+    assert_int_equal(204, delete_response.http_code);
+    RestResponse_destroy(&delete_response);
+
+    AtmosCreateObjectResponse_destroy(&response);
+    AtmosChecksum_destroy(&ck);
+
+    printf("SHA1\n");
+    if((atmos_major == 2 && atmos_minor >= 1) || atmos_major > 2) {
+        AtmosCreateObjectResponse_init(&response);
+        AtmosCreateObjectRequest_init(&request);
+
+        fseek(f, 0, SEEK_SET);
+        RestRequest_set_file_body((RestRequest*)&request, f,
+        		CHECK_STRING_LONG_BYTES, "text/plain");
+
+        AtmosChecksum_init(&ck, ATMOS_WSCHECKSUM, ATMOS_ALG_SHA1);
+        request.parent.checksum = &ck;
+
+        AtmosClient_create_object(&atmos, &request, &response);
+        check_error((AtmosResponse*)&response);
+        assert_int_equal(201, response.parent.parent.http_code);
+        assert_true(strlen(response.object_id) > 0);
+
+        printf("Created object: %s\n", response.object_id);
+
+        value = AtmosChecksum_get_value(&ck);
+        assert_string_equal(CHECK_STRING_LONG_SHA1, value);
+        free(value);
+        assert_int64t_equal(CHECK_STRING_LONG_OFFSET, ck.offset);
+
+        RestResponse_init(&delete_response);
+        AtmosClient_delete_object(&atmos, response.object_id, &delete_response);
+        assert_int_equal(204, delete_response.http_code);
+        RestResponse_destroy(&delete_response);
+
+        AtmosCreateObjectResponse_destroy(&response);
+        AtmosChecksum_destroy(&ck);
+
+    } else {
+        printf("...skipped (atmos<2.1)\n");
+    }
+
+    printf("MD5\n");
+    if((atmos_major == 2 && atmos_minor >= 1) || atmos_major > 2) {
+        AtmosCreateObjectResponse_init(&response);
+        AtmosCreateObjectRequest_init(&request);
+
+        fseek(f, 0, SEEK_SET);
+        RestRequest_set_file_body((RestRequest*)&request, f,
+        		CHECK_STRING_LONG_BYTES, "text/plain");
+
+        AtmosChecksum_init(&ck, ATMOS_WSCHECKSUM, ATMOS_ALG_MD5);
+        request.parent.checksum = &ck;
+
+        AtmosClient_create_object(&atmos, &request, &response);
+        check_error((AtmosResponse*)&response);
+        assert_int_equal(201, response.parent.parent.http_code);
+        assert_true(strlen(response.object_id) > 0);
+
+        printf("Created object: %s\n", response.object_id);
+
+        value = AtmosChecksum_get_value(&ck);
+        assert_string_equal(CHECK_STRING_LONG_MD5, value);
+        free(value);
+        assert_int64t_equal(CHECK_STRING_LONG_OFFSET, ck.offset);
+
+        RestResponse_init(&delete_response);
+        AtmosClient_delete_object(&atmos, response.object_id, &delete_response);
+        assert_int_equal(204, delete_response.http_code);
+        RestResponse_destroy(&delete_response);
+
+        AtmosCreateObjectResponse_destroy(&response);
+        AtmosChecksum_destroy(&ck);
+
+    } else {
+        printf("...skipped (atmos<2.1)\n");
+    }
+
+    AtmosClient_destroy(&atmos);
+}
+
+
 
 void test_append_object_wschecksum() {
     AtmosClient atmos;
@@ -5849,6 +6110,12 @@ void test_atmos_suite() {
 
     start_test_msg("test_create_object_wschecksum");
     run_test(test_create_object_wschecksum);
+
+    start_test_msg("test_create_object_wschecksum_file");
+    run_test(test_create_object_wschecksum_file);
+
+    start_test_msg("test_create_object_wschecksum_file_long");
+    run_test(test_create_object_wschecksum_file_long);
 
     start_test_msg("test_append_object_wschecksum");
     run_test(test_append_object_wschecksum);

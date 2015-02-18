@@ -18,7 +18,7 @@ int build_hash_string(char *hash_string, enum http_method method,
         const char *content_type, const char *range, const char *date,
         const char *uri, char **emc_sorted_headers, const int header_count);
 
-char *AtmosUtil_base64decode(const char *base64encoded, size_t length);
+char *AtmosUtil_base64decode(const char *base64encoded, size_t length, size_t *decoded_len);
 char *AtmosUtil_base64encode(const char *normal, size_t length);
 char *AtmosUtil_HMACSHA1(const char *hash_string, const char *key,
         size_t key_len);

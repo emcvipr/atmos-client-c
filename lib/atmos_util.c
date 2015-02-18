@@ -145,7 +145,7 @@ void AtmosUtil_lowercase(char *s) {
         s[i] = tolower(s[i]);
 }
 
-char *AtmosUtil_base64decode(const char *base64encoded, size_t length) {
+char *AtmosUtil_base64decode(const char *base64encoded, size_t length, size_t *decoded_len) {
     BIO *b64, *bmem;
     char *buffer = (char *) malloc(length); // This really should be 3/4 of length
 
@@ -154,7 +154,7 @@ char *AtmosUtil_base64decode(const char *base64encoded, size_t length) {
     BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
     bmem = BIO_new_mem_buf((void*) base64encoded, (int) length);
     bmem = BIO_push(b64, bmem);
-    BIO_read(bmem, buffer, (int) length);
+    *decoded_len = BIO_read(bmem, buffer, (int) length);
     BIO_free_all(bmem);
 
     b64 = NULL;
@@ -163,8 +163,10 @@ char *AtmosUtil_base64decode(const char *base64encoded, size_t length) {
 }
 
 char *AtmosUtil_base64encode(const char *normal, size_t length) {
+    long memlength = 0;
+    char *membuff;
+
     BIO *bmem, *b64;
-    BUF_MEM *bptr;
     char *buff = NULL;
     b64 = BIO_new(BIO_f_base64());
     bmem = BIO_new(BIO_s_mem());
@@ -173,12 +175,12 @@ char *AtmosUtil_base64encode(const char *normal, size_t length) {
     if (BIO_flush(b64) != 1) {
         return NULL;
     }
+    memlength = BIO_get_mem_data(bmem, &membuff);
 
-    BIO_get_mem_ptr(b64, &bptr);
+    buff = (char *) malloc(memlength);
 
-    buff = (char *) malloc(bptr->length);
-    memcpy(buff, bptr->data, bptr->length-1);
-    buff[bptr->length - 1] = 0;
+    memcpy(buff, membuff, memlength);
+    buff[memlength-1] = 0;
 
     BIO_free_all(b64);
     b64 = NULL;
@@ -190,10 +192,10 @@ char *AtmosUtil_HMACSHA1(const char *hash_string, const char *key,
     const EVP_MD *evp_md = EVP_sha1();
     unsigned int md_len;
     unsigned char md[EVP_MAX_MD_SIZE];
-    char *newkey = AtmosUtil_base64decode(key, key_len);
-    size_t new_key_len = strlen(newkey);
+    size_t decoded_len;
+    char *newkey = AtmosUtil_base64decode(key, key_len, &decoded_len);
 
-    HMAC(evp_md, newkey, (int)new_key_len, (const unsigned char*) hash_string,
+    HMAC(evp_md, newkey, (int)decoded_len, (const unsigned char*) hash_string,
             strlen(hash_string), md, &md_len);
     free(newkey);
     return AtmosUtil_base64encode((char*) md, md_len);

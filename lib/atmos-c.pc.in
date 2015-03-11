@@ -1,0 +1,15 @@
+/------------------ mylib.pc.in ------------------------
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: atmos-c
+Description: C SDK for object storage in EMC Atmos and EMC Elastic Cloud Storage (ECS) using the Atmos REST protocol.
+URL: https://github.com/emcvipr/atmos-client-c
+Version: @VERSION@
+Requires: libcurl >= 7.20 rest-client-c >= 1.0.1 openssl >= 0.9.8 libxml-2.0 >= 2.4
+Libs: @XML_LIBS@ @REST_LIBS@ @SSL_LIBS@
+Cflags: @XML_CFLAGS@
+\-------------------------------------------------------
+

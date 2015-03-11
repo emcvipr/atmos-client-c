@@ -1,4 +1,4 @@
-AC_INIT([atmos-c], [2.1.6.2], [jason_d0t_cwik@emc_d0t_com])
+AC_INIT([atmos-c], [2.1.6.3], [jason_d0t_cwik@emc_d0t_com])
 m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
@@ -17,10 +17,10 @@ fi
 #PKG_CHECK_MODULES(CURL, libcurl >= 7.20)
 PKG_CHECK_MODULES([XML], libxml-2.0 >= 2.4)
 PKG_CHECK_MODULES([SSL], openssl >= 0.9.8)
+PKG_CHECK_MODULES([REST], rest-client-c >= 1.0.1)
 AC_CHECK_HEADERS([libxml/parser.h])
 AC_DEFINE([_XOPEN_SOURCE], [600], [Some required extensions])
 AC_CHECK_MEMBERS([struct tm.tm_gmtoff, struct tm.__tm_gmtoff], [], [], [#include <time.h>])
 AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_FILES([Makefile xmlbind/Makefile lib/Makefile tests/Makefile])
-AC_CONFIG_SUBDIRS([dep/rest-client-c])
+AC_CONFIG_FILES([Makefile xmlbind/Makefile lib/Makefile tests/Makefile lib/atmos-c.pc])
 AC_OUTPUT

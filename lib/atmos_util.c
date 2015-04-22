@@ -400,6 +400,12 @@ void AtmosUtil_set_metadata_header(AtmosMetadata *meta, int meta_count,
 const char *
 AtmosUtil_get_permission_string(enum atmos_acl_permission perm) {
     switch (perm) {
+    case ATMOS_PERM_EXECUTE:
+        return ATMOS_ACL_PERMISSION_EXECUTE;
+    case ATMOS_PERM_WRITE_ACL:
+        return ATMOS_ACL_PERMISSION_WRITE_ACL;
+    case ATMOS_PERM_READ_ACL:
+        return ATMOS_ACL_PERMISSION_READ_ACL;
     case ATMOS_PERM_FULL:
         return ATMOS_ACL_PERMISSION_FULL;
     case ATMOS_PERM_READ:
@@ -834,6 +840,12 @@ AtmosUtil_parse_acl(const char *value, AtmosAclEntry *acl, int *acl_count,
             acl[*acl_count].permission = ATMOS_PERM_READ;
         } else if(!strcmp(ATMOS_ACL_PERMISSION_READWRITE, entry_value)) {
             acl[*acl_count].permission = ATMOS_PERM_READ_WRITE;
+        } else if(!strcmp(ATMOS_ACL_PERMISSION_READ_ACL, entry_value)) {
+            acl[*acl_count].permission = ATMOS_PERM_READ_ACL;
+        } else if(!strcmp(ATMOS_ACL_PERMISSION_WRITE_ACL, entry_value)) {
+            acl[*acl_count].permission = ATMOS_PERM_WRITE_ACL;
+        } else if(!strcmp(ATMOS_ACL_PERMISSION_EXECUTE, entry_value)) {
+            acl[*acl_count].permission = ATMOS_PERM_EXECUTE;
         } else {
             ATMOS_WARN("Invalid ACL permission '%s'\n", entry_value);
         }

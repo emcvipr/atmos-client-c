@@ -74,7 +74,13 @@ enum atmos_acl_permission {
     /** The object's content and metadata may be read or written */
     ATMOS_PERM_READ_WRITE,
     /** The object's content, metadata, and ACL may be read or written */
-    ATMOS_PERM_FULL
+    ATMOS_PERM_FULL,
+    /** The object's ACL may be read */
+    ATMOS_PERM_READ_ACL,
+    /** The object's ACL may be written */
+    ATMOS_PERM_WRITE_ACL,
+    /** The object can be executed */
+    ATMOS_PERM_EXECUTE
 };
 
 /**

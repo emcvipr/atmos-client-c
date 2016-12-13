@@ -1,5 +1,5 @@
 AC_INIT([atmos-c], [2.1.6.3], [jason_d0t_cwik@emc_d0t_com])
-m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
+#m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign -Wall -Werror])
